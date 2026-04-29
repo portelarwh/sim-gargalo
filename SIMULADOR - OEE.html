@@ -1,0 +1,1399 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <title>SIMULADOR - OEE / TOC</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
+    <style>
+        :root{
+            --green:#22c55e; --red:#ef4444; --orange:#f59e0b; --yellow:#eab308;
+            --blue:#3b82f6; --cyan: #06b6d4; --gray:#94a3b8; --navy:#1e3a8a;
+            --purple: #d946ef; --purple-glow: rgba(217, 70, 239, 0.4);
+            --bg-body: radial-gradient(1200px 600px at 50% -10%, #1d2f55 0%, #0b1220 60%, #070b14 100%);
+            --top-bg: linear-gradient(180deg, rgba(10,16,30,.98), rgba(10,16,30,.92));
+            --top-border: rgba(255,255,255,.08); --top-text: #fff; --top-muted: rgba(255,255,255,0.5);
+            --input-bg: rgba(255,255,255,0.1); --input-border: rgba(255,255,255,0.2); --input-text: #fff;
+            --panel2:#f6f7fb; --stroke:#e7e9f1; --shadow:0 10px 25px rgba(0,0,0,0.2);
+            --text-main: #0f172a; --muted-main: #6b7280; --wip-w: 120px;
+            --modal-bg: #0f172a; --modal-text: #f1f5f9; --modal-border: #1e293b;
+        }
+        input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type=number] { -moz-appearance: textfield; }
+        body.light-mode {
+            --bg-body: linear-gradient(135deg, #f0f2f5 0%, #e2e8f0 100%);
+            --top-bg: rgba(255,255,255,0.95); --top-border: rgba(0,0,0,.06);
+            --top-text: #1e293b; --top-muted: #64748b; --input-bg: #f1f5f9;
+            --input-border: #cbd5e1; --input-text: #334155; --modal-bg: #ffffff;
+            --modal-text: #0f172a; --modal-border: #cbd5e1;
+        }
+        *{box-sizing:border-box}
+        body{ margin:0; font-family: 'Inter', sans-serif; color: var(--text-main); background: var(--bg-body); height:100vh; overflow:hidden; display: flex; flex-direction: column; transition: background 0.3s ease; }
+        
+        .topbar{ flex: 0 0 auto; z-index:30; padding: 6px 16px; background: var(--top-bg); border-bottom: 1px solid var(--top-border); backdrop-filter: blur(10px); display: flex; flex-direction: column; gap: 6px; color: var(--top-text); }
+        .row1 { display: flex; align-items: center; justify-content: space-between; gap: 12px; height: 38px; }
+        .left-group { display: flex; align-items: center; gap: 12px; }
+        .brand-compact { display: flex; align-items: baseline; gap: 8px; }
+        .brandTitle { font-weight: 900; font-size: 14px; color: var(--top-text); letter-spacing: -0.02em; white-space: nowrap; }
+        .brandSub { font-size: 9px; color: var(--top-muted); font-weight: 500; white-space: nowrap; }
+        .author-link { display: flex; align-items: center; gap: 4px; text-decoration: none; color: var(--top-muted); font-size: 10px; font-weight: 600; transition: color 0.2s; white-space: nowrap; }
+        .author-link:hover { color: var(--top-text); }
+        .author-link svg { width: 12px; height: 12px; fill: currentColor; }
+        .help-btn { background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.3); color: var(--blue); padding: 4px 8px; border-radius: 4px; font-size: 9px; font-weight: 700; cursor: pointer; transition: all 0.2s; text-transform: uppercase; white-space: nowrap; }
+        .help-btn:hover { background: var(--blue); color: #fff; border-color: var(--blue); }
+        .center-configs { display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,0.03); padding: 5px 14px; border-radius: 8px; border: 1px solid var(--top-border); }
+        body.light-mode .center-configs { background: rgba(0,0,0,0.02); }
+        .cfg { display: flex; align-items: center; gap: 5px; }
+        .cfg-lbl { font-size: 9px; font-weight: 700; color: var(--top-muted); text-transform: uppercase; white-space: nowrap; }
+        .cfg-input { background: var(--input-bg); border: 1px solid var(--input-border); color: var(--input-text); padding: 3px 5px; border-radius: 4px; font-weight: bold; font-size: 11px; width: 55px; text-align: center; }
+        .cfg-input:focus { outline: none; border-color: var(--blue); }
+        select.cfg-input { width: 58px; cursor: pointer; }
+        select.cfg-input option { background: #fff; color: #333; }
+        .zoom-row { display: flex; align-items: center; gap: 4px; }
+        .zoom-row input[type=range] { width: 45px; height: 3px; background: rgba(255,255,255,0.3); border-radius: 2px; -webkit-appearance: none; cursor: pointer; }
+        body.light-mode .zoom-row input[type=range] { background: rgba(0,0,0,0.2); }
+        .zoom-row input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 10px; height: 10px; background: var(--blue); border-radius: 50%; border: 1px solid #fff; }
+        .zoom-row input[type=number] { background: var(--input-bg); border: 1px solid var(--input-border); color: var(--top-text); width: 36px; padding: 2px; border-radius: 3px; text-align: center; font-size: 9px; font-weight: 700; }
+        .right-group { display: flex; align-items: center; gap: 10px; }
+        .toggles { display: flex; align-items: center; gap: 6px; }
+        .tgl { display: flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 600; color: var(--top-muted); cursor: pointer; padding: 4px 10px; border-radius: 4px; background: rgba(255,255,255,0.05); border: 1px solid var(--top-border); transition: all 0.2s; white-space: nowrap; }
+        .tgl:hover { background: rgba(255,255,255,0.1); }
+        .tgl input { width: 12px; height: 12px; accent-color: var(--cyan); margin: 0; cursor: pointer; }
+        body.light-mode .tgl { background: rgba(0,0,0,0.03); }
+        body.light-mode .tgl:hover { background: rgba(0,0,0,0.06); }
+        .btns { display: flex; align-items: center; gap: 6px; }
+        .iconBtn { background: var(--input-bg); border: 1px solid var(--input-border); color: var(--input-text); width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 14px; display: grid; place-items: center; }
+        .iconBtn:hover { background: rgba(255,255,255,0.15); }
+        .startBtn { border-radius: 5px; background: var(--green); color: #052e16; border: none; padding: 0 14px; font-weight: 800; cursor: pointer; font-size: 11px; display: flex; align-items: center; gap: 5px; height: 28px; }
+        .startBtn:hover { filter: brightness(1.1); }
+        .startBtn:active { transform: scale(0.96); }
+        .theme-toggle { display: flex; align-items: center; gap: 5px; }
+        .theme-lbl { font-size: 9px; font-weight: 700; color: var(--top-muted); white-space: nowrap; }
+        .switch { position: relative; width: 28px; height: 16px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .3s; border-radius: 16px; }
+        .slider:before { position: absolute; content: ""; height: 10px; width: 10px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--blue); }
+        input:checked + .slider:before { transform: translateX(12px); }
+        .switch input:checked + .slider.green-mode { background-color: #15803d !important; }
+        .switch input:checked + .slider.green-mode:before { transform: translateX(12px); }
+        
+        .row2 { display: flex; align-items: center; justify-content: center; gap: 14px; padding-top: 10px; margin-top: 2px; border-top: 1px solid var(--top-border); }
+        .time-group { display: flex; gap: 5px; }
+        .time-card { background: #0f172a; border: 1px solid #1e293b; padding: 4px 10px; border-radius: 6px; display: flex; flex-direction: column; align-items: center; min-width: 85px; }
+        body.light-mode .time-card { background: #fff; border-color: #e2e8f0; }
+        body.light-mode .time-val { color: #0f172a; }
+        .time-lbl { font-size: 7px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; }
+        .time-val { font-size: 13px; color: #fff; font-weight: 700; font-family: 'Inter', sans-serif; font-variant-numeric: tabular-nums; }
+        .time-val.est { color: #94a3b8; }
+        .time-val.curr { color: var(--blue); }
+        .time-val.rem { color: var(--orange); }
+        
+        .chart-group { display: flex; gap: 12px; height: 44px; align-items: center; padding: 0 12px; border-left: 1px solid var(--top-border); border-right: 1px solid var(--top-border); }
+        .mini-chart { display: flex; flex-direction: column; gap: 2px; width: 130px; }
+        .chart-lbl { font-size: 8px; color: #94a3b8; font-weight: 700; display: flex; justify-content: space-between; align-items: center; }
+        .chart-val-box { display: flex; gap: 4px; align-items: center; }
+        .cv-main { color: var(--top-text); font-size: 10px; font-weight: 700; }
+        .cv-sub { color: #fbbf24; font-size: 9px; }
+        .cv-lbl-small { font-size: 7px; color: var(--top-muted); margin-right: 1px; }
+        body.light-mode .cv-sub { color: var(--orange); }
+        .svg-box { height: 28px; width: 100%; background: rgba(255,255,255,0.02); border-radius: 3px; overflow: hidden; border: 1px solid var(--top-border); }
+        body.light-mode .svg-box { background: rgba(0,0,0,0.03); }
+        .svg-box svg { display: block; width: 100%; height: 100%; }
+        .chart-line { fill: none; stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+        
+        .state-group { display: flex; gap: 4px; }
+        .state-pill { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 3px 8px; min-width: 75px; border-radius: 6px; background: rgba(255,255,255,0.05); border: 1px solid var(--top-border); }
+        body.light-mode .state-pill { background: #fff; border-color: #e2e8f0; }
+        .state-pill.scrap-pill { border-color: rgba(239,68,68,0.3); background: rgba(239,68,68,0.1); }
+        .st-lbl { font-size: 7px; font-weight: 800; color: var(--top-muted); text-transform: uppercase; letter-spacing: 0.3px; }
+        .st-val { font-size: 13px; font-weight: 700; color: var(--top-text); font-variant-numeric: tabular-nums; }
+        .st-op .st-val { color: var(--blue); }
+        .st-pd .st-val { color: var(--red); }
+        .st-oc .st-val { color: var(--gray); }
+        .st-tr .st-val { color: var(--orange); }
+        .st-ag .st-val { color: var(--yellow); }
+        .st-sc .st-val { color: #f87171; }
+        .st-su .st-val { color: var(--cyan); }
+        
+        .main { flex: 1 1 auto; width: 100%; overflow: auto; display: flex; align-items: flex-start; position: relative; padding-top: 10px; }
+        .board { margin: auto; padding: 15px 15px 30px 15px; position: relative; display: flex; gap: 15px; align-items: flex-start; width: max-content; min-width: min-content; transform-origin: top center; transition: transform 0.1s linear; }
+        .station, .nodeBox, .wipCol { margin-bottom: 20px; }
+        .animLayer { position: absolute; inset: 0; pointer-events: none; z-index: 50; overflow: hidden; }
+        .animBox { position: absolute; width: 16px; height: 16px; border-radius: 4px; border: 1px solid rgba(255,255,255,.8); box-shadow: 0 4px 10px rgba(0,0,0,0.3); opacity: 0; }
+        body.light-mode .animBox { border: 1px solid rgba(0,0,0,0.1); }
+        .animBox.normal { background: var(--blue); }
+        .animBox.scrap { background: var(--red); }
+        
+        .nodeBox { flex: 0 0 110px; background: rgba(255,255,255,0.95); border-radius: 18px; padding: 15px 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: var(--shadow); border: 1px solid #fff; min-height: 580px; z-index: 2; text-align: center; }
+        .nodeBox .iconArea { width: 50px; height: 50px; background: #f1f5f9; border-radius: 12px; display: grid; place-items: center; margin-bottom: 10px; border: 1px solid #e2e8f0; color: #64748b; }
+        .nodeBox .label { font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; }
+        .lot-input-group { margin-top: 10px; display: flex; flex-direction: column; gap: 4px; align-items: center; }
+        .lot-input-group label { font-size: 8px; font-weight: bold; color: #94a3b8; text-align: center; }
+        .lot-input-group input { width: 60px; text-align: center; font-size: 16px; font-weight: bold; color: var(--text-main); border: 1px solid #cbd5e1; border-radius: 6px; padding: 4px; background: #fff; }
+        .checkbox-group { margin-top: 15px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+        .checkbox-lbl { font-size: 9px; font-weight: 800; color: #64748b; }
+        #badgeLot { font-weight: 900; font-size: 20px; color: var(--navy); font-variant-numeric: tabular-nums; margin-top: 5px; }
+        .stock-available-label { font-size: 8px; font-weight: 700; color: #94a3b8; margin-top: 2px; }
+        .final-val { font-size: 28px; font-weight: 900; color: #16a34a; margin-top: 5px; font-variant-numeric: tabular-nums; }
+        
+        .station { flex: 0 0 280px; min-height: 580px; border-radius: 18px; background: rgba(255,255,255,.95); border: 2px solid rgba(255,255,255,.65); box-shadow: var(--shadow); padding: 10px; display: flex; flex-direction: column; gap: 8px; position: relative; color: var(--text-main); z-index: 2; transition: border-color 0.3s, box-shadow 0.3s; }
+        .station.is-bottleneck { border-color: var(--purple); box-shadow: 0 0 25px var(--purple-glow); z-index: 3; }
+        .bottleneck-badge { display: none; font-size: 13px; font-weight: 900; color: #fff; background: var(--purple); padding: 2px 8px; border-radius: 99px; animation: pulseBadge 2s infinite; }
+        .station.is-bottleneck .bottleneck-badge { display: block; }
+        @keyframes pulseBadge { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.05); opacity: 0.9; } }
+        
+        .stationHead { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 24px; }
+        .stationTitle { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 13px; color: #334155; }
+        .station-name-input { background: transparent; border: none; font: inherit; font-weight: 800; color: inherit; width: 100px; padding: 2px; border-bottom: 1px solid transparent; }
+        .station-name-input:focus { border-bottom-color: var(--blue); outline: none; }
+        .dot { width: 8px; height: 8px; border-radius: 999px; background: #cbd5e1; border: 1px solid #bfc8d6; }
+        .toggle { position: relative; width: 36px; height: 20px; border-radius: 999px; background: #e5e7eb; border: 1px solid #d1d5db; cursor: pointer; }
+        .toggle::after { content: ''; position: absolute; top: 1px; left: 1px; width: 16px; height: 16px; border-radius: 999px; background: #fff; border: 1px solid rgba(17,24,39,.10); box-shadow: 0 2px 5px rgba(0,0,0,.1); transition: all .18s ease; }
+        .toggle.on { background: rgba(34,197,94,.25); border-color: rgba(34,197,94,.45); }
+        .toggle.on::after { left: 17px; background: rgba(34,197,94,.95); }
+        .visual { height: 90px; border-radius: 14px; background: linear-gradient(180deg, rgba(148,163,184,.18), rgba(148,163,184,.05)); border: 1px solid rgba(148,163,184,.25); display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+        @keyframes spinGear { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .machineIcon { width: 48px; height: 48px; border-radius: 12px; background: rgba(17,24,39,.06); border: 1px solid rgba(17,24,39,.12); display: grid; place-items: center; transition: all 0.4s ease; }
+        .machineIcon svg { width: 26px; height: 26px; stroke: #64748b; transition: stroke 0.3s ease; }
+        .machineIcon.state-run { background: rgba(34,197,94, 0.15); border-color: rgba(34,197,94, 0.4); box-shadow: 0 0 20px rgba(34,197,94, 0.25); }
+        .machineIcon.state-run svg { stroke: #16a34a; animation: spinGear 3s linear infinite; }
+        .machineIcon.state-down { background: rgba(239,68,68, 0.15); border-color: rgba(239,68,68, 0.4); }
+        .machineIcon.state-down svg { stroke: #dc2626; }
+        .machineIcon.state-setup { background: rgba(6,182,212, 0.15); border-color: rgba(6,182,212, 0.4); }
+        .machineIcon.state-setup svg { stroke: var(--cyan); }
+        .machineIcon.state-finished { background: rgba(217, 70, 239, 0.15); border-color: rgba(217, 70, 239, 0.4); }
+        .machineIcon.state-finished svg { stroke: var(--purple); }
+        .statusPill { position: absolute; left: 10px; right: 10px; bottom: 6px; height: 18px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 800; letter-spacing: .06em; color: #fff; }
+        .statusPill.gray { background: linear-gradient(180deg, #64748b, #475569); }
+        .statusPill.green { background: linear-gradient(180deg, #065f46, #16a34a); }
+        .statusPill.red { background: linear-gradient(180deg, #7f1d1d, #ef4444); }
+        .statusPill.orange { background: linear-gradient(180deg, #d97706, #f59e0b); }
+        .statusPill.yellow { background: linear-gradient(180deg, #ca8a04, #eab308); color: #422006; }
+        .statusPill.cyan { background: linear-gradient(180deg, #0891b2, #06b6d4); }
+        .statusPill.purple { background: linear-gradient(180deg, #7e22ce, #a855f7); }
+        .kpiRow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+        .kbox { border-radius: 8px; background: #fff; border: 1px solid var(--stroke); padding: 4px 2px; text-align: center; }
+        .kbox .klabel { font-size: 9px; color: var(--muted-main); font-weight: 800; }
+        .kbox .kval { margin-top: 1px; font-size: 14px; font-weight: 800; color: var(--purple); font-variant-numeric: tabular-nums; }
+        .kbox .kval.small { color: #111827; }
+        .info-header { display: flex; justify-content: space-between; padding: 0 4px; margin-top: 6px; margin-bottom: 4px; font-size: 10px; font-weight: 700; color: #64748b; }
+        .info-header b { color: #0f172a; margin-left: 4px; font-weight: 800; font-size: 11px; }
+        .info-header .blue { color: var(--blue); }
+        .info-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 6px; }
+        .card-stat { display: flex; justify-content: space-between; align-items: center; padding: 4px 8px; border-radius: 6px; border: 1px solid transparent; }
+        .card-stat.green { background: #ecfdf5; border-color: #d1fae5; color: #15803d; }
+        .card-stat.red { background: #fef2f2; border-color: #fee2e2; color: #b91c1c; }
+        .card-stat span { font-size: 9px; font-weight: 800; text-transform: uppercase; }
+        .card-stat b { font-size: 13px; font-weight: 800; font-variant-numeric: tabular-nums; }
+        .sliders { margin-top: 2px; display: flex; flex-direction: column; gap: 6px; padding: 6px; border-radius: 12px; background: var(--panel2); border: 1px solid var(--stroke); }
+        .srow { display: grid; grid-template-columns: 70px 1fr 40px; gap: 6px; align-items: center; font-size: 10px; }
+        .srow .name { font-weight: 800; color: #334155; }
+        .srow input[type=range] { width: 100%; cursor: pointer; height: 6px; border-radius: 3px; background: #e2e8f0; -webkit-appearance: none; }
+        .srow input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; border-radius: 50%; background: #fff; border: 2px solid currentColor; box-shadow: 0 1px 3px rgba(0,0,0,0.2); margin-top: -3px; }
+        .srow input[type=number] { width: 100%; border-radius: 6px; border: 1px solid rgba(15,23,42,.10); background: #fff; padding: 2px 0; font-weight: 800; font-variant-numeric: tabular-nums; text-align: center; font-size: 10px; outline: none; }
+        .srow.nom input[type=range] { color: var(--blue); }
+        .srow.a input[type=range] { color: var(--red); }
+        .srow.p input[type=range] { color: var(--orange); }
+        .srow.q input[type=range] { color: var(--green); }
+        .srow.setup-row { grid-template-columns: 70px 1fr 30px; }
+        .times { margin-top: auto; padding: 6px; border-radius: 12px; background: #fff; border: 1px solid var(--stroke); font-size: 10px; }
+        .trow { display: flex; justify-content: space-between; gap: 10px; padding: 3px 2px; border-bottom: 1px solid rgba(15,23,42,.06); font-variant-numeric: tabular-nums; }
+        .trow:last-child { border-bottom: none; }
+        .tname { font-weight: 800; }
+        .tname.op { color: var(--blue); }
+        .tname.down { color: var(--red); }
+        .tname.wait { color: var(--yellow); }
+        .tname.block { color: var(--orange); }
+        .tname.idle { color: var(--gray); }
+        .tname.setup { color: var(--cyan); }
+        .wipCol { flex: 0 0 var(--wip-w); max-width: var(--wip-w); min-width: 100px; z-index: 2; }
+        .wipCard { width: 100%; border-radius: 18px; background: rgba(255,255,255,.95); border: 1px solid rgba(17,24,39,.10); box-shadow: var(--shadow); overflow: hidden; display: flex; flex-direction: column; min-height: 580px; }
+        .wipHead { padding: 6px 8px; display: flex; align-items: center; gap: 8px; background: linear-gradient(180deg, rgba(15,23,42,.06), rgba(15,23,42,.01)); border-bottom: 1px solid rgba(15,23,42,.08); }
+        .wipIcon { width: 24px; height: 24px; border-radius: 10px; background: rgba(15,23,42,.06); border: 1px solid rgba(15,23,42,.10); display: grid; place-items: center; }
+        .wipIcon svg { width: 14px; height: 14px; opacity: .92; }
+        .wipTitle { font-weight: 900; letter-spacing: .08em; font-size: 11px; color: #334155; }
+        .wipMid { flex: 1; padding: 8px 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; background: radial-gradient(circle at center, rgba(255,255,255,0.8) 0%, rgba(241,245,249,0.5) 100%); min-height: 300px; position: relative; }
+        .thermoTrack { width: 34px; height: 300px; background: #e2e8f0; border-radius: 99px; border: 3px solid #cbd5e1; box-shadow: inset 0 2px 5px rgba(0,0,0,0.1); position: relative; overflow: hidden; }
+        .thermoTrack::after { content: ''; position: absolute; top: 0; bottom: 0; left: 8px; width: 6px; background: rgba(255,255,255,0.5); border-radius: 99px; z-index: 5; }
+        .thermoFill { position: absolute; bottom: 0; left: 0; right: 0; width: 100%; height: 0%; background: linear-gradient(to top, #22c55e 0%, #facc15 50%, #ef4444 100%); transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1); z-index: 1; }
+        .pctBig { font-size: 22px; font-weight: 900; color: #334155; font-variant-numeric: tabular-nums; text-shadow: 0 2px 0 #fff; }
+        .pctBig span { font-size: 12px; color: #94a3b8; font-weight: 700; margin-left: 2px; }
+        .wipBlocked { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); padding: 6px 10px; border-radius: 8px; background: rgba(239, 68, 68, 0.95); border: 2px solid #fff; color: #fff; font-weight: 900; font-size: 11px; box-shadow: 0 10px 30px rgba(220, 38, 38, 0.4); display: none; z-index: 10; }
+        .wipFoot { padding: 4px; display: flex; flex-direction: column; gap: 3px; background: rgba(255,255,255,.72); border-top: 1px solid rgba(15,23,42,.08); }
+        .wipMini { border-radius: 8px; background: #fff; border: 1px solid rgba(15,23,42,.10); padding: 3px 6px; display: flex; justify-content: space-between; align-items: center; min-height: 28px; }
+        .wipMini .lbl { font-size: 9px; font-weight: 900; color: var(--muted-main); }
+        .wipMini .val { font-size: 11px; font-weight: 900; color: var(--text-main); font-variant-numeric: tabular-nums; }
+        .wipInputGroup { display: flex; align-items: center; gap: 2px; font-size: 11px; font-weight: 900; color: var(--text-main); }
+        .wipInputGroup input { width: 45px; font-size: 11px; border: none; border-bottom: 2px solid #e2e8f0; outline: none; background: transparent; font: inherit; text-align: center; color: var(--text-main); }
+        .wipInputGroup input:focus { border-color: var(--blue); }
+        .wipInputGroup .slash { color: #cbd5e1; }
+        .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); backdrop-filter: blur(4px); }
+        .modal-content { background-color: var(--modal-bg); margin: 3% auto; padding: 25px; border: 1px solid var(--modal-border); width: 90%; max-width: 900px; border-radius: 16px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); color: var(--modal-text); max-height: 90vh; overflow-y: auto; }
+        .close { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
+        .close:hover { color: var(--blue); }
+        .modal h2 { font-size: 22px; font-weight: 800; color: var(--blue); margin-bottom: 20px; border-bottom: 1px solid var(--modal-border); padding-bottom: 10px; }
+        .modal h3 { font-size: 16px; font-weight: 700; color: var(--cyan); margin-top: 25px; margin-bottom: 10px; }
+        .modal p, .modal li { font-size: 14px; line-height: 1.7; color: var(--modal-text); opacity: 0.9; }
+        .modal ul { margin-left: 20px; margin-bottom: 15px; }
+        .modal li { margin-bottom: 8px; }
+        .modal code { background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 13px; color: var(--orange); }
+        .modal strong { color: var(--top-text); }
+        .help-section { background: rgba(255,255,255,0.03); padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 1px solid var(--modal-border); }
+        .help-section h4 { font-size: 13px; font-weight: 700; color: var(--green); margin-bottom: 8px; text-transform: uppercase; }
+        .glossary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; }
+        .g-item { background: rgba(255,255,255,0.03); padding: 12px; border-radius: 8px; border: 1px solid var(--modal-border); }
+        .g-title { font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--gray); margin-bottom: 5px; }
+        .g-desc { font-size: 13px; line-height: 1.5; }
+        
+        /* Estilos para os novos indicadores */
+        .extra-stats { margin-top: 15px; display: flex; flex-direction: column; gap: 8px; width: 100%; }
+        .extra-stat-item { display: flex; flex-direction: column; align-items: center; padding: 6px 8px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; }
+        .extra-stat-label { font-size: 8px; font-weight: 700; color: #64748b; text-transform: uppercase; }
+        .extra-stat-value { font-size: 16px; font-weight: 800; color: #334155; font-variant-numeric: tabular-nums; }
+        .extra-stat-value.wip-balance { font-size: 14px; color: #0369a1; }
+    </style>
+</head>
+<body>
+
+<div class="topbar">
+    <div class="row1">
+        <div class="left-group">
+            <div class="brand-compact">
+                <span class="brandTitle">SIMULADOR OEE/TOC</span>
+                <span class="brandSub">JIPM/TPM</span>
+            </div>
+            <a href="https://www.linkedin.com/in/pedro-ag-portela/" target="_blank" class="author-link">
+                <svg viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
+                Pedro Portela
+            </a>
+            <button class="help-btn" onclick="openHelp()">AJUDA</button>
+        </div>
+
+        <div class="center-configs">
+            <div class="cfg">
+                <span class="cfg-lbl">ESTAÇÕES</span>
+                <select id="stationsSelect" class="cfg-input">
+                    <option value="2">2</option><option value="3" selected>3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option>
+                </select>
+            </div>
+            <div class="cfg">
+                <span class="cfg-lbl">TRÂNSITO (s)</span>
+                <input id="transitTimeInput" class="cfg-input" type="number" min="0" max="99" value="0">
+            </div>
+            <div class="cfg">
+                <span class="cfg-lbl">VELOCIDADE</span>
+                <select id="speedSelect" class="cfg-input">
+                    <option value="1">1x</option><option value="2">2x</option><option value="4">4x</option><option value="8">8x</option><option value="10">10x</option><option value="20">20x</option><option value="100">100x</option>
+                </select>
+            </div>
+            <div class="cfg">
+                <span class="cfg-lbl">ZOOM</span>
+                <div class="zoom-row">
+                    <input id="zoomSlider" type="range" min="30" max="150" step="5" value="100">
+                    <input id="zoomInput" type="number" min="30" max="150" value="100">
+                </div>
+            </div>
+        </div>
+
+        <div class="right-group">
+            <div class="toggles">
+                <label class="tgl"><input type="checkbox" id="chkKeepParams">Manter Parâmetros</label>
+                <label class="tgl"><input type="checkbox" id="chkFlushLine">Esgotar Linha</label>
+            </div>
+            <div class="btns">
+                <button class="iconBtn" id="btnReset" title="Reset">⟲</button>
+                <button class="startBtn" id="btnStart"><span>▶</span> INICIAR</button>
+            </div>
+            <div class="theme-toggle">
+                <span class="theme-lbl">Claro</span>
+                <label class="switch"><input type="checkbox" id="chkTheme"><span class="slider"></span></label>
+            </div>
+        </div>
+    </div>
+
+    <div class="row2">
+        <div class="time-group">
+            <div class="time-card"><div class="time-lbl">META INICIAL</div><div class="time-val est" id="t_init">00:00.0</div></div>
+            <div class="time-card"><div class="time-lbl">PREVISÃO</div><div class="time-val curr" id="t_est_curr">00:00.0</div></div>
+            <div class="time-card"><div class="time-lbl">DECORRIDO</div><div class="time-val" id="t_elap">00:00.0</div></div>
+            <div class="time-card"><div class="time-lbl">RESTANTE</div><div class="time-val rem" id="t_rem">00:00.0</div></div>
+        </div>
+
+        <div class="chart-group">
+            <div class="mini-chart">
+                <div class="chart-lbl"><span>OEE TREND</span><span class="cv-main" id="val_oee_now">0%</span></div>
+                <div class="svg-box"><svg id="chartOEE"></svg></div>
+            </div>
+            <div class="mini-chart">
+                <div class="chart-lbl">
+                    <span>PPM</span>
+                    <div class="chart-val-box">
+                        <span class="cv-lbl-small">REAL</span><span class="cv-main" id="val_ppm_now">0</span>
+                        <span class="cv-lbl-small">MÉD</span><span class="cv-sub" id="val_ppm_avg">0</span>
+                    </div>
+                </div>
+                <div class="svg-box"><svg id="chartPPM"></svg></div>
+            </div>
+        </div>
+
+        <div class="state-group">
+            <div class="state-pill st-op"><div class="st-lbl">OPERAÇÃO</div><div class="st-val" id="g_run">00:00</div></div>
+            <div class="state-pill st-su"><div class="st-lbl">SETUP</div><div class="st-val" id="g_setup_run">00:00</div></div>
+            <div class="state-pill st-pd"><div class="st-lbl">PARADA</div><div class="st-val" id="g_down">00:00</div></div>
+            <div class="state-pill st-oc"><div class="st-lbl">OCIOSA</div><div class="st-val" id="g_idle">00:00</div></div>
+            <div class="state-pill st-tr"><div class="st-lbl">TRAVADA</div><div class="st-val" id="g_block">00:00</div></div>
+            <div class="state-pill st-ag"><div class="st-lbl">AGUARDANDO</div><div class="st-val" id="g_wait">00:00</div></div>
+            <div class="state-pill scrap-pill st-sc"><div class="st-lbl">REFUGOS</div><div class="st-val" id="g_scrap">0</div></div>
+        </div>
+    </div>
+</div>
+
+<div class="main">
+    <div class="board" id="board">
+        <div class="animLayer" id="animLayer"></div>
+    </div>
+</div>
+
+<div id="helpModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeHelp()">&times;</span>
+        <h2>📘 Manual Completo do Simulador OEE & TOC</h2>
+        
+        <h3>1. INTRODUÇÃO</h3>
+        <p>Este simulador combina os princípios da <strong>Teoria das Restrições (TOC)</strong> de Eliyahu Goldratt com as métricas de <strong>OEE (Overall Equipment Effectiveness)</strong> do padrão JIPM/TPM. O objetivo é visualizar como parâmetros de disponibilidade, performance e qualidade impactam a produção de uma linha de manufatura.</p>
+        
+        <h3>2. CONCEITOS FUNDAMENTAIS</h3>
+        
+        <div class="help-section">
+            <h4>OEE (Overall Equipment Effectiveness)</h4>
+            <p><strong>Fórmula:</strong> <code>OEE = Disponibilidade (A%) × Performance (P%) × Qualidade (Q%)</code></p>
+            <ul>
+                <li><strong>Disponibilidade (A%):</strong> Percentual do tempo que a máquina está operacional (não quebrada)</li>
+                <li><strong>Performance (P%):</strong> Percentual da velocidade nominal que está sendo alcançada</li>
+                <li><strong>Qualidade (Q%):</strong> Percentual de peças boas produzidas (sem defeitos)</li>
+            </ul>
+            <p>Um OEE de <strong>85%</strong> é considerado "classe mundial" na indústria.</p>
+        </div>
+        
+        <div class="help-section">
+            <h4>Teoria das Restrições (TOC)</h4>
+            <ul>
+                <li><strong>Gargalo (Bottleneck):</strong> É a estação com menor capacidade efetiva, que limita toda a linha</li>
+                <li>A capacidade de uma linha de produção é determinada pelo seu gargalo</li>
+                <li>O simulador identifica automaticamente o gargalo (estação com menor PPM × A% × P%)</li>
+                <li>Melhorar qualquer estação que NÃO seja o gargalo não aumenta a produção total</li>
+            </ul>
+        </div>
+        
+        <div class="help-section">
+            <h4>WIP (Work in Progress)</h4>
+            <ul>
+                <li>Estoque intermediário entre estações</li>
+                <li>Buffers protegem o gargalo contra variações das estações anteriores</li>
+                <li><strong>WIP alto:</strong> Maior proteção, mas mais capital parado</li>
+                <li><strong>WIP baixo:</strong> Menor custo, mas maior risco de paradas por falta de peça</li>
+            </ul>
+        </div>
+        
+        <h3>3. CONFIGURAÇÕES GERAIS (Barra Superior)</h3>
+        <div class="glossary-grid">
+            <div class="g-item"><div class="g-title">ESTAÇÕES</div><div class="g-desc">Quantidade de máquinas/etapas na linha (2 a 8)</div></div>
+            <div class="g-item"><div class="g-title">TRÂNSITO (s)</div><div class="g-desc">Tempo de transporte entre estações em segundos</div></div>
+            <div class="g-item"><div class="g-title">VELOCIDADE</div><div class="g-desc">Multiplicador de velocidade da simulação (1x a 100x)</div></div>
+            <div class="g-item"><div class="g-title">ZOOM</div><div class="g-desc">Ajuste visual do tamanho do board (30% a 150%)</div></div>
+        </div>
+        
+        <h3>4. INDICADORES DE TEMPO</h3>
+        <div class="glossary-grid">
+            <div class="g-item"><div class="g-title">META INICIAL</div><div class="g-desc">Tempo estimado para concluir a meta no momento que a simulação iniciou</div></div>
+            <div class="g-item"><div class="g-title">PREVISÃO</div><div class="g-desc">Tempo estimado atual (recalculado se parâmetros mudarem durante a simulação)</div></div>
+            <div class="g-item"><div class="g-title">DECORRIDO</div><div class="g-desc">Tempo de simulação já transcorrido</div></div>
+            <div class="g-item"><div class="g-title">RESTANTE</div><div class="g-desc">Previsão menos o tempo decorrido</div></div>
+        </div>
+        
+        <h3>5. GRÁFICOS EM TEMPO REAL</h3>
+        <div class="glossary-grid">
+            <div class="g-item"><div class="g-title">OEE TREND</div><div class="g-desc">Evolução do OEE do gargalo ao longo do tempo (0% a 100%)</div></div>
+            <div class="g-item"><div class="g-title">PPM</div><div class="g-desc"><strong>REAL:</strong> PPM instantâneo do gargalo | <strong>MÉD:</strong> Média de peças boas por minuto desde o início</div></div>
+        </div>
+        
+        <h3>6. ESTADOS GLOBAIS DA LINHA</h3>
+        <div class="help-section">
+            <table style="width:100%; font-size:13px; border-collapse:collapse;">
+                <tr style="border-bottom:1px solid var(--modal-border);">
+                    <td style="padding:8px;"><strong style="color:var(--blue);">OPERAÇÃO</strong></td>
+                    <td style="padding:8px;">Tempo que o gargalo esteve efetivamente produzindo</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--modal-border);">
+                    <td style="padding:8px;"><strong style="color:var(--cyan);">SETUP</strong></td>
+                    <td style="padding:8px;">Tempo de setup/preparação da última estação</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--modal-border);">
+                    <td style="padding:8px;"><strong style="color:var(--red);">PARADA</strong></td>
+                    <td style="padding:8px;">Tempo de parada não planejada (falhas, quebras)</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--modal-border);">
+                    <td style="padding:8px;"><strong style="color:var(--gray);">OCIOSA</strong></td>
+                    <td style="padding:8px;">Tempo sem atividade (estação 1 sem demanda para puxar)</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--modal-border);">
+                    <td style="padding:8px;"><strong style="color:var(--orange);">TRAVADA</strong></td>
+                    <td style="padding:8px;">Tempo bloqueado porque o buffer à frente está cheio</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--modal-border);">
+                    <td style="padding:8px;"><strong style="color:var(--yellow);">AGUARDANDO</strong></td>
+                    <td style="padding:8px;">Tempo esperando peça chegar do buffer anterior (starving)</td>
+                </tr>
+                <tr>
+                    <td style="padding:8px;"><strong style="color:#f87171;">REFUGOS</strong></td>
+                    <td style="padding:8px;">Total de peças rejeitadas por problemas de qualidade</td>
+                </tr>
+            </table>
+        </div>
+        
+        <h3>7. ESTOQUE (Coluna Esquerda)</h3>
+        <div class="glossary-grid">
+            <div class="g-item"><div class="g-title">DISPONÍVEL</div><div class="g-desc">Quantidade inicial de matéria-prima a ser configurada</div></div>
+            <div class="g-item"><div class="g-title">RESTANTE</div><div class="g-desc">Quantidade ainda disponível para puxar durante a simulação</div></div>
+        </div>
+        
+        <h3>8. PARÂMETROS DE CADA ESTAÇÃO</h3>
+        <div class="help-section">
+            <h4>Controles Ajustáveis</h4>
+            <table style="width:100%; font-size:13px; border-collapse:collapse;">
+                <tr style="border-bottom:1px solid var(--modal-border);">
+                    <td style="padding:8px;"><strong>PPM</strong></td>
+                    <td style="padding:8px;">Peças por minuto nominal (velocidade teórica máxima)</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--modal-border);">
+                    <td style="padding:8px;"><strong>DISP (A%)</strong></td>
+                    <td style="padding:8px;">Disponibilidade - % do tempo que a máquina está operacional</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--modal-border);">
+                    <td style="padding:8px;"><strong>PERF (P%)</strong></td>
+                    <td style="padding:8px;">Performance - % da velocidade nominal realmente alcançada</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--modal-border);">
+                    <td style="padding:8px;"><strong>QUAL (Q%)</strong></td>
+                    <td style="padding:8px;">Qualidade - % de peças boas (sem defeito) produzidas</td>
+                </tr>
+                <tr>
+                    <td style="padding:8px;"><strong>SETUP</strong></td>
+                    <td style="padding:8px;">Tempo de setup ao final da produção (em minutos)</td>
+                </tr>
+            </table>
+        </div>
+        <div class="help-section">
+            <h4>KPIs Calculados da Estação</h4>
+            <ul>
+                <li><strong>OEE</strong> = A% × P% × Q%</li>
+                <li><strong>PPM NOM</strong> = velocidade configurada</li>
+                <li><strong>PPM REAL</strong> = PPM NOM × P%</li>
+                <li><strong>BONS</strong> = peças aprovadas pela estação</li>
+                <li><strong>REFUGO</strong> = peças rejeitadas pela estação</li>
+            </ul>
+        </div>
+        <div class="help-section">
+            <h4>Tempos Acumulados por Estação</h4>
+            <p>OPERANDO, SETUP, PARADA, AGUARDANDO, TRAVADA, OCIOSIDADE - cada um mostra quanto tempo a estação passou em cada estado.</p>
+        </div>
+        
+        <h3>9. BUFFERS WIP (Entre Estações)</h3>
+        <div class="glossary-grid">
+            <div class="g-item"><div class="g-title">Termômetro</div><div class="g-desc">Visualização gráfica do nível de ocupação do buffer</div></div>
+            <div class="g-item"><div class="g-title">%</div><div class="g-desc">Percentual de ocupação do buffer</div></div>
+            <div class="g-item"><div class="g-title">Disp.</div><div class="g-desc">Peças prontas e disponíveis para a próxima estação</div></div>
+            <div class="g-item"><div class="g-title">Trans.</div><div class="g-desc">Peças em trânsito (ainda chegando ao buffer)</div></div>
+            <div class="g-item"><div class="g-title">Início</div><div class="g-desc">Quantidade inicial de WIP (configurável ANTES de iniciar)</div></div>
+            <div class="g-item"><div class="g-title">Nível</div><div class="g-desc">Quantidade atual / Capacidade máxima do buffer</div></div>
+        </div>
+        
+        <h3>10. CONCLUÍDO (Coluna Direita)</h3>
+        <div class="glossary-grid">
+            <div class="g-item"><div class="g-title">META DE PROD.</div><div class="g-desc">Quantidade de peças BOAS desejadas ao final</div></div>
+            <div class="g-item"><div class="g-title">REPOR PERDAS</div><div class="g-desc">Se ativo, continua puxando do estoque até atingir a meta de bons, compensando refugos</div></div>
+            <div class="g-item"><div class="g-title">Número Grande</div><div class="g-desc">Total de peças boas finalizadas (saída da linha)</div></div>
+            <div class="g-item"><div class="g-title">TOTAL PROCESSADO</div><div class="g-desc">Bons + Refugos (tudo que passou pela linha completa)</div></div>
+            <div class="g-item"><div class="g-title">SALDO WIP (INI/FIM)</div><div class="g-desc">WIP total no início da simulação / WIP total atual</div></div>
+        </div>
+        
+        <h3>11. CONTROLES E BOTÕES</h3>
+        <div class="help-section">
+            <table style="width:100%; font-size:13px; border-collapse:collapse;">
+                <tr style="border-bottom:1px solid var(--modal-border);">
+                    <td style="padding:8px;"><strong>Toggle ON/OFF</strong></td>
+                    <td style="padding:8px;">Liga/desliga cada estação individualmente</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--modal-border);">
+                    <td style="padding:8px;"><strong>Manter Parâmetros</strong></td>
+                    <td style="padding:8px;">Ao resetar, preserva TODAS as configurações (PPM, A%, P%, Q%, WIP, etc.)</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--modal-border);">
+                    <td style="padding:8px;"><strong>Esgotar Linha</strong></td>
+                    <td style="padding:8px;">Continua simulação até esvaziar todo o WIP, mesmo após atingir a meta</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--modal-border);">
+                    <td style="padding:8px;"><strong>⟲ (Reset)</strong></td>
+                    <td style="padding:8px;">Reinicia a simulação (respeita "Manter Parâmetros")</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--modal-border);">
+                    <td style="padding:8px;"><strong>▶ INICIAR / ⏸ PAUSAR</strong></td>
+                    <td style="padding:8px;">Inicia ou pausa a simulação</td>
+                </tr>
+                <tr>
+                    <td style="padding:8px;"><strong>Tema Claro/Escuro</strong></td>
+                    <td style="padding:8px;">Alterna entre aparência clara e escura</td>
+                </tr>
+            </table>
+        </div>
+        
+        <h3>12. INDICADOR DE GARGALO</h3>
+        <div class="help-section">
+            <ul>
+                <li>A estação com <strong>menor capacidade efetiva</strong> (PPM × A% × P%) recebe destaque em <strong style="color:var(--purple);">roxo</strong></li>
+                <li>O badge <strong>"GARGALO"</strong> aparece na estação limitante</li>
+                <li>Se todas as estações tiverem capacidade igual, a última é considerada o gargalo</li>
+                <li>Os indicadores globais (OPERAÇÃO, PARADA, etc.) são baseados no gargalo</li>
+            </ul>
+        </div>
+        
+        <h3>13. COMO USAR O SIMULADOR</h3>
+        <div class="help-section">
+            <h4>Passo a Passo Básico</h4>
+            <ol>
+                <li>Configure o <strong>número de estações</strong> desejado</li>
+                <li>Defina o <strong>estoque inicial</strong> (matéria-prima) e a <strong>meta de produção</strong></li>
+                <li>Ajuste os parâmetros (<strong>PPM, A%, P%, Q%</strong>) de cada estação</li>
+                <li>Opcionalmente, configure <strong>WIP inicial</strong> nos buffers e <strong>tempo de setup</strong></li>
+                <li>Clique em <strong>INICIAR</strong></li>
+                <li>Observe os indicadores e identifique o gargalo</li>
+                <li><strong>Pause</strong> para ajustar parâmetros e ver o impacto em tempo real</li>
+            </ol>
+        </div>
+        <div class="help-section">
+            <h4>Dicas de Uso</h4>
+            <ul>
+                <li>Use <strong>velocidade alta (20x ou 100x)</strong> para simulações longas</li>
+                <li>Reduza a <strong>disponibilidade</strong> de uma estação para simular quebras</li>
+                <li>Compare cenários usando <strong>"Manter Parâmetros"</strong> + Reset</li>
+                <li>Observe o <strong>Saldo WIP</strong> para entender acúmulo na linha</li>
+                <li>Ative <strong>"Repor Perdas"</strong> para simular produção até atingir meta de bons</li>
+            </ul>
+        </div>
+        
+        <h3>14. INTERPRETAÇÕES E INSIGHTS</h3>
+        <div class="help-section">
+            <table style="width:100%; font-size:13px; border-collapse:collapse;">
+                <tr style="border-bottom:1px solid var(--modal-border);">
+                    <td style="padding:8px;"><strong>OEE baixo com A% baixo</strong></td>
+                    <td style="padding:8px;">Problema de manutenção/confiabilidade - máquina quebra muito</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--modal-border);">
+                    <td style="padding:8px;"><strong>OEE baixo com P% baixo</strong></td>
+                    <td style="padding:8px;">Máquina operando abaixo da velocidade nominal</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--modal-border);">
+                    <td style="padding:8px;"><strong>OEE baixo com Q% baixo</strong></td>
+                    <td style="padding:8px;">Problema de qualidade no processo</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--modal-border);">
+                    <td style="padding:8px;"><strong>Muito tempo "AGUARDANDO"</strong></td>
+                    <td style="padding:8px;">Estação anterior é mais lenta (gargalo está antes)</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--modal-border);">
+                    <td style="padding:8px;"><strong>Muito tempo "TRAVADA"</strong></td>
+                    <td style="padding:8px;">Buffer cheio - próxima estação é mais lenta (gargalo está depois)</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--modal-border);">
+                    <td style="padding:8px;"><strong>WIP acumulando</strong></td>
+                    <td style="padding:8px;">Desbalanceamento entre estações - revisar capacidades</td>
+                </tr>
+                <tr>
+                    <td style="padding:8px;"><strong>Meta não atingida</strong></td>
+                    <td style="padding:8px;">Estoque insuficiente ou muitos refugos (ativar "Repor Perdas")</td>
+                </tr>
+            </table>
+        </div>
+        
+        <h3>15. GLOSSÁRIO RÁPIDO</h3>
+        <div class="glossary-grid">
+            <div class="g-item"><div class="g-title">PPM</div><div class="g-desc">Peças Por Minuto</div></div>
+            <div class="g-item"><div class="g-title">OEE</div><div class="g-desc">Overall Equipment Effectiveness (Eficácia Global do Equipamento)</div></div>
+            <div class="g-item"><div class="g-title">WIP</div><div class="g-desc">Work in Progress (Estoque em Processo)</div></div>
+            <div class="g-item"><div class="g-title">TOC</div><div class="g-desc">Theory of Constraints (Teoria das Restrições)</div></div>
+            <div class="g-item"><div class="g-title">Gargalo</div><div class="g-desc">Recurso que limita a capacidade total do sistema</div></div>
+            <div class="g-item"><div class="g-title">Setup</div><div class="g-desc">Tempo de preparação/troca de ferramenta</div></div>
+            <div class="g-item"><div class="g-title">Throughput</div><div class="g-desc">Taxa de saída de produtos acabados (bons)</div></div>
+            <div class="g-item"><div class="g-title">Starving</div><div class="g-desc">Estação parada esperando peça (fome de material)</div></div>
+        </div>
+        
+        <div style="margin-top:25px; padding:15px; background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.3); border-radius:10px;">
+            <p style="margin:0; font-size:13px; color:var(--green);"><strong>💡 Lembre-se:</strong> O objetivo é experimentar! Altere parâmetros, observe os impactos e desenvolva intuição sobre como OEE e gargalos afetam a produção.</p>
+        </div>
+    </div>
+</div>
+
+<script>
+const SVG_GEAR = `<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>`;
+const SVG_BUFFER = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10l9-5 9 5-9 5-9-5z"></path><path d="M3 10v7l9 5 9-5v-7"></path></svg>`;
+const SVG_DONE = `<svg viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2"><path d="M20 7l-8.5 8.5L8 12"></path><path d="M4 4h16v16H4z"></path></svg>`;
+const SVG_FAIL = `<svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"></path></svg>`;
+const SVG_RUNNING = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>`;
+const SVG_WAIT = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`;
+
+const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+const clamp01 = v => clamp(v, 0, 1);
+const safeDiv = (a, b) => b <= 0 ? 0 : a / b;
+const EPSILON = 1e-6;
+
+function fmtTime(sec) {
+    if (!Number.isFinite(sec) || sec < 0) return "00:00.0";
+    let total = Math.round(sec * 10) / 10;
+    let h = Math.floor(total / 3600);
+    let m = Math.floor((total % 3600) / 60);
+    let s = Math.floor(total % 60);
+    let dec = Math.floor((total - Math.floor(total)) * 10);
+    return h > 0 ? `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}.${dec}` : `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}.${dec}`;
+}
+
+function fmtMMSSd(sec) {
+    if (!Number.isFinite(sec) || sec < 0) return "00:00.0";
+    let total = Math.round(sec * 10) / 10;
+    return `${String(Math.floor(total/60)).padStart(2,'0')}:${String(Math.floor(total%60)).padStart(2,'0')}.${Math.floor((total - Math.floor(total))*10)}`;
+}
+
+function pct(x) { return (clamp01(x) * 100).toFixed(0) + '%'; }
+
+let STATION_COUNT = 3;
+let DEFAULT_WIP_MAX = 100;
+let TRANSIT_TIME = 0;
+let running = false;
+let lineStarted = false;
+let t = 0;
+let finalTime = null;
+let isFastForwarding = false;
+let makeToGood = false;
+let flushLine = false;
+let timeScale = 1;
+
+let initialEstimate = 0;
+let fixedInitialEstimate = null;
+
+let historyOEE = [];
+let historyPPM = [];
+const MAX_HISTORY = 50;
+
+let initialWipAtStart = 0;
+let targetAtStart = 0;
+
+let buffers = { raw: { count: 0, stock: 100, target: 60 }, wips: [] };
+let stats = { good: 0, scrap: 0, scrapByStation: [] };
+const transfers = [];
+let S = [];
+let bottleneckId = 0;
+
+function openHelp() { document.getElementById('helpModal').style.display = "block"; }
+function closeHelp() { document.getElementById('helpModal').style.display = "none"; }
+window.onclick = e => { if (e.target == document.getElementById('helpModal')) closeHelp(); };
+
+function makeWip() { return { ready: 0, reserved: 0, max: DEFAULT_WIP_MAX }; }
+
+function stationTemplate(i) {
+    return { 
+        id: i, enabled: true, name: `ESTAÇÃO ${i+1}`, ppmNom: 60, Aset: 1, Pset: 1, Qset: 1, 
+        setupConfig: 0, setupRem: 0, setupDone: false, setupStarted: false,
+        state: 'idle', resumeState: 'idle', curIdealCT: 0, curProcTot: 0, remProc: 0, downRem: 0, 
+        holding: false, holdDestIndex: null, runTime: 0, idealTime: 0, totalCount: 0, goodCount: 0, 
+        tRun: 0, tDown: 0, tStarved: 0, tBlocked: 0, tIdle: 0, tSetup: 0 
+    };
+}
+
+function idealCT_nom(st) { return 60 / Math.max(0.1, st.ppmNom); }
+function ppmReal(st) { return Math.max(0, st.ppmNom * st.Pset); }
+
+function oeeCalcStation(st) {
+    const planned = Math.max(0.0001, st.tRun + st.tDown + st.tStarved + st.tBlocked + st.tSetup + st.tIdle);
+    const A = clamp01(safeDiv(st.tRun, planned));
+    const P = clamp01(safeDiv(st.idealTime, Math.max(0.0001, st.tRun)));
+    const Q = clamp01(safeDiv(st.goodCount, Math.max(0.0001, st.totalCount)));
+    return st.totalCount === 0 ? { A, P: 1, Q: 1, OEE: A } : { A, P, Q, OEE: A * P * Q };
+}
+
+function wipTotal(w) { return w.ready + w.reserved; }
+function wipCanReceive(w) { return wipTotal(w) < w.max; }
+
+function sendToWip(i, dur) { 
+    if (dur > EPSILON) {
+        buffers.wips[i].reserved++; 
+        transfers.push({ destIndex: i, rem: dur }); 
+    } else {
+        buffers.wips[i].ready++;
+    }
+}
+
+function transfersTick(dt) {
+    for (let i = transfers.length - 1; i >= 0; i--) {
+        transfers[i].rem -= dt;
+        if (transfers[i].rem <= EPSILON) { 
+            buffers.wips[transfers[i].destIndex].reserved--; 
+            buffers.wips[transfers[i].destIndex].ready++; 
+            transfers.splice(i, 1); 
+        }
+    }
+}
+
+function takeFromInput(i) {
+    if (i === 0) { 
+        if (buffers.raw.count <= 0) return false; 
+        buffers.raw.count--; 
+        return true; 
+    }
+    const w = buffers.wips[i - 1]; 
+    if (w.ready <= 0) return false; 
+    w.ready--; 
+    return true;
+}
+
+function getInitialWipSum() { 
+    let s = 0; 
+    for (let i = 0; i < STATION_COUNT - 1; i++) { 
+        const el = document.getElementById(`wipInitInput_${i}`); 
+        if (el) s += parseInt(el.value) || 0; 
+    } 
+    return s; 
+}
+
+// Função para calcular o saldo atual de WIP (soma de todos os buffers)
+function getCurrentWipSum() {
+    let s = 0;
+    for (let i = 0; i < buffers.wips.length; i++) {
+        s += wipTotal(buffers.wips[i]);
+    }
+    return s;
+}
+
+// Função para calcular o total processado na linha (bons + refugos)
+function getTotalProcessed() {
+    return stats.good + stats.scrap;
+}
+
+function isUpstreamDry(i) {
+    if (i === 0) return buffers.raw.count <= 0;
+    for (let k = 0; k < i; k++) {
+        const s = S[k];
+        if (!s.enabled) continue; 
+        if (s.state === 'processing' || s.state === 'blocked') return false;
+        if (s.state === 'down' && s.remProc > EPSILON) return false; 
+    }
+    for (let k = 0; k < i; k++) {
+        if (k < buffers.wips.length) {
+            const w = buffers.wips[k];
+            if (w.ready > 0 || w.reserved > 0) return false;
+        }
+    }
+    return true;
+}
+
+function isLineClear() {
+    return isUpstreamDry(STATION_COUNT);
+}
+
+function startNewPiece(i) {
+    const st = S[i]; 
+    if (st.Pset <= 0) return false;
+    
+    if (i === 0) {
+        const target = targetAtStart;
+        const hasStock = buffers.raw.count > 0;
+        
+        if (flushLine && makeToGood) { 
+            if (stats.good >= target && !hasStock) return false;
+            if (!hasStock) return false; 
+        }
+        else if (flushLine && !makeToGood) { 
+            if (!hasStock) return false; 
+        }
+        else if (!flushLine && makeToGood) { 
+            if (stats.good >= target) return false;
+            if (!hasStock) return false; 
+        }
+        else { 
+            const maxFromStock = target - initialWipAtStart;
+            if (st.totalCount >= maxFromStock) return false;
+            if (!hasStock) return false; 
+        }
+    }
+    
+    if (!takeFromInput(i)) return false;
+    
+    const to = document.getElementById(`stationVisual_${i}`);
+    if (i === 0) spawnAnimBox(document.getElementById('stockNode'), to, 'normal', 1000);
+    else spawnAnimBox(document.getElementById(`thermoTrack_${i-1}`), to, 'wip_to_station', 600);
+    
+    st.curIdealCT = idealCT_nom(st); 
+    const P = clamp(st.Pset, 0.0001, 1); 
+    st.curProcTot = st.curIdealCT / P; 
+    st.remProc = st.curProcTot;
+    st.downRem = st.Aset <= 0 ? Infinity : st.curProcTot * (1 - clamp(st.Aset, 0.0001, 1)) / clamp(st.Aset, 0.0001, 1);
+    st.state = 'processing'; 
+    return true;
+}
+
+function finishProcessing(i) {
+    const st = S[i]; 
+    st.totalCount++; 
+    st.idealTime += st.curIdealCT;
+    const isGood = Math.random() < st.Qset;
+    const fromEl = document.getElementById(`stationVisual_${i}`);
+    
+    if (!isGood) { 
+        stats.scrap++; 
+        stats.scrapByStation[i]++; 
+        spawnAnimBox(fromEl, null, 'scrap', 600); 
+    }
+    else { 
+        st.goodCount++; 
+        if (i === S.length - 1) { 
+            stats.good++; 
+            spawnAnimBox(fromEl, document.getElementById('endNode'), 'finish', 1000); 
+        }
+        else { 
+            const w = buffers.wips[i]; 
+            if (wipCanReceive(w)) { 
+                sendToWip(i, TRANSIT_TIME); 
+                spawnAnimBox(fromEl, document.getElementById(`thermoTrack_${i}`), 'station_to_wip', TRANSIT_TIME * 1000); 
+            }
+            else { 
+                st.holding = true; st.holdDestIndex = i; st.state = 'blocked'; 
+            } 
+        } 
+    }
+    
+    st.remProc = 0; st.curIdealCT = 0; st.curProcTot = 0;
+    if (st.state !== 'blocked') { 
+        if (st.downRem > EPSILON && st.enabled) st.state = 'down'; 
+        else { st.state = 'idle'; st.downRem = 0; } 
+    }
+}
+
+function tryReleaseBlocked(i) {
+    const st = S[i]; 
+    if (st.state !== 'blocked') return;
+    const w = buffers.wips[st.holdDestIndex]; 
+    if (wipCanReceive(w)) { 
+        sendToWip(st.holdDestIndex, TRANSIT_TIME); 
+        spawnAnimBox(document.getElementById(`stationVisual_${i}`), document.getElementById(`thermoTrack_${st.holdDestIndex}`), 'station_to_wip', TRANSIT_TIME * 1000); 
+        st.holding = false; st.holdDestIndex = null; 
+        if (st.downRem > EPSILON && st.enabled) st.state = 'down'; 
+        else { st.state = 'idle'; st.downRem = 0; } 
+    }
+}
+
+function shouldStartSetup(st, i) {
+    if (st.setupConfig <= EPSILON) return false;
+    if (st.setupStarted || st.setupDone) return false;
+    if (st.totalCount === 0) return false; 
+    return isUpstreamDry(i);
+}
+
+function checkLineFinished() {
+    const target = targetAtStart;
+    
+    if (flushLine && makeToGood) { 
+        if (stats.good >= target) return true; 
+        if (buffers.raw.count <= 0 && isLineClear()) return true; 
+        return false; 
+    }
+    
+    if (flushLine && !makeToGood) { 
+        if (buffers.raw.count > 0) return false; 
+        if (isLineClear()) return true;
+        return false; 
+    }
+    
+    if (!flushLine && makeToGood) { 
+        if (stats.good >= target) return true;
+        if (buffers.raw.count <= 0 && isLineClear()) return true;
+        return false; 
+    }
+    
+    const maxFromStock = target - initialWipAtStart;
+    const station1Done = S[0].totalCount >= maxFromStock || buffers.raw.count <= 0;
+    if (!station1Done) return false;
+    if (isLineClear()) return true;
+    return false;
+}
+
+function stationTick(i, dt) {
+    const st = S[i];
+    const isLineDone = finalTime !== null;
+    
+    if (st.state === 'finished') return;
+    
+    if (isLineDone && st.state !== 'setup') { 
+        if (!st.setupStarted && st.setupConfig > EPSILON && st.totalCount > 0 && !st.setupDone) {
+            st.setupStarted = true; st.setupRem = st.setupConfig * 60; st.state = 'setup';
+        } else if (st.state !== 'setup') {
+            st.state = 'finished'; return;
+        }
+    }
+    
+    if (!st.enabled) { 
+        if (lineStarted && !isLineDone) st.tDown += dt; 
+        if (st.state !== 'off') { st.resumeState = st.state; st.state = 'off'; } 
+        return; 
+    }
+    if (st.state === 'off') st.state = st.resumeState || 'idle';
+    
+    let rem = dt;
+    
+    while (rem > EPSILON && st.state !== 'finished') {
+        if (st.state === 'setup') { 
+            const use = Math.min(rem, st.setupRem);
+            st.tSetup += use; st.setupRem -= use; rem -= use;
+            if (st.setupRem <= EPSILON) { st.setupRem = 0; st.setupDone = true; st.state = 'finished'; }
+            continue;
+        }
+        
+        if (st.state === 'blocked') { 
+            if (lineStarted && !isLineDone) st.tBlocked += rem; 
+            if (st.downRem > 0) st.downRem -= Math.min(rem, st.downRem); 
+            rem = 0; tryReleaseBlocked(i); continue; 
+        }
+        
+        if (st.state === 'down') { 
+            const use = st.downRem < Infinity ? Math.min(rem, st.downRem) : rem; 
+            if (lineStarted && !isLineDone) st.tDown += use; 
+            if (st.downRem < Infinity) { 
+                st.downRem -= use; 
+                if (st.downRem <= EPSILON) { st.downRem = 0; st.state = 'idle'; } 
+            } 
+            rem -= use; continue; 
+        }
+        
+        if (st.state === 'processing') { 
+            const use = Math.min(rem, st.remProc); 
+            if (lineStarted && !isLineDone) st.tRun += use; 
+            st.runTime += use; st.remProc -= use; rem -= use; 
+            if (st.remProc <= EPSILON) finishProcessing(i); 
+            continue; 
+        }
+        
+        if (st.state === 'idle') { 
+            if (lineStarted && shouldStartSetup(st, i)) {
+                st.setupStarted = true; st.setupRem = st.setupConfig * 60; st.state = 'setup'; continue;
+            }
+            
+            if (lineStarted && (st.Aset <= EPSILON || st.Pset <= EPSILON)) { 
+                if (!isLineDone) st.tDown += rem; rem = 0; continue; 
+            }
+            
+            if (startNewPiece(i)) continue;
+            
+            if (lineStarted && !isLineDone) { 
+                if (i === 0) st.tIdle += rem; 
+                else { 
+                    const pw = buffers.wips[i-1]; 
+                    if (wipTotal(pw) === 0) st.tStarved += rem; else st.tIdle += rem; 
+                } 
+            } 
+            rem = 0; 
+        }
+    }
+}
+
+function updateBottlenecks() {
+    const active = S.filter(s => s.enabled); 
+    if (active.length === 0) return;
+    const effs = active.map(s => s.ppmNom * s.Aset * s.Pset);
+    const minEff = Math.min(...effs);
+    const isBalanced = Math.max(...effs) - minEff < 0.5;
+    let bId = -1;
+    
+    if (isBalanced) { 
+        bId = active[active.length - 1].id; 
+        S.forEach(s => document.getElementById(`st${s.id}`)?.classList.remove('is-bottleneck')); 
+    }
+    else { 
+        for (const st of S) { 
+            const el = document.getElementById(`st${st.id}`); 
+            if (!el) continue; 
+            if (!st.enabled) { el.classList.remove('is-bottleneck'); continue; } 
+            const eff = st.ppmNom * st.Aset * st.Pset; 
+            if (Math.abs(eff - minEff) < 0.001) { 
+                el.classList.add('is-bottleneck'); 
+                if (bId === -1) bId = st.id; 
+            } else el.classList.remove('is-bottleneck'); 
+        } 
+    }
+    if (bId === -1 && active.length > 0) bId = active[0].id; 
+    bottleneckId = bId;
+}
+
+function drawSparkline(data, color, elId, forceScale = false) {
+    const el = document.getElementById(elId); 
+    if (!el || data.length < 2) return;
+    
+    let poly = el.querySelector('polyline');
+    if (!poly) {
+        poly = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
+        poly.setAttribute("class", "chart-line");
+        poly.setAttribute("stroke", color);
+        poly.setAttribute("fill", "none");
+        poly.setAttribute("stroke-width", "1.5");
+        el.appendChild(poly);
+    }
+
+    const w = el.parentElement.clientWidth;
+    const h = el.parentElement.clientHeight;
+    let max = Math.max(...data), min = Math.min(...data);
+    if (forceScale) { min = 0; max = 1; } else if (max === min) { max += 10; min = 0; }
+    
+    const range = (max - min) || 1;
+    const pts = data.map((d, i) => {
+        const x = (i / (data.length - 1)) * w;
+        const y = h - ((d - min) / range) * h;
+        return `${x.toFixed(1)},${y.toFixed(1)}`;
+    }).join(' ');
+    
+    poly.setAttribute("points", pts);
+}
+
+function calculateCurrentEstimate() {
+    let latency = 0, maxCT = 0, count = 0, totalSetup = 0;
+    for (let s of S) { 
+        if (!s.enabled) continue; 
+        const effPPM = Math.max(0.1, s.ppmNom * s.Aset * s.Pset);
+        const ct = 60 / effPPM; 
+        latency += ct; 
+        if (ct > maxCT) maxCT = ct;
+        totalSetup += s.setupConfig * 60;
+        count++; 
+    }
+    if (count > 1) latency += (count - 1) * TRANSIT_TIME;
+    return latency + Math.max(0, buffers.raw.target - 1) * maxCT + totalSetup;
+}
+
+function calculateInitialMeta() {
+    initialEstimate = calculateCurrentEstimate();
+}
+
+function updateCharts() {
+    let oee = bottleneckId >= 0 && S[bottleneckId] ? oeeCalcStation(S[bottleneckId]).OEE : 0;
+    historyOEE.push(oee); 
+    if (historyOEE.length > MAX_HISTORY) historyOEE.shift();
+    drawSparkline(historyOEE, '#3b82f6', 'chartOEE', true);
+    document.getElementById('val_oee_now').textContent = pct(oee);
+    
+    let ppm = bottleneckId >= 0 && S[bottleneckId]?.state === 'processing' ? ppmReal(S[bottleneckId]) : 0;
+    historyPPM.push(ppm); 
+    if (historyPPM.length > MAX_HISTORY) historyPPM.shift();
+    drawSparkline(historyPPM, '#22c55e', 'chartPPM', false);
+    document.getElementById('val_ppm_now').textContent = Math.round(ppm);
+    document.getElementById('val_ppm_avg').textContent = t > 0 ? (stats.good / (t / 60)).toFixed(1) : '0';
+}
+
+function buildDOM() {
+    const board = document.getElementById('board');
+    board.querySelectorAll('.nodeBox, .station, .wipCol').forEach(c => c.remove());
+    
+    const stock = document.createElement('div'); 
+    stock.className = 'nodeBox'; stock.id = 'stockNode';
+    stock.innerHTML = `
+        <div class="iconArea">${SVG_BUFFER}</div>
+        <div class="label">ESTOQUE (MP)</div>
+        <div class="lot-input-group">
+            <label>DISPONÍVEL</label>
+            <input id="stockInput" type="number" value="${buffers.raw.stock}" onchange="updateStockFromCard(this.value)">
+        </div>
+        <div class="stock-available-label" style="margin-top:15px">RESTANTE</div>
+        <div id="badgeLot">0</div>
+    `;
+    board.appendChild(stock);
+    
+    for (let i = 0; i < STATION_COUNT; i++) {
+        const isLast = i === STATION_COUNT - 1, st = S[i];
+        const stEl = document.createElement('div'); 
+        stEl.className = 'station'; stEl.id = `st${i}`;
+        stEl.innerHTML = `<div class="stationHead"><div class="stationTitle"><span class="dot"></span><input class="station-name-input" type="text" value="${st.name}" onchange="S[${i}].name=this.value"></div><div class="bottleneck-badge">GARGALO</div><div class="toggle on" id="toggle_${i}"></div></div><div class="visual" id="stationVisual_${i}"><div class="machineIcon" id="icon_${i}">${SVG_GEAR}</div><div class="statusPill gray" id="status_${i}">PRONTA</div></div><div class="kpiRow"><div class="kbox"><div class="klabel">OEE</div><div class="kval" id="oee_${i}">0%</div></div><div class="kbox"><div class="klabel">A%</div><div class="kval small" id="A_${i}">100</div></div><div class="kbox"><div class="klabel">P%</div><div class="kval small" id="P_${i}">100</div></div><div class="kbox"><div class="klabel">Q%</div><div class="kval small" id="Q_${i}">100</div></div></div><div class="info-header"><div>PPM NOM: <b id="ppmNomShow_${i}">${st.ppmNom}</b></div><div>PPM REAL: <b id="ppmRealShow_${i}" class="blue">${Math.round(ppmReal(st))}</b></div></div><div class="info-cards"><div class="card-stat green"><span>BONS</span><b id="good_${i}">0</b></div><div class="card-stat red"><span>REFUGO</span><b id="refugo_${i}">0</b></div></div><div class="sliders"><div class="srow nom"><div class="name">PPM</div><input id="ppmR_${i}" type="range" min="1" max="300" value="${st.ppmNom}"><input id="ppmN_${i}" type="number" min="1" max="300" value="${st.ppmNom}"></div><div class="srow a"><div class="name">DISP</div><input id="aR_${i}" type="range" min="0" max="100" value="${st.Aset*100}"><input id="aN_${i}" type="number" min="0" max="100" value="${st.Aset*100}"></div><div class="srow p"><div class="name">PERF</div><input id="pR_${i}" type="range" min="0" max="100" value="${st.Pset*100}"><input id="pN_${i}" type="number" min="0" max="100" value="${st.Pset*100}"></div><div class="srow q"><div class="name">QUAL</div><input id="qR_${i}" type="range" min="0" max="100" value="${st.Qset*100}"><input id="qN_${i}" type="number" min="0" max="100" value="${st.Qset*100}"></div><div class="srow setup-row"><div class="name">SETUP</div><input id="setupInp_${i}" type="number" step="0.1" min="0" value="${st.setupConfig}"><span style="font-size:9px;font-weight:800;color:#64748b;">min</span></div></div><div class="times"><div class="trow"><span class="tname op">OPERANDO</span><span id="tRun_${i}">00:00.0</span></div><div class="trow"><span class="tname setup">SETUP</span><span id="tSetup_${i}">00:00.0</span></div><div class="trow"><span class="tname down">PARADA</span><span id="tDown_${i}">00:00.0</span></div><div class="trow" style="${i===0?'display:none':''}"><span class="tname wait">AGUARDANDO</span><span id="tWait_${i}">00:00.0</span></div><div class="trow" style="${isLast?'display:none':''}"><span class="tname block">TRAVADA</span><span id="tBlock_${i}">00:00.0</span></div><div class="trow"><span class="tname idle">OCIOSIDADE</span><span id="tIdle_${i}">00:00.0</span></div></div>`;
+        board.appendChild(stEl); setupStationBinds(i);
+        document.getElementById(`toggle_${i}`).classList.toggle('on', st.enabled);
+        
+        if (!isLast) {
+            const wipEl = document.createElement('div'); wipEl.className = 'wipCol'; wipEl.id = `wipBox_${i}`;
+            wipEl.innerHTML = `<div class="wipCard" id="wipCard_${i}"><div class="wipHead"><span class="wipIcon">${SVG_BUFFER}</span><span class="wipTitle">WIP ${i+1}</span></div><div class="wipMid"><div class="thermoTrack" id="thermoTrack_${i}"><div class="thermoFill" id="wipFill_${i}"></div></div><div class="pctBig" id="wipPct_${i}">0<span>%</span></div><div class="wipBlocked" id="wipBlocked_${i}">TRAVADO</div></div><div class="wipFoot"><div class="wipMini"><span class="lbl">Disp.</span><span class="val" id="wipDisp_${i}">0</span></div><div class="wipMini"><span class="lbl">Trans.</span><span class="val" id="wipTrans_${i}">0</span></div><div class="wipMini"><span class="lbl">Início</span><div class="wipInputGroup"><input id="wipInitInput_${i}" type="number" min="0" value="${buffers.wips[i]?.ready||0}"></div></div><div class="wipMini"><span class="lbl">Nível</span><div class="wipInputGroup"><span id="wipCurLabel_${i}">0</span><span class="slash">/</span><input id="wipMaxInput_${i}" type="number" min="1" max="999" value="${buffers.wips[i]?.max||100}"></div></div></div></div>`;
+            board.appendChild(wipEl); setupWipBinds(i);
+        }
+    }
+    
+    const end = document.createElement('div'); 
+    end.className = 'nodeBox'; end.id = 'endNode'; end.style.border = '2px solid #22c55e';
+    end.innerHTML = `
+        <div class="iconArea" id="endIconArea" style="background:#ecfdf5;border-color:#22c55e;color:#16a34a">${SVG_DONE}</div>
+        <div class="label" id="endLabel" style="color:#15803d">CONCLUÍDO</div>
+        <div class="lot-input-group">
+            <label style="color:#15803d">META DE PROD.</label>
+            <input id="targetInput" type="number" value="${buffers.raw.target}" onchange="updateTargetFromCard(this.value)" style="border-color:#86efac; color:#14532d">
+        </div>
+        <div class="checkbox-group">
+            <div class="checkbox-lbl" style="color:#15803d">REPOR PERDAS</div>
+            <label class="switch">
+                <input type="checkbox" id="checkMakeGood" ${makeToGood?'checked':''}>
+                <span class="slider green-mode"></span>
+            </label>
+            <style>#endNode input:checked + .slider { background-color: #22c55e; }</style>
+        </div>
+        <div class="final-val" id="finalGoodCount">0</div>
+        <div class="extra-stats">
+            <div class="extra-stat-item">
+                <span class="extra-stat-label">TOTAL PROCESSADO</span>
+                <span class="extra-stat-value" id="totalProcessedCount">0</span>
+            </div>
+            <div class="extra-stat-item">
+                <span class="extra-stat-label">SALDO WIP (INI/FIM)</span>
+                <span class="extra-stat-value wip-balance" id="wipBalanceDisplay">0 / 0</span>
+            </div>
+        </div>
+    `;
+    board.appendChild(end); 
+    document.getElementById('checkMakeGood').onchange = e => { makeToGood = e.target.checked; render(); };
+    updateBottlenecks();
+}
+
+function updateStockFromCard(val) { 
+    const v = Math.max(1, parseInt(val) || 1); buffers.raw.stock = v; 
+    if (!running) buffers.raw.count = v; calculateInitialMeta(); render(); 
+}
+
+function updateTargetFromCard(val) { 
+    const v = Math.max(1, parseInt(val) || 1); buffers.raw.target = v; calculateInitialMeta(); render(); 
+}
+
+function bindDual(rId, nId, cb) {
+    const r = document.getElementById(rId), n = document.getElementById(nId); if (!r || !n) return;
+    const sync = v => { 
+        const i = parseInt(rId.split('_')[1]);
+        const st = S[i];
+        if (st && st.state === 'processing' && st.ppmNom > 0 && rId.startsWith('ppm')) {
+             const oldTotal = st.curProcTot;
+             cb(Number(v));
+             const newIdeal = 60 / Math.max(0.1, st.ppmNom);
+             const P = clamp(st.Pset, 0.0001, 1);
+             const newTotal = newIdeal / P;
+             const ratio = st.remProc / oldTotal;
+             st.remProc = newTotal * ratio;
+             st.curProcTot = newTotal;
+        } else {
+             cb(Number(v));
+        }
+        r.value = v; n.value = v; 
+        updateBottlenecks(); calculateInitialMeta(); render(); 
+    };
+    r.oninput = () => sync(r.value); n.oninput = () => sync(n.value);
+}
+
+function setupStationBinds(i) {
+    const st = S[i];
+    document.getElementById(`toggle_${i}`).onclick = function() { st.enabled = !st.enabled; this.classList.toggle('on', st.enabled); updateBottlenecks(); calculateInitialMeta(); };
+    bindDual(`ppmR_${i}`, `ppmN_${i}`, v => st.ppmNom = Math.max(1, v));
+    bindDual(`aR_${i}`, `aN_${i}`, v => st.Aset = clamp01(v / 100));
+    bindDual(`pR_${i}`, `pN_${i}`, v => st.Pset = clamp01(v / 100));
+    bindDual(`qR_${i}`, `qN_${i}`, v => st.Qset = clamp01(v / 100));
+    const setupInp = document.getElementById(`setupInp_${i}`);
+    if (setupInp) setupInp.oninput = e => { st.setupConfig = Math.max(0, parseFloat(e.target.value) || 0); calculateInitialMeta(); render(); };
+}
+
+function setupWipBinds(i) {
+    const w = buffers.wips[i]; if (!w) return;
+    const initInp = document.getElementById(`wipInitInput_${i}`);
+    if (initInp) initInp.oninput = e => { let v = Math.max(0, parseInt(e.target.value) || 0); if (v > w.max) { v = w.max; initInp.value = v; } if (!running) { w.ready = v; calculateInitialMeta(); render(); } };
+    const maxInp = document.getElementById(`wipMaxInput_${i}`);
+    if (maxInp) maxInp.oninput = e => { let v = Math.max(1, parseInt(e.target.value) || 100); w.max = v; if (initInp && parseInt(initInp.value) > w.max) { initInp.value = w.max; if (!running) w.ready = w.max; } render(); };
+}
+
+function updateStationUI(i) {
+    const st = S[i], k = oeeCalcStation(st), icon = document.getElementById(`icon_${i}`), pill = document.getElementById(`status_${i}`);
+    let txt = 'PRONTA', cls = 'gray', stateCls = '';
+    if (!st.enabled) { txt = 'DESLIGADA'; } else if (st.state === 'finished') { txt = 'FINALIZADO'; cls = 'purple'; stateCls = 'state-finished'; } else if (st.state === 'processing') { txt = 'OPERANDO'; cls = 'green'; stateCls = 'state-run'; } else if (st.state === 'setup') { txt = 'SETUP'; cls = 'cyan'; stateCls = 'state-setup'; } else if (st.state === 'down') { txt = 'PARADA'; cls = 'red'; stateCls = 'state-down'; } else if (st.state === 'blocked') { txt = 'TRAVADA'; cls = 'orange'; } else if (lineStarted && st.tStarved > EPSILON) { txt = 'AGUARDANDO'; cls = 'yellow'; } else if (lineStarted) { txt = 'OCIOSA'; }
+    if (pill) { pill.textContent = txt; pill.className = `statusPill ${cls}`; } if (icon) icon.className = `machineIcon ${stateCls}`;
+    const setEl = (id, val) => { const e = document.getElementById(id); if (e) e.textContent = val; };
+    setEl(`oee_${i}`, pct(k.OEE)); setEl(`A_${i}`, (k.A*100).toFixed(0)); setEl(`P_${i}`, (k.P*100).toFixed(0)); setEl(`Q_${i}`, (k.Q*100).toFixed(0));
+    setEl(`ppmNomShow_${i}`, Math.round(st.ppmNom)); setEl(`ppmRealShow_${i}`, Math.round(ppmReal(st)));
+    setEl(`good_${i}`, st.goodCount); setEl(`refugo_${i}`, stats.scrapByStation[i]);
+    setEl(`tRun_${i}`, fmtMMSSd(st.tRun)); setEl(`tDown_${i}`, fmtMMSSd(st.tDown)); setEl(`tSetup_${i}`, fmtMMSSd(st.tSetup)); setEl(`tWait_${i}`, fmtMMSSd(st.tStarved)); setEl(`tBlock_${i}`, fmtMMSSd(st.tBlocked)); setEl(`tIdle_${i}`, fmtMMSSd(st.tIdle));
+}
+
+function updateWipUI(i) {
+    const w = buffers.wips[i]; if (!w) return; const total = wipTotal(w), pctVal = w.max > 0 ? total / w.max : 0;
+    const fillEl = document.getElementById(`wipFill_${i}`); if (fillEl) fillEl.style.height = (clamp01(pctVal) * 100) + '%';
+    const pctEl = document.getElementById(`wipPct_${i}`); if (pctEl) pctEl.innerHTML = (clamp01(pctVal) * 100).toFixed(0) + '<span>%</span>';
+    const setEl = (id, val) => { const e = document.getElementById(id); if (e) e.textContent = val; };
+    setEl(`wipCurLabel_${i}`, total); setEl(`wipDisp_${i}`, w.ready); setEl(`wipTrans_${i}`, w.reserved);
+    const blockedEl = document.getElementById(`wipBlocked_${i}`); if (blockedEl) blockedEl.style.display = total >= w.max ? 'block' : 'none';
+}
+
+function render() {
+    for (let i = 0; i < STATION_COUNT; i++) { updateStationUI(i); if (i < STATION_COUNT - 1) updateWipUI(i); }
+    if (bottleneckId >= 0 && bottleneckId < S.length) {
+        const stG = S[bottleneckId], stF = S[S.length - 1];
+        document.getElementById('g_run').textContent = fmtTime(stG.tRun);
+        document.getElementById('g_setup_run').textContent = fmtTime(stF.tSetup);
+        document.getElementById('g_down').textContent = fmtTime(stG.tDown);
+        document.getElementById('g_idle').textContent = fmtTime(S[0].tIdle);
+        document.getElementById('g_block').textContent = fmtTime(stG.tBlocked);
+        document.getElementById('g_wait').textContent = fmtTime(stG.tStarved);
+        document.getElementById('g_scrap').textContent = stats.scrap;
+    }
+    const metaInicial = fixedInitialEstimate !== null ? fixedInitialEstimate : initialEstimate;
+    document.getElementById('t_init').textContent = fmtTime(metaInicial);
+    const previsaoAtual = calculateCurrentEstimate();
+    document.getElementById('t_est_curr').textContent = fmtTime(previsaoAtual);
+    const curTime = t;
+    document.getElementById('t_elap').textContent = fmtTime(curTime);
+    const restante = Math.max(0, previsaoAtual - curTime);
+    document.getElementById('t_rem').textContent = fmtTime(restante);
+    document.getElementById('badgeLot').textContent = buffers.raw.count;
+    const finalGood = stats.good;
+    document.getElementById('finalGoodCount').textContent = finalGood;
+    
+    // Atualiza os novos indicadores
+    document.getElementById('totalProcessedCount').textContent = getTotalProcessed();
+    const currentWip = getCurrentWipSum();
+    document.getElementById('wipBalanceDisplay').textContent = `${initialWipAtStart} / ${currentWip}`;
+
+    const endNode = document.getElementById('endNode');
+    const endIcon = document.getElementById('endIconArea');
+    const endLabel = document.getElementById('endLabel');
+    const target = buffers.raw.target;
+
+    if (!lineStarted) {
+        endNode.style.borderColor = '#64748b'; 
+        endIcon.innerHTML = SVG_WAIT;
+        endIcon.style.backgroundColor = '#f1f5f9';
+        endIcon.style.borderColor = '#cbd5e1';
+        endIcon.style.color = '#64748b';
+        endLabel.textContent = "AGUARDANDO";
+        endLabel.style.color = '#475569';
+        document.getElementById('finalGoodCount').style.color = '#0f172a';
+    } else if (finalTime === null) {
+        endNode.style.borderColor = '#3b82f6'; 
+        endIcon.innerHTML = SVG_RUNNING;
+        endIcon.style.backgroundColor = '#eff6ff';
+        endIcon.style.borderColor = '#3b82f6';
+        endIcon.style.color = '#3b82f6';
+        endLabel.textContent = "EM PRODUÇÃO";
+        endLabel.style.color = '#2563eb';
+        document.getElementById('finalGoodCount').style.color = '#0f172a';
+    } else if (finalGood < target) {
+        endNode.style.borderColor = '#ef4444'; 
+        endIcon.innerHTML = SVG_FAIL;
+        endIcon.style.backgroundColor = '#fef2f2';
+        endIcon.style.borderColor = '#ef4444';
+        endIcon.style.color = '#dc2626';
+        endLabel.textContent = "META NÃO ATINGIDA";
+        endLabel.style.color = '#b91c1c';
+        document.getElementById('finalGoodCount').style.color = '#dc2626';
+    } else {
+        endNode.style.borderColor = '#22c55e'; 
+        endIcon.innerHTML = SVG_DONE;
+        endIcon.style.backgroundColor = '#ecfdf5';
+        endIcon.style.borderColor = '#22c55e';
+        endIcon.style.color = '#16a34a';
+        endLabel.textContent = "CONCLUÍDO";
+        endLabel.style.color = '#15803d';
+        document.getElementById('finalGoodCount').style.color = '#16a34a';
+    }
+}
+
+function spawnAnimBox(fromEl, toEl, type, duration) {
+    if (isFastForwarding || !fromEl) return;
+    const layer = document.getElementById('animLayer'), board = document.getElementById('board'); if (!layer || !board) return;
+    const boardRect = board.getBoundingClientRect(), b = document.createElement('div'); b.className = `animBox ${type.includes('scrap') ? 'scrap' : 'normal'}`;
+    const startRect = fromEl.getBoundingClientRect(), startX = startRect.left - boardRect.left + startRect.width / 2 - 8;
+    b.style.left = `${startX}px`; b.style.top = '0px'; b.style.opacity = 1; layer.appendChild(b);
+    const adjDur = (duration || 1000) / timeScale;
+    if (type === 'scrap') { b.animate([{ top: '0px', opacity: 1 }, { top: '100px', opacity: 0 }], { duration: adjDur, easing: 'ease-in' }).onfinish = () => b.remove(); return; }
+    let targetX = startX; if (toEl) { const endRect = toEl.getBoundingClientRect(); targetX = endRect.left - boardRect.left + endRect.width / 2 - 8; }
+    b.animate([{ left: `${startX}px` }, { left: `${targetX}px` }], { duration: adjDur, easing: 'linear', fill: 'forwards' }).onfinish = () => { if (type === 'station_to_wip') b.animate([{ transform: 'scale(1)', opacity: 1 }, { transform: 'scale(0.5)', opacity: 0 }], { duration: 200 / timeScale }).onfinish = () => b.remove(); else b.remove(); };
+}
+
+function reset() {
+    const keep = document.getElementById('chkKeepParams').checked;
+    let saved = null;
+    if (keep && S.length > 0) { let wI = [], wM = []; for (let i = 0; i < STATION_COUNT - 1; i++) { wI.push(parseInt(document.getElementById(`wipInitInput_${i}`)?.value) || 0); wM.push(parseInt(document.getElementById(`wipMaxInput_${i}`)?.value) || 100); } saved = { transit: TRANSIT_TIME, stock: buffers.raw.stock, target: buffers.raw.target, makeToGood, timeScale, flushLine, wI, wM, stations: S.map(s => ({ enabled: s.enabled, name: s.name, ppm: s.ppmNom, A: s.Aset, P: s.Pset, Q: s.Qset, setup: s.setupConfig })) }; }
+    
+    running = false; lineStarted = false; t = 0; finalTime = null; isFastForwarding = false; initialWipAtStart = 0; targetAtStart = 0; fixedInitialEstimate = null;
+    lastChartUpdate = 0; // CORRIGIDO: Reset do timer do gráfico
+
+    // Zera gráficos e limpa SVG visualmente
+    historyOEE = []; historyPPM = [];
+    document.getElementById('chartOEE').innerHTML = '';
+    document.getElementById('chartPPM').innerHTML = '';
+
+    let stockVal = 100, targetVal = 60;
+    if (keep && saved) { stockVal = saved.stock; targetVal = saved.target; TRANSIT_TIME = saved.transit; makeToGood = saved.makeToGood; flushLine = saved.flushLine; timeScale = saved.timeScale; }
+    else { TRANSIT_TIME = parseInt(document.getElementById('transitTimeInput')?.value) || 0; timeScale = parseInt(document.getElementById('speedSelect')?.value) || 1; makeToGood = false; flushLine = false; }
+    
+    document.getElementById('transitTimeInput').value = TRANSIT_TIME; document.getElementById('speedSelect').value = timeScale; document.getElementById('chkFlushLine').checked = flushLine;
+    buffers.raw.stock = stockVal; buffers.raw.target = targetVal; buffers.raw.count = stockVal;
+    
+    stats = { good: 0, scrap: 0, scrapByStation: Array(STATION_COUNT).fill(0) }; transfers.length = 0;
+    S = []; buffers.wips = [];
+    
+    for (let i = 0; i < STATION_COUNT; i++) { let st = stationTemplate(i); if (keep && saved?.stations[i]) Object.assign(st, { enabled: saved.stations[i].enabled, name: saved.stations[i].name, ppmNom: saved.stations[i].ppm, Aset: saved.stations[i].A, Pset: saved.stations[i].P, Qset: saved.stations[i].Q, setupConfig: saved.stations[i].setup || 0 }); S.push(st); }
+    for (let i = 0; i < STATION_COUNT - 1; i++) { let w = makeWip(); if (keep && saved) { w.max = saved.wM[i] || 100; w.ready = saved.wI[i] || 0; } buffers.wips.push(w); }
+    
+    buildDOM();
+    
+    if (keep && saved) { for (let i = 0; i < STATION_COUNT - 1; i++) { const initEl = document.getElementById(`wipInitInput_${i}`), maxEl = document.getElementById(`wipMaxInput_${i}`); if (initEl) initEl.value = saved.wI[i]; if (maxEl) maxEl.value = saved.wM[i]; } }
+    
+    document.getElementById('chkFlushLine').onchange = e => { flushLine = e.target.checked; };
+    calculateInitialMeta(); render();
+    document.getElementById('btnStart').innerHTML = '<span>▶</span> INICIAR';
+    document.getElementById('animLayer').innerHTML = '';
+}
+
+let lastChartUpdate = 0;
+function tick(dt, doRender) {
+    if (!lineStarted) { calculateInitialMeta(); if (doRender) render(); } 
+    if (!running) return;
+    
+    // Verifica parada
+    if (checkLineFinished() && finalTime === null) { 
+        finalTime = t; 
+        running = false; 
+        document.getElementById('btnStart').innerHTML = '<span>▶</span> INICIAR'; 
+        render(); // Força render final para atualizar status visual
+    }
+    
+    t += finalTime !== null ? 0 : dt;
+    transfersTick(dt); 
+    for (let i = 0; i < STATION_COUNT; i++) stationTick(i, dt);
+    
+    if (t - lastChartUpdate > 0.5) { updateCharts(); lastChartUpdate = t; }
+    if (doRender) render();
+}
+
+window.onload = function() {
+    document.getElementById('stationsSelect').onchange = e => { STATION_COUNT = Number(e.target.value); reset(); };
+    document.getElementById('transitTimeInput').oninput = e => { TRANSIT_TIME = Math.max(0, parseInt(e.target.value) || 0); calculateInitialMeta(); render(); };
+    document.getElementById('speedSelect').onchange = e => { timeScale = parseInt(e.target.value) || 1; };
+    const zSlider = document.getElementById('zoomSlider'), zInput = document.getElementById('zoomInput'), board = document.getElementById('board');
+    zSlider.oninput = e => { zInput.value = e.target.value; board.style.transform = `scale(${e.target.value / 100})`; };
+    zInput.onchange = e => { let v = clamp(parseInt(e.target.value) || 100, 30, 150); zInput.value = v; zSlider.value = v; board.style.transform = `scale(${v / 100})`; };
+    document.getElementById('btnReset').onclick = reset;
+    document.getElementById('btnStart').onclick = () => { running = !running; if (running && !lineStarted) { lineStarted = true; initialWipAtStart = getInitialWipSum(); targetAtStart = buffers.raw.target; fixedInitialEstimate = initialEstimate; } document.getElementById('btnStart').innerHTML = running ? '<span>⏸</span> PAUSAR' : '<span>▶</span> INICIAR'; };
+    document.getElementById('chkTheme').onchange = e => { document.body.classList.toggle('light-mode', e.target.checked); };
+    reset();
+    let last = performance.now();
+    function loop(now) { 
+        let delta = Math.min((now - last) / 1000, 3600); last = now; isFastForwarding = delta > 0.5; delta *= timeScale; const step = 0.02; 
+        while (delta > 0) { let dt = Math.min(delta, step); tick(dt, isFastForwarding ? delta <= step : true); delta -= dt; } 
+        requestAnimationFrame(loop); 
+    }
+    requestAnimationFrame(loop);
+};
+</script>
+</body>
+</html>
