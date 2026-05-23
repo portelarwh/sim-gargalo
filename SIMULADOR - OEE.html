@@ -367,6 +367,8 @@
                     <button onclick="document.getElementById('loadConfigInput').click()">📂 Carregar configuração</button>
                     <button onclick="saveConfigLocal()">⭐ Guardar em browser</button>
                     <button onclick="loadConfigLocal()">↻ Restaurar do browser</button>
+                    <hr>
+                    <button onclick="openPrefs()">⚙ Preferências…</button>
                 </div>
                 <input type="file" id="loadConfigInput" accept=".json,application/json" style="display:none" onchange="loadConfigFile(event)">
             </div>
@@ -423,7 +425,7 @@
     <div class="row2">
         <div class="time-group">
             <div class="time-card"><div class="time-lbl">META INICIAL</div><div class="time-val est" id="t_init">00:00.0</div></div>
-            <div class="time-card"><div class="time-lbl">PREVISÃO</div><div class="time-val curr" id="t_est_curr">00:00.0</div></div>
+            <div class="time-card" title="Previsão de tempo de conclusão (P50 / P90 com MTBF ativo)"><div class="time-lbl">PREVISÃO</div><div class="time-val curr" id="t_est_curr">00:00.0</div><div class="time-lbl" id="t_est_p90" style="display:none; color:#fbbf24; font-size:8px; margin-top:1px;"></div></div>
             <div class="time-card"><div class="time-lbl">DECORRIDO</div><div class="time-val" id="t_elap">00:00.0</div></div>
             <div class="time-card"><div class="time-lbl">RESTANTE</div><div class="time-val rem" id="t_rem">00:00.0</div></div>
         </div>
@@ -824,6 +826,40 @@
     </div>
 </div>
 
+<div id="prefsModal" class="modal">
+    <div class="modal-content" style="max-width: 600px;">
+        <span class="close" onclick="closePrefs()">&times;</span>
+        <h2>⚙ Preferências</h2>
+        <p style="font-size: 12px; opacity: 0.85; margin-bottom: 16px;">Parâmetros internos do simulador. Aplicação imediata; valores persistidos com a configuração no browser.</p>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+            <label style="display:grid; grid-template-columns: 1fr 100px; gap:8px; align-items:center; font-size:13px;">
+                <span><strong>Tolerância de balanceamento</strong><br><span style="font-size:10px; opacity:0.7;">Diferença máxima (em PPM efetivo) entre estações para serem consideradas equilibradas.</span></span>
+                <input id="prefBalance" type="number" min="0" step="0.1" class="seed-input" style="width:80px;">
+            </label>
+            <label style="display:grid; grid-template-columns: 1fr 100px; gap:8px; align-items:center; font-size:13px;">
+                <span><strong>Pontos no sparkline</strong><br><span style="font-size:10px; opacity:0.7;">Quantidade de amostras retidas nos gráficos OEE/PPM da topbar.</span></span>
+                <input id="prefHistory" type="number" min="10" max="500" step="10" class="seed-input" style="width:80px;">
+            </label>
+            <label style="display:grid; grid-template-columns: 1fr 100px; gap:8px; align-items:center; font-size:13px;">
+                <span><strong>Transições no heatmap</strong><br><span style="font-size:10px; opacity:0.7;">Limite de mudanças de estado guardadas por estação. Valores maiores aumentam detalhe à custa de memória.</span></span>
+                <input id="prefHeatmap" type="number" min="100" max="5000" step="100" class="seed-input" style="width:80px;">
+            </label>
+            <label style="display:grid; grid-template-columns: 1fr 100px; gap:8px; align-items:center; font-size:13px;">
+                <span><strong>Intervalo de atualização (s)</strong><br><span style="font-size:10px; opacity:0.7;">Cadência de re-render dos gráficos. Maior → menos CPU.</span></span>
+                <input id="prefInterval" type="number" min="0.1" max="5" step="0.1" class="seed-input" style="width:80px;">
+            </label>
+            <label style="display:flex; gap:10px; align-items:center; font-size:13px; padding-top:6px; border-top:1px solid var(--modal-border);">
+                <input id="prefP90" type="checkbox" style="accent-color: var(--blue); width:16px; height:16px;">
+                <span><strong>Mostrar previsão P90 (com MTBF)</strong><br><span style="font-size:10px; opacity:0.7;">Quando há variabilidade estocástica, mostra também o percentil 90 do tempo previsto.</span></span>
+            </label>
+        </div>
+        <div style="display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end;">
+            <button class="file-pick-btn" onclick="resetPrefs()">Repor padrões</button>
+            <button class="file-pick-btn" style="background: var(--blue); color: #fff; border-color: var(--blue);" onclick="closePrefs()">Concluído</button>
+        </div>
+    </div>
+</div>
+
 <div id="toast" class="toast"></div>
 
 <script>
@@ -907,7 +943,15 @@ let fixedInitialEstimate = null;
 
 let historyOEE = [];
 let historyPPM = [];
-const MAX_HISTORY = 50;
+// === Bloco 5: Preferências ajustáveis em runtime ===
+const PREFS_DEFAULTS = {
+    balanceThreshold: 0.5,    // tolerância PPM para considerar linha balanceada
+    sparklineHistory: 50,     // pontos guardados em historyOEE/historyPPM
+    heatmapMaxSamples: 600,   // limite de transições gravadas por estação
+    chartUpdateInterval: 0.5, // segundos entre re-render dos sparklines
+    estimateConfidence: false // mostrar P50/P90 quando há MTBF
+};
+let PREFS = { ...PREFS_DEFAULTS };
 
 let initialWipAtStart = 0;
 let targetAtStart = 0;
@@ -925,6 +969,7 @@ window.onclick = e => {
     if (e.target == document.getElementById('analyticsModal')) closeAnalytics();
     if (e.target == document.getElementById('scenariosModal')) closeScenarios();
     if (e.target == document.getElementById('compareModal')) closeCompare();
+    if (e.target == document.getElementById('prefsModal')) closePrefs();
 };
 
 // === Bloco 1: Diagnóstico Visual ===
@@ -938,7 +983,7 @@ const STATE_LABELS = {
     blocked: 'Travada', starved: 'Aguardando', idle: 'Ociosa',
     off: 'Desligada', finished: 'Concluída'
 };
-const HEATMAP_MAX_SAMPLES = 600;
+// HEATMAP_MAX_SAMPLES movido para PREFS.heatmapMaxSamples (Bloco 5)
 let stateHistory = []; // [[{t, s}, ...], ...] uma série por estação
 let lastSnapshot = -1;
 let analyticsOpen = false;
@@ -955,7 +1000,7 @@ function effectiveState(st, i) {
 
 function recordStateSnapshot() {
     if (!lineStarted) return;
-    if (t - lastSnapshot < 0.5 && lastSnapshot >= 0) return;
+    if (t - lastSnapshot < PREFS.chartUpdateInterval && lastSnapshot >= 0) return;
     lastSnapshot = t;
     for (let i = 0; i < STATION_COUNT; i++) {
         if (!stateHistory[i]) stateHistory[i] = [];
@@ -964,7 +1009,7 @@ function recordStateSnapshot() {
         const last = series[series.length - 1];
         if (last && last.s === s) continue; // colapsa runs do mesmo estado
         series.push({ t: t, s: s });
-        if (series.length > HEATMAP_MAX_SAMPLES) {
+        if (series.length > PREFS.heatmapMaxSamples) {
             // amostragem agressiva: descarta metade dos eventos antigos
             const compact = [];
             for (let k = 0; k < series.length; k += 2) compact.push(series[k]);
@@ -1650,7 +1695,7 @@ function updateBottlenecks() {
     if (active.length === 0) return;
     const effs = active.map(s => s.ppmNom * s.Aset * s.Pset);
     const minEff = Math.min(...effs);
-    const isBalanced = Math.max(...effs) - minEff < 0.5;
+    const isBalanced = Math.max(...effs) - minEff < PREFS.balanceThreshold;
     let bId = -1;
     
     if (isBalanced) { 
@@ -1704,17 +1749,37 @@ function drawSparkline(data, color, elId, forceScale = false) {
 
 function calculateCurrentEstimate() {
     let latency = 0, maxCT = 0, count = 0, totalSetup = 0;
-    for (let s of S) { 
-        if (!s.enabled) continue; 
-        const effPPM = Math.max(0.1, s.ppmNom * s.Aset * s.Pset);
-        const ct = 60 / effPPM; 
-        latency += ct; 
+    for (let s of S) {
+        if (!s.enabled) continue;
+        // Bloco 3: aplicar A efetivo se MTBF estiver definido
+        const effA = s.mtbfMin > 0 ? s.mtbfMin / (s.mtbfMin + s.mttrMin) : s.Aset;
+        const effPPM = Math.max(0.1, s.ppmNom * effA * s.Pset);
+        const ct = 60 / effPPM;
+        latency += ct;
         if (ct > maxCT) maxCT = ct;
         totalSetup += s.setupConfig * 60;
-        count++; 
+        count++;
     }
     if (count > 1) latency += (count - 1) * TRANSIT_TIME;
     return latency + Math.max(0, buffers.raw.target - 1) * maxCT + totalSetup;
+}
+
+// Bloco 5: estimativa com intervalo de confiança (P50/P90) quando há variabilidade
+function calculateEstimateBand() {
+    const base = calculateCurrentEstimate();
+    const hasStochastic = S.some(s => s.enabled && s.mtbfMin > 0);
+    if (!hasStochastic || !PREFS.estimateConfidence) return { p50: base, p90: base, hasBand: false };
+    // Aproximação: variância adicional do gargalo proporcional ao número esperado de falhas
+    let bn = bottleneckId >= 0 ? S[bottleneckId] : null;
+    if (!bn || bn.mtbfMin <= 0) return { p50: base, p90: base, hasBand: false };
+    const expectedFailures = base / (bn.mtbfMin * 60);
+    // Σ de MTTRs exponenciais: variância = N * MTTR² → desvio = MTTR * sqrt(N)
+    const sigma = bn.mttrMin * 60 * Math.sqrt(Math.max(1, expectedFailures));
+    return {
+        p50: base,
+        p90: base + 1.282 * sigma, // z-score 1.282 para P90 numa normal
+        hasBand: true
+    };
 }
 
 function calculateInitialMeta() {
@@ -1724,13 +1789,13 @@ function calculateInitialMeta() {
 function updateCharts() {
     let oee = bottleneckId >= 0 && S[bottleneckId] ? oeeCalcStation(S[bottleneckId]).OEE : 0;
     historyOEE.push(oee); 
-    if (historyOEE.length > MAX_HISTORY) historyOEE.shift();
+    while (historyOEE.length > PREFS.sparklineHistory) historyOEE.shift();
     drawSparkline(historyOEE, '#3b82f6', 'chartOEE', true);
     document.getElementById('val_oee_now').textContent = pct(oee);
     
     let ppm = bottleneckId >= 0 && S[bottleneckId]?.state === 'processing' ? ppmReal(S[bottleneckId]) : 0;
     historyPPM.push(ppm); 
-    if (historyPPM.length > MAX_HISTORY) historyPPM.shift();
+    while (historyPPM.length > PREFS.sparklineHistory) historyPPM.shift();
     drawSparkline(historyPPM, '#22c55e', 'chartPPM', false);
     document.getElementById('val_ppm_now').textContent = Math.round(ppm);
     document.getElementById('val_ppm_avg').textContent = t > 0 ? (stats.good / (t / 60)).toFixed(1) : '0';
@@ -1912,6 +1977,16 @@ function render() {
     document.getElementById('t_init').textContent = fmtTime(metaInicial);
     const previsaoAtual = calculateCurrentEstimate();
     document.getElementById('t_est_curr').textContent = fmtTime(previsaoAtual);
+    const band = calculateEstimateBand();
+    const p90El = document.getElementById('t_est_p90');
+    if (p90El) {
+        if (band.hasBand && band.p90 > band.p50) {
+            p90El.style.display = 'block';
+            p90El.textContent = `P90: ${fmtTime(band.p90)}`;
+        } else {
+            p90El.style.display = 'none';
+        }
+    }
     const curTime = t;
     document.getElementById('t_elap').textContent = fmtTime(curTime);
     const restante = Math.max(0, previsaoAtual - curTime);
@@ -2055,11 +2130,41 @@ function tick(dt, doRender) {
     for (let i = 0; i < STATION_COUNT; i++) stationTick(i, dt);
 
     recordStateSnapshot();
-    if (t - lastChartUpdate > 0.5) {
+    if (t - lastChartUpdate > PREFS.chartUpdateInterval) {
         updateCharts(); lastChartUpdate = t;
         if (analyticsOpen) renderAnalytics();
     }
     if (doRender) render();
+}
+
+// === Bloco 5: Preferências ===
+function openPrefs() {
+    document.getElementById('dataMenu').classList.remove('open');
+    document.getElementById('prefBalance').value = PREFS.balanceThreshold;
+    document.getElementById('prefHistory').value = PREFS.sparklineHistory;
+    document.getElementById('prefHeatmap').value = PREFS.heatmapMaxSamples;
+    document.getElementById('prefInterval').value = PREFS.chartUpdateInterval;
+    document.getElementById('prefP90').checked = !!PREFS.estimateConfidence;
+    document.getElementById('prefsModal').style.display = 'block';
+}
+function closePrefs() {
+    // Aplica
+    PREFS.balanceThreshold = Math.max(0, parseFloat(document.getElementById('prefBalance').value) || 0);
+    PREFS.sparklineHistory = clamp(parseInt(document.getElementById('prefHistory').value) || 50, 10, 500);
+    PREFS.heatmapMaxSamples = clamp(parseInt(document.getElementById('prefHeatmap').value) || 600, 100, 5000);
+    PREFS.chartUpdateInterval = clamp(parseFloat(document.getElementById('prefInterval').value) || 0.5, 0.1, 5);
+    PREFS.estimateConfidence = !!document.getElementById('prefP90').checked;
+    document.getElementById('prefsModal').style.display = 'none';
+    updateBottlenecks(); render();
+    showToast('Preferências atualizadas');
+}
+function resetPrefs() {
+    PREFS = { ...PREFS_DEFAULTS };
+    document.getElementById('prefBalance').value = PREFS.balanceThreshold;
+    document.getElementById('prefHistory').value = PREFS.sparklineHistory;
+    document.getElementById('prefHeatmap').value = PREFS.heatmapMaxSamples;
+    document.getElementById('prefInterval').value = PREFS.chartUpdateInterval;
+    document.getElementById('prefP90').checked = PREFS.estimateConfidence;
 }
 
 // === Bloco 4: Cenários e Comparador ===
@@ -2352,6 +2457,7 @@ function collectConfig() {
         flushLine,
         makeToGood,
         seed: document.getElementById('seedInput')?.value || '0',
+        prefs: { ...PREFS },
         wipInit: wI,
         wipMax: wM,
         stations: S.map(s => ({
@@ -2378,6 +2484,9 @@ function applyConfig(cfg) {
     document.getElementById('chkFlushLine').checked = flushLine;
     makeToGood = !!cfg.makeToGood;
     if (cfg.seed !== undefined) document.getElementById('seedInput').value = String(cfg.seed);
+    if (cfg.prefs && typeof cfg.prefs === 'object') {
+        PREFS = { ...PREFS_DEFAULTS, ...cfg.prefs };
+    }
 
     buffers.raw.stock = parseInt(cfg.stock) || 100;
     buffers.raw.target = parseInt(cfg.target) || 60;
