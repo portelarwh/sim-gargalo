@@ -314,6 +314,30 @@
         .adv-row.chk input[type=checkbox] { accent-color: var(--purple); width: 14px; height: 14px; cursor: pointer; }
         .adv-counters { display: flex; gap: 5px; font-size: 8px; color: var(--muted-main); padding-top: 4px; border-top: 1px dashed rgba(15,23,42,0.1); justify-content: space-between; }
         .adv-counters b { color: var(--purple); }
+
+        /* === Bloco 4: Cenários e Comparador === */
+        .scenario-btn { background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.35); color: var(--orange); padding: 4px 8px; border-radius: 4px; font-size: 9px; font-weight: 700; cursor: pointer; transition: all 0.2s; text-transform: uppercase; white-space: nowrap; }
+        .scenario-btn:hover { background: var(--orange); color: #1a1209; }
+        .scenarios-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .scenario-card { background: rgba(255,255,255,0.04); border: 1px solid var(--modal-border); border-radius: 10px; padding: 14px; cursor: pointer; transition: all 0.2s; }
+        .scenario-card:hover { background: rgba(245, 158, 11, 0.1); border-color: var(--orange); transform: translateY(-2px); }
+        .scenario-title { font-size: 13px; font-weight: 800; color: var(--orange); margin-bottom: 4px; }
+        .scenario-objective { font-size: 11px; color: var(--cyan); margin-bottom: 6px; font-weight: 600; }
+        .scenario-desc { font-size: 12px; opacity: 0.85; line-height: 1.5; }
+        .scenario-tags { margin-top: 8px; display: flex; gap: 4px; flex-wrap: wrap; }
+        .scenario-tag { font-size: 9px; padding: 2px 6px; border-radius: 4px; background: rgba(217, 70, 239, 0.15); color: var(--purple); font-weight: 700; }
+        .compare-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px; }
+        .compare-col { background: rgba(255,255,255,0.04); border: 1px solid var(--modal-border); border-radius: 10px; padding: 12px; }
+        .compare-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-weight: 700; color: var(--blue); border-bottom: 1px solid var(--modal-border); padding-bottom: 6px; }
+        .compare-row { display: grid; grid-template-columns: 1.2fr 1fr 1fr 0.8fr; gap: 6px; padding: 4px 2px; font-size: 11px; align-items: center; border-bottom: 1px dotted rgba(255,255,255,0.05); }
+        .compare-row.header { font-weight: 800; opacity: 0.7; font-size: 10px; text-transform: uppercase; }
+        .compare-row .delta { font-weight: 700; text-align: right; }
+        .delta.up { color: #22c55e; }
+        .delta.down { color: #ef4444; }
+        .delta.flat { color: var(--gray); }
+        .compare-actions { display: flex; gap: 8px; margin-bottom: 12px; }
+        .file-pick-btn { background: var(--input-bg); border: 1px solid var(--input-border); color: var(--input-text); padding: 8px 14px; border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: 600; }
+        .file-pick-btn:hover { background: rgba(255,255,255,0.15); }
     </style>
 </head>
 <body>
@@ -346,6 +370,8 @@
                 </div>
                 <input type="file" id="loadConfigInput" accept=".json,application/json" style="display:none" onchange="loadConfigFile(event)">
             </div>
+            <button class="scenario-btn" onclick="openScenarios()">CENÁRIOS</button>
+            <button class="scenario-btn" onclick="openCompare()" title="Comparar dois snapshots JSON">COMPARAR</button>
         </div>
 
         <div class="center-configs">
@@ -768,6 +794,36 @@
     </div>
 </div>
 
+<div id="scenariosModal" class="modal">
+    <div class="modal-content" style="max-width: 900px;">
+        <span class="close" onclick="closeScenarios()">&times;</span>
+        <h2>🎯 Cenários Didáticos</h2>
+        <p style="font-size: 13px; opacity: 0.85; margin-bottom: 20px;">Selecione um cenário pré-configurado para explorar conceitos específicos. <strong>A configuração atual será substituída.</strong></p>
+        <div class="scenarios-grid" id="scenariosGrid"></div>
+    </div>
+</div>
+
+<div id="compareModal" class="modal">
+    <div class="modal-content" style="max-width: 1100px;">
+        <span class="close" onclick="closeCompare()">&times;</span>
+        <h2>⚖ Comparador de Cenários</h2>
+        <p style="font-size: 13px; opacity: 0.85; margin-bottom: 14px;">Carregue dois ficheiros JSON de snapshot (exportados via DADOS → Snapshot completo) para comparar lado a lado. Útil para validar melhorias entre execuções.</p>
+        <div class="compare-actions">
+            <button class="file-pick-btn" onclick="document.getElementById('cmpFileA').click()">📂 Carregar A</button>
+            <button class="file-pick-btn" onclick="document.getElementById('cmpFileB').click()">📂 Carregar B</button>
+            <button class="file-pick-btn" onclick="useCurrentAsCompare('A')">📌 Usar atual como A</button>
+            <button class="file-pick-btn" onclick="useCurrentAsCompare('B')">📌 Usar atual como B</button>
+        </div>
+        <input type="file" id="cmpFileA" accept=".json,application/json" style="display:none" onchange="loadCompareFile(event, 'A')">
+        <input type="file" id="cmpFileB" accept=".json,application/json" style="display:none" onchange="loadCompareFile(event, 'B')">
+        <div class="compare-cols">
+            <div class="compare-col" id="cmpColA"><div class="empty-note">Carregue um snapshot A</div></div>
+            <div class="compare-col" id="cmpColB"><div class="empty-note">Carregue um snapshot B</div></div>
+        </div>
+        <div id="cmpDiff" style="margin-top: 16px;"></div>
+    </div>
+</div>
+
 <div id="toast" class="toast"></div>
 
 <script>
@@ -867,6 +923,8 @@ function closeHelp() { document.getElementById('helpModal').style.display = "non
 window.onclick = e => {
     if (e.target == document.getElementById('helpModal')) closeHelp();
     if (e.target == document.getElementById('analyticsModal')) closeAnalytics();
+    if (e.target == document.getElementById('scenariosModal')) closeScenarios();
+    if (e.target == document.getElementById('compareModal')) closeCompare();
 };
 
 // === Bloco 1: Diagnóstico Visual ===
@@ -2002,6 +2060,264 @@ function tick(dt, doRender) {
         if (analyticsOpen) renderAnalytics();
     }
     if (doRender) render();
+}
+
+// === Bloco 4: Cenários e Comparador ===
+const SCENARIOS = [
+    {
+        id: 'balanced',
+        title: 'Linha Balanceada',
+        objective: 'Demonstrar uma linha equilibrada (CT iguais)',
+        desc: 'Todas as estações com a mesma capacidade efetiva. Observe que mesmo balanceada, o sistema tem perdas por starving devido às variações estatísticas (sem MTBF aqui, só ruído de qualidade).',
+        tags: ['TOC', 'Iniciante'],
+        config: {
+            stationCount: 3, stock: 200, target: 100, transit: 0, timeScale: 4,
+            stations: [
+                { ppmNom: 60, Aset: 0.95, Pset: 1, Qset: 0.98, setupConfig: 0 },
+                { ppmNom: 60, Aset: 0.95, Pset: 1, Qset: 0.98, setupConfig: 0 },
+                { ppmNom: 60, Aset: 0.95, Pset: 1, Qset: 0.98, setupConfig: 0 },
+            ],
+            wipInit: [10, 10], wipMax: [50, 50]
+        }
+    },
+    {
+        id: 'mid-bottleneck',
+        title: 'Gargalo no Meio',
+        objective: 'Identificar e quantificar o efeito de um gargalo central',
+        desc: 'A estação 2 tem metade do PPM. Observe o WIP a acumular antes dela e a estação 3 a sofrer starving. A linha inteira opera ao ritmo do gargalo.',
+        tags: ['TOC', 'Gargalo'],
+        config: {
+            stationCount: 4, stock: 250, target: 80, transit: 0, timeScale: 4,
+            stations: [
+                { ppmNom: 80, Aset: 0.95, Pset: 1, Qset: 1, setupConfig: 0 },
+                { ppmNom: 80, Aset: 0.95, Pset: 1, Qset: 1, setupConfig: 0 },
+                { ppmNom: 40, Aset: 0.95, Pset: 1, Qset: 1, setupConfig: 0 },
+                { ppmNom: 80, Aset: 0.95, Pset: 1, Qset: 1, setupConfig: 0 },
+            ],
+            wipInit: [5, 5, 5], wipMax: [40, 40, 40]
+        }
+    },
+    {
+        id: 'starve-cascade',
+        title: 'Starving em Cascata',
+        objective: 'Visualizar como uma estação inicial lenta esgota toda a linha',
+        desc: 'A estação 1 é o gargalo e tem baixa disponibilidade (MTBF baixo). As estações seguintes vão alternar entre AGUARDANDO e processamento. Observe o heatmap.',
+        tags: ['MTBF', 'Avançado'],
+        config: {
+            stationCount: 3, stock: 200, target: 100, transit: 0, timeScale: 4,
+            stations: [
+                { ppmNom: 40, Aset: 1, Pset: 1, Qset: 1, setupConfig: 0, mtbfMin: 3, mttrMin: 1 },
+                { ppmNom: 80, Aset: 0.98, Pset: 1, Qset: 1, setupConfig: 0 },
+                { ppmNom: 80, Aset: 0.98, Pset: 1, Qset: 1, setupConfig: 0 },
+            ],
+            wipInit: [0, 0], wipMax: [30, 30]
+        }
+    },
+    {
+        id: 'quality-killer',
+        title: 'Refugo Concentrado',
+        objective: 'Demonstrar impacto da qualidade no throughput',
+        desc: 'A estação 2 tem Q=80% (alta taxa de refugo). Note como o gargalo aparente muda quando se considera apenas peças boas. Active o REWORK para ver o impacto no tempo.',
+        tags: ['Qualidade', 'Rework'],
+        config: {
+            stationCount: 3, stock: 300, target: 80, transit: 0, timeScale: 4,
+            stations: [
+                { ppmNom: 60, Aset: 0.95, Pset: 1, Qset: 1, setupConfig: 0 },
+                { ppmNom: 60, Aset: 0.95, Pset: 1, Qset: 0.8, setupConfig: 0 },
+                { ppmNom: 60, Aset: 0.95, Pset: 1, Qset: 1, setupConfig: 0 },
+            ],
+            wipInit: [5, 5], wipMax: [50, 50]
+        }
+    },
+    {
+        id: 'setup-trade-off',
+        title: 'Lotes vs Setup (SMED)',
+        objective: 'Explorar trade-off entre tamanho de lote e tempo de setup',
+        desc: 'Cada estação tem setup longo (3 min) acionado a cada 20 peças. Tente reduzir setupConfig para 0.5 min e veja o ganho — é o princípio do SMED (troca rápida).',
+        tags: ['Setup', 'SMED', 'Lotes'],
+        config: {
+            stationCount: 3, stock: 200, target: 60, transit: 0, timeScale: 4,
+            stations: [
+                { ppmNom: 60, Aset: 0.98, Pset: 1, Qset: 0.99, setupConfig: 3, batchSize: 20 },
+                { ppmNom: 60, Aset: 0.98, Pset: 1, Qset: 0.99, setupConfig: 3, batchSize: 20 },
+                { ppmNom: 60, Aset: 0.98, Pset: 1, Qset: 0.99, setupConfig: 3, batchSize: 20 },
+            ],
+            wipInit: [10, 10], wipMax: [60, 60]
+        }
+    },
+    {
+        id: 'learning-curve',
+        title: 'Curva de Aprendizagem',
+        objective: 'Visualizar o efeito de operadores em treino',
+        desc: 'Todas as estações começam a 50% do P nominal e melhoram ao longo de 40 peças. Útil para simular ramp-up de turno ou novo produto. O PPM real cresce ao longo do tempo.',
+        tags: ['Aprendizagem', 'Lean'],
+        config: {
+            stationCount: 3, stock: 200, target: 80, transit: 0, timeScale: 4,
+            stations: [
+                { ppmNom: 60, Aset: 0.97, Pset: 1, Qset: 0.99, setupConfig: 0, learningPieces: 40, learningStart: 0.5 },
+                { ppmNom: 60, Aset: 0.97, Pset: 1, Qset: 0.99, setupConfig: 0, learningPieces: 40, learningStart: 0.5 },
+                { ppmNom: 60, Aset: 0.97, Pset: 1, Qset: 0.99, setupConfig: 0, learningPieces: 40, learningStart: 0.5 },
+            ],
+            wipInit: [10, 10], wipMax: [50, 50]
+        }
+    }
+];
+
+function openScenarios() {
+    const grid = document.getElementById('scenariosGrid');
+    grid.innerHTML = SCENARIOS.map(s => `
+        <div class="scenario-card" onclick="loadScenario('${s.id}')">
+            <div class="scenario-title">${s.title}</div>
+            <div class="scenario-objective">🎯 ${s.objective}</div>
+            <div class="scenario-desc">${s.desc}</div>
+            <div class="scenario-tags">${s.tags.map(t => `<span class="scenario-tag">${t}</span>`).join('')}</div>
+        </div>
+    `).join('');
+    document.getElementById('scenariosModal').style.display = 'block';
+}
+function closeScenarios() { document.getElementById('scenariosModal').style.display = 'none'; }
+
+function loadScenario(id) {
+    const sc = SCENARIOS.find(s => s.id === id);
+    if (!sc) return;
+    const cfg = JSON.parse(JSON.stringify(sc.config));
+    // Normaliza estações com defaults
+    cfg.stations = cfg.stations.map((s, idx) => ({
+        enabled: true, name: `ESTAÇÃO ${idx+1}`,
+        ppmNom: 60, Aset: 1, Pset: 1, Qset: 1, setupConfig: 0,
+        batchSize: 0, mtbfMin: 0, mttrMin: 5,
+        learningPieces: 0, learningStart: 0.6, reworkEnabled: false,
+        ...s
+    }));
+    cfg.version = 1;
+    applyConfig(cfg);
+    closeScenarios();
+    showToast(`Cenário carregado: ${sc.title}`);
+}
+
+// --- Comparador ---
+let _cmpA = null, _cmpB = null;
+
+function openCompare() {
+    document.getElementById('compareModal').style.display = 'block';
+    renderCompare();
+}
+function closeCompare() { document.getElementById('compareModal').style.display = 'none'; }
+
+function loadCompareFile(ev, slot) {
+    const file = ev.target.files && ev.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+        try {
+            const data = JSON.parse(e.target.result);
+            if (slot === 'A') _cmpA = { name: file.name, data };
+            else _cmpB = { name: file.name, data };
+            renderCompare();
+            showToast(`Snapshot ${slot} carregado`);
+        } catch (err) { showToast('Erro: ' + err.message, true); }
+    };
+    reader.readAsText(file);
+    ev.target.value = '';
+}
+
+function useCurrentAsCompare(slot) {
+    const snap = {
+        ...collectConfig(),
+        runtime: {
+            t, finalTime, lineStarted, seed_active: _activeSeed,
+            stats: { good: stats.good, scrap: stats.scrap },
+            stations: S.map(s => ({
+                name: s.name, totalCount: s.totalCount, goodCount: s.goodCount,
+                tRun: s.tRun, tSetup: s.tSetup, tDown: s.tDown,
+                tBlocked: s.tBlocked, tStarved: s.tStarved, tIdle: s.tIdle,
+                idealTime: s.idealTime
+            }))
+        }
+    };
+    const wrapped = { name: `Atual (t=${fmtMMSSd(t)})`, data: snap };
+    if (slot === 'A') _cmpA = wrapped; else _cmpB = wrapped;
+    renderCompare();
+    showToast(`Estado atual definido como ${slot}`);
+}
+
+function snapshotKPIs(snap) {
+    if (!snap || !snap.data) return null;
+    const d = snap.data;
+    const rt = d.runtime || {};
+    const stations = rt.stations || [];
+    let totRun = 0, totIdeal = 0, totPlanned = 0, totGood = 0, totTotal = 0;
+    stations.forEach(s => {
+        const planned = (s.tRun||0) + (s.tDown||0) + (s.tStarved||0) + (s.tBlocked||0) + (s.tSetup||0) + (s.tIdle||0);
+        totRun += s.tRun || 0; totIdeal += s.idealTime || 0;
+        totPlanned += planned; totGood += s.goodCount || 0; totTotal += s.totalCount || 0;
+    });
+    const elapsed = rt.t || 0;
+    const good = rt.stats?.good || 0;
+    const scrap = rt.stats?.scrap || 0;
+    return {
+        elapsed,
+        good, scrap,
+        finished: rt.finalTime != null,
+        throughput: elapsed > 0 ? (good / (elapsed/60)) : 0,
+        stationCount: d.stationCount || stations.length,
+        target: d.target || 0,
+        seed: rt.seed_active ?? d.seed,
+        oeeLine: totPlanned > 0 ? (totRun/totPlanned) * (totRun > 0 ? totIdeal/totRun : 1) * (totTotal > 0 ? totGood/totTotal : 1) : 0,
+        stations
+    };
+}
+
+function renderCompare() {
+    const cA = document.getElementById('cmpColA');
+    const cB = document.getElementById('cmpColB');
+    const diff = document.getElementById('cmpDiff');
+    const fmtCol = (slot, snap) => {
+        if (!snap) return `<div class="empty-note">Carregue um snapshot ${slot}</div>`;
+        const k = snapshotKPIs(snap);
+        const row = (l, v) => `<div style="display:flex; justify-content:space-between; padding:4px 2px; font-size:11px; border-bottom:1px dotted rgba(255,255,255,0.06);"><span>${l}</span><span style="font-weight:700;">${v}</span></div>`;
+        return `
+            <div class="compare-head"><span>${slot}: ${snap.name}</span><span style="font-size:10px; color: var(--gray);">seed=${k.seed || '—'}</span></div>
+            ${row('Tempo decorrido', fmtMMSSd(k.elapsed))}
+            ${row('Bons', k.good)}
+            ${row('Refugo', k.scrap)}
+            ${row('Throughput', k.throughput.toFixed(1) + ' ppm')}
+            ${row('OEE linha (aprox)', (k.oeeLine*100).toFixed(1) + '%')}
+            ${row('Estações', k.stationCount)}
+            ${row('Meta', k.target)}
+            ${row('Concluído', k.finished ? 'Sim' : 'Não')}
+        `;
+    };
+    cA.innerHTML = fmtCol('A', _cmpA);
+    cB.innerHTML = fmtCol('B', _cmpB);
+
+    if (_cmpA && _cmpB) {
+        const a = snapshotKPIs(_cmpA), b = snapshotKPIs(_cmpB);
+        const cmp = (label, va, vb, isPctOrUnit, betterUp) => {
+            const delta = vb - va;
+            const pct = va !== 0 ? (delta/Math.abs(va))*100 : 0;
+            const dir = Math.abs(delta) < 1e-6 ? 'flat' : (delta > 0 ? 'up' : 'down');
+            const isGood = (betterUp && delta > 0) || (!betterUp && delta < 0);
+            const arrow = dir === 'flat' ? '—' : (isGood ? '✓' : '✗');
+            return `<div class="compare-row">
+                <span><strong>${label}</strong></span>
+                <span>${typeof va === 'number' ? (isPctOrUnit === '%' ? (va*100).toFixed(1)+'%' : va.toFixed(1)+(isPctOrUnit||'')) : va}</span>
+                <span>${typeof vb === 'number' ? (isPctOrUnit === '%' ? (vb*100).toFixed(1)+'%' : vb.toFixed(1)+(isPctOrUnit||'')) : vb}</span>
+                <span class="delta ${dir}">${arrow} ${delta >= 0 ? '+' : ''}${pct.toFixed(1)}%</span>
+            </div>`;
+        };
+        diff.innerHTML = `
+            <h3 style="font-size:14px; color: var(--cyan); margin-bottom:8px;">Δ A → B</h3>
+            <div class="compare-row header"><span>Métrica</span><span>A</span><span>B</span><span style="text-align:right;">Δ</span></div>
+            ${cmp('Bons', a.good, b.good, '', true)}
+            ${cmp('Refugo', a.scrap, b.scrap, '', false)}
+            ${cmp('Throughput (ppm)', a.throughput, b.throughput, '', true)}
+            ${cmp('OEE linha', a.oeeLine, b.oeeLine, '%', true)}
+            ${cmp('Tempo decorrido (s)', a.elapsed, b.elapsed, 's', false)}
+        `;
+    } else {
+        diff.innerHTML = '';
+    }
 }
 
 // === Bloco 2: Export, Import, Save/Load, Sankey ===
