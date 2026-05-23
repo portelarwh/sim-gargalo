@@ -252,6 +252,92 @@
         .extra-stat-label { font-size: 8px; font-weight: 700; color: #64748b; text-transform: uppercase; }
         .extra-stat-value { font-size: 16px; font-weight: 800; color: #334155; font-variant-numeric: tabular-nums; }
         .extra-stat-value.wip-balance { font-size: 14px; color: #0369a1; }
+
+        /* === Bloco 1: Diagnóstico Visual === */
+        .analytics-btn { background: rgba(217, 70, 239, 0.15); border: 1px solid rgba(217, 70, 239, 0.35); color: var(--purple); padding: 4px 8px; border-radius: 4px; font-size: 9px; font-weight: 700; cursor: pointer; transition: all 0.2s; text-transform: uppercase; white-space: nowrap; }
+        .analytics-btn:hover { background: var(--purple); color: #fff; }
+        .modal-content.analytics { max-width: 1100px; }
+        .tab-bar { display: flex; gap: 4px; margin: 10px 0 18px; border-bottom: 1px solid var(--modal-border); }
+        .tab-btn { background: transparent; border: none; color: var(--modal-text); opacity: 0.6; padding: 8px 14px; cursor: pointer; font-size: 12px; font-weight: 700; border-bottom: 2px solid transparent; text-transform: uppercase; letter-spacing: 0.04em; }
+        .tab-btn:hover { opacity: 1; }
+        .tab-btn.active { opacity: 1; color: var(--blue); border-bottom-color: var(--blue); }
+        .tab-pane { display: none; }
+        .tab-pane.active { display: block; }
+        .analytics-summary { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+        .a-stat { background: rgba(255,255,255,0.04); border: 1px solid var(--modal-border); padding: 8px 14px; border-radius: 8px; min-width: 110px; }
+        .a-stat-lbl { font-size: 9px; color: var(--gray); font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; }
+        .a-stat-val { font-size: 18px; font-weight: 800; color: var(--modal-text); margin-top: 2px; font-variant-numeric: tabular-nums; }
+        .a-stat-val.bn { color: var(--purple); }
+        .a-stat-val.takt { color: var(--cyan); }
+        .chart-wrap { background: rgba(255,255,255,0.03); border: 1px solid var(--modal-border); border-radius: 10px; padding: 14px; }
+        .chart-wrap svg { display: block; width: 100%; }
+        .legend { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 10px; font-size: 11px; }
+        .legend-item { display: flex; align-items: center; gap: 5px; color: var(--modal-text); opacity: 0.9; }
+        .legend-swatch { width: 12px; height: 12px; border-radius: 3px; }
+        .swatch-run { background: #22c55e; }
+        .swatch-setup { background: #06b6d4; }
+        .swatch-down { background: #ef4444; }
+        .swatch-block { background: #f59e0b; }
+        .swatch-wait { background: #eab308; }
+        .swatch-idle { background: #94a3b8; }
+        .empty-note { text-align: center; padding: 30px; color: var(--gray); font-size: 13px; font-style: italic; }
+
+        /* === Bloco 2: Export & Reprodutibilidade === */
+        .data-btn { background: rgba(34, 197, 94, 0.15); border: 1px solid rgba(34, 197, 94, 0.35); color: var(--green); padding: 4px 8px; border-radius: 4px; font-size: 9px; font-weight: 700; cursor: pointer; transition: all 0.2s; text-transform: uppercase; white-space: nowrap; }
+        .data-btn:hover { background: var(--green); color: #052e16; }
+        .data-menu-wrap { position: relative; display: inline-block; }
+        .data-menu { display: none; position: absolute; top: calc(100% + 4px); left: 0; background: #0f172a; border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 4px; min-width: 200px; box-shadow: 0 10px 30px rgba(0,0,0,0.4); z-index: 50; }
+        body.light-mode .data-menu { background: #fff; border-color: #cbd5e1; }
+        .data-menu.open { display: block; }
+        .data-menu button { display: block; width: 100%; text-align: left; background: transparent; border: none; color: var(--top-text); padding: 7px 10px; font-size: 11px; font-weight: 600; cursor: pointer; border-radius: 4px; }
+        .data-menu button:hover { background: rgba(255,255,255,0.08); }
+        body.light-mode .data-menu button:hover { background: rgba(0,0,0,0.05); }
+        .data-menu hr { border: none; border-top: 1px solid rgba(255,255,255,0.08); margin: 4px 0; }
+        body.light-mode .data-menu hr { border-top-color: #e2e8f0; }
+        .data-menu .group-title { font-size: 9px; color: var(--gray); font-weight: 800; text-transform: uppercase; padding: 6px 10px 2px; letter-spacing: 0.05em; }
+        .seed-input { background: var(--input-bg); border: 1px solid var(--input-border); color: var(--input-text); padding: 3px 5px; border-radius: 4px; font-weight: bold; font-size: 11px; width: 70px; text-align: center; font-family: 'Roboto Mono', monospace; }
+        .seed-input:focus { outline: none; border-color: var(--blue); }
+        .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(20px); background: #0f172a; color: #fff; padding: 10px 18px; border-radius: 8px; font-size: 12px; font-weight: 600; box-shadow: 0 10px 30px rgba(0,0,0,0.4); border: 1px solid rgba(34,197,94,0.4); opacity: 0; transition: all 0.25s; z-index: 200; pointer-events: none; }
+        .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+        .toast.error { border-color: rgba(239,68,68,0.5); }
+
+        /* === Bloco 3: Painel Avançado por estação === */
+        .adv-toggle { margin-top: 6px; background: rgba(217, 70, 239, 0.08); border: 1px dashed rgba(217, 70, 239, 0.4); color: var(--purple); font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; padding: 4px 6px; border-radius: 6px; cursor: pointer; text-align: center; user-select: none; }
+        .adv-toggle:hover { background: rgba(217, 70, 239, 0.15); }
+        .adv-panel { display: none; margin-top: 6px; padding: 8px; border-radius: 10px; background: linear-gradient(180deg, rgba(217, 70, 239, 0.05), rgba(217, 70, 239, 0.02)); border: 1px solid rgba(217, 70, 239, 0.2); flex-direction: column; gap: 5px; }
+        .adv-panel.open { display: flex; }
+        .adv-row { display: grid; grid-template-columns: 1fr 50px 26px; gap: 4px; align-items: center; font-size: 9px; }
+        .adv-row .nm { font-weight: 800; color: #334155; text-transform: uppercase; letter-spacing: 0.02em; }
+        .adv-row .un { font-size: 8px; font-weight: 700; color: #94a3b8; }
+        .adv-row input[type=number] { width: 100%; border-radius: 4px; border: 1px solid #cbd5e1; background: #fff; padding: 2px 0; font-weight: 700; text-align: center; font-size: 10px; outline: none; }
+        .adv-row.chk { grid-template-columns: 1fr auto; }
+        .adv-row.chk input[type=checkbox] { accent-color: var(--purple); width: 14px; height: 14px; cursor: pointer; }
+        .adv-counters { display: flex; gap: 5px; font-size: 8px; color: var(--muted-main); padding-top: 4px; border-top: 1px dashed rgba(15,23,42,0.1); justify-content: space-between; }
+        .adv-counters b { color: var(--purple); }
+
+        /* === Bloco 4: Cenários e Comparador === */
+        .scenario-btn { background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.35); color: var(--orange); padding: 4px 8px; border-radius: 4px; font-size: 9px; font-weight: 700; cursor: pointer; transition: all 0.2s; text-transform: uppercase; white-space: nowrap; }
+        .scenario-btn:hover { background: var(--orange); color: #1a1209; }
+        .scenarios-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .scenario-card { background: rgba(255,255,255,0.04); border: 1px solid var(--modal-border); border-radius: 10px; padding: 14px; cursor: pointer; transition: all 0.2s; }
+        .scenario-card:hover { background: rgba(245, 158, 11, 0.1); border-color: var(--orange); transform: translateY(-2px); }
+        .scenario-title { font-size: 13px; font-weight: 800; color: var(--orange); margin-bottom: 4px; }
+        .scenario-objective { font-size: 11px; color: var(--cyan); margin-bottom: 6px; font-weight: 600; }
+        .scenario-desc { font-size: 12px; opacity: 0.85; line-height: 1.5; }
+        .scenario-tags { margin-top: 8px; display: flex; gap: 4px; flex-wrap: wrap; }
+        .scenario-tag { font-size: 9px; padding: 2px 6px; border-radius: 4px; background: rgba(217, 70, 239, 0.15); color: var(--purple); font-weight: 700; }
+        .compare-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px; }
+        .compare-col { background: rgba(255,255,255,0.04); border: 1px solid var(--modal-border); border-radius: 10px; padding: 12px; }
+        .compare-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-weight: 700; color: var(--blue); border-bottom: 1px solid var(--modal-border); padding-bottom: 6px; }
+        .compare-row { display: grid; grid-template-columns: 1.2fr 1fr 1fr 0.8fr; gap: 6px; padding: 4px 2px; font-size: 11px; align-items: center; border-bottom: 1px dotted rgba(255,255,255,0.05); }
+        .compare-row.header { font-weight: 800; opacity: 0.7; font-size: 10px; text-transform: uppercase; }
+        .compare-row .delta { font-weight: 700; text-align: right; }
+        .delta.up { color: #22c55e; }
+        .delta.down { color: #ef4444; }
+        .delta.flat { color: var(--gray); }
+        .compare-actions { display: flex; gap: 8px; margin-bottom: 12px; }
+        .file-pick-btn { background: var(--input-bg); border: 1px solid var(--input-border); color: var(--input-text); padding: 8px 14px; border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: 600; }
+        .file-pick-btn:hover { background: rgba(255,255,255,0.15); }
     </style>
 </head>
 <body>
@@ -268,6 +354,26 @@
                 Pedro Portela
             </a>
             <button class="help-btn" onclick="openHelp()">AJUDA</button>
+            <button class="analytics-btn" onclick="openAnalytics()">ANÁLISE</button>
+            <div class="data-menu-wrap">
+                <button class="data-btn" onclick="toggleDataMenu(event)">DADOS ▾</button>
+                <div class="data-menu" id="dataMenu">
+                    <div class="group-title">Exportar</div>
+                    <button onclick="exportCSV()">📊 KPIs por estação (CSV)</button>
+                    <button onclick="exportSnapshot()">📦 Snapshot completo (JSON)</button>
+                    <hr>
+                    <div class="group-title">Configuração</div>
+                    <button onclick="saveConfig()">💾 Guardar configuração</button>
+                    <button onclick="document.getElementById('loadConfigInput').click()">📂 Carregar configuração</button>
+                    <button onclick="saveConfigLocal()">⭐ Guardar em browser</button>
+                    <button onclick="loadConfigLocal()">↻ Restaurar do browser</button>
+                    <hr>
+                    <button onclick="openPrefs()">⚙ Preferências…</button>
+                </div>
+                <input type="file" id="loadConfigInput" accept=".json,application/json" style="display:none" onchange="loadConfigFile(event)">
+            </div>
+            <button class="scenario-btn" onclick="openScenarios()">CENÁRIOS</button>
+            <button class="scenario-btn" onclick="openCompare()" title="Comparar dois snapshots JSON">COMPARAR</button>
         </div>
 
         <div class="center-configs">
@@ -294,6 +400,10 @@
                     <input id="zoomInput" type="number" min="30" max="150" value="100">
                 </div>
             </div>
+            <div class="cfg" title="Semente para reprodutibilidade (0 = aleatório)">
+                <span class="cfg-lbl">SEED</span>
+                <input id="seedInput" class="seed-input" type="text" value="0" maxlength="10">
+            </div>
         </div>
 
         <div class="right-group">
@@ -315,7 +425,7 @@
     <div class="row2">
         <div class="time-group">
             <div class="time-card"><div class="time-lbl">META INICIAL</div><div class="time-val est" id="t_init">00:00.0</div></div>
-            <div class="time-card"><div class="time-lbl">PREVISÃO</div><div class="time-val curr" id="t_est_curr">00:00.0</div></div>
+            <div class="time-card" title="Previsão de tempo de conclusão (P50 / P90 com MTBF ativo)"><div class="time-lbl">PREVISÃO</div><div class="time-val curr" id="t_est_curr">00:00.0</div><div class="time-lbl" id="t_est_p90" style="display:none; color:#fbbf24; font-size:8px; margin-top:1px;"></div></div>
             <div class="time-card"><div class="time-lbl">DECORRIDO</div><div class="time-val" id="t_elap">00:00.0</div></div>
             <div class="time-card"><div class="time-lbl">RESTANTE</div><div class="time-val rem" id="t_rem">00:00.0</div></div>
         </div>
@@ -634,6 +744,124 @@
     </div>
 </div>
 
+<div id="analyticsModal" class="modal">
+    <div class="modal-content analytics">
+        <span class="close" onclick="closeAnalytics()">&times;</span>
+        <h2>📊 Análise da Linha</h2>
+
+        <div class="analytics-summary" id="analyticsSummary"></div>
+
+        <div class="tab-bar">
+            <button class="tab-btn active" data-tab="yamazumi" onclick="switchAnalyticsTab('yamazumi')">Yamazumi</button>
+            <button class="tab-btn" data-tab="pareto" onclick="switchAnalyticsTab('pareto')">Pareto de Perdas</button>
+            <button class="tab-btn" data-tab="heatmap" onclick="switchAnalyticsTab('heatmap')">Heatmap de Estados</button>
+            <button class="tab-btn" data-tab="sankey" onclick="switchAnalyticsTab('sankey')">Fluxo (Sankey)</button>
+        </div>
+
+        <div class="tab-pane active" id="tab-yamazumi">
+            <p style="font-size:12px; opacity:0.8; margin:0 0 10px;">Tempo de ciclo efetivo decomposto por estação. Cada barra mostra a média de segundos por peça produzida em cada estado. A <strong style="color:var(--cyan);">linha tracejada</strong> indica o <strong>Takt time</strong> (ritmo necessário para atingir a meta).</p>
+            <div class="chart-wrap"><div id="yamazumiChart"></div></div>
+            <div class="legend">
+                <span class="legend-item"><span class="legend-swatch swatch-run"></span>Operando</span>
+                <span class="legend-item"><span class="legend-swatch swatch-setup"></span>Setup</span>
+                <span class="legend-item"><span class="legend-swatch swatch-down"></span>Parada</span>
+                <span class="legend-item"><span class="legend-swatch swatch-block"></span>Travada</span>
+                <span class="legend-item"><span class="legend-swatch swatch-wait"></span>Aguardando</span>
+                <span class="legend-item"><span class="legend-swatch swatch-idle"></span>Ociosa</span>
+            </div>
+        </div>
+
+        <div class="tab-pane" id="tab-pareto">
+            <p style="font-size:12px; opacity:0.8; margin:0 0 10px;">Perdas agregadas da linha, ordenadas do maior para o menor impacto. A linha sobreposta mostra a <strong>% cumulativa</strong>. Foque nas barras à esquerda — geralmente 20% das categorias causam 80% das perdas (Princípio de Pareto).</p>
+            <div class="chart-wrap"><div id="paretoChart"></div></div>
+        </div>
+
+        <div class="tab-pane" id="tab-heatmap">
+            <p style="font-size:12px; opacity:0.8; margin:0 0 10px;">Linha do tempo de cada estação. Cada faixa horizontal mostra o estado ao longo da simulação — útil para identificar padrões (ex: starving cíclico, blocos prolongados, propagação de paradas).</p>
+            <div class="chart-wrap"><div id="heatmapChart"></div></div>
+            <div class="legend">
+                <span class="legend-item"><span class="legend-swatch swatch-run"></span>Operando</span>
+                <span class="legend-item"><span class="legend-swatch swatch-setup"></span>Setup</span>
+                <span class="legend-item"><span class="legend-swatch swatch-down"></span>Parada</span>
+                <span class="legend-item"><span class="legend-swatch swatch-block"></span>Travada</span>
+                <span class="legend-item"><span class="legend-swatch swatch-wait"></span>Aguardando</span>
+                <span class="legend-item"><span class="legend-swatch swatch-idle"></span>Ociosa</span>
+            </div>
+        </div>
+
+        <div class="tab-pane" id="tab-sankey">
+            <p style="font-size:12px; opacity:0.8; margin:0 0 10px;">Fluxo de peças do estoque até ao destino final. A largura de cada fluxo é proporcional ao número de peças. Permite ver instantaneamente onde se concentra o refugo.</p>
+            <div class="chart-wrap"><div id="sankeyChart"></div></div>
+        </div>
+    </div>
+</div>
+
+<div id="scenariosModal" class="modal">
+    <div class="modal-content" style="max-width: 900px;">
+        <span class="close" onclick="closeScenarios()">&times;</span>
+        <h2>🎯 Cenários Didáticos</h2>
+        <p style="font-size: 13px; opacity: 0.85; margin-bottom: 20px;">Selecione um cenário pré-configurado para explorar conceitos específicos. <strong>A configuração atual será substituída.</strong></p>
+        <div class="scenarios-grid" id="scenariosGrid"></div>
+    </div>
+</div>
+
+<div id="compareModal" class="modal">
+    <div class="modal-content" style="max-width: 1100px;">
+        <span class="close" onclick="closeCompare()">&times;</span>
+        <h2>⚖ Comparador de Cenários</h2>
+        <p style="font-size: 13px; opacity: 0.85; margin-bottom: 14px;">Carregue dois ficheiros JSON de snapshot (exportados via DADOS → Snapshot completo) para comparar lado a lado. Útil para validar melhorias entre execuções.</p>
+        <div class="compare-actions">
+            <button class="file-pick-btn" onclick="document.getElementById('cmpFileA').click()">📂 Carregar A</button>
+            <button class="file-pick-btn" onclick="document.getElementById('cmpFileB').click()">📂 Carregar B</button>
+            <button class="file-pick-btn" onclick="useCurrentAsCompare('A')">📌 Usar atual como A</button>
+            <button class="file-pick-btn" onclick="useCurrentAsCompare('B')">📌 Usar atual como B</button>
+        </div>
+        <input type="file" id="cmpFileA" accept=".json,application/json" style="display:none" onchange="loadCompareFile(event, 'A')">
+        <input type="file" id="cmpFileB" accept=".json,application/json" style="display:none" onchange="loadCompareFile(event, 'B')">
+        <div class="compare-cols">
+            <div class="compare-col" id="cmpColA"><div class="empty-note">Carregue um snapshot A</div></div>
+            <div class="compare-col" id="cmpColB"><div class="empty-note">Carregue um snapshot B</div></div>
+        </div>
+        <div id="cmpDiff" style="margin-top: 16px;"></div>
+    </div>
+</div>
+
+<div id="prefsModal" class="modal">
+    <div class="modal-content" style="max-width: 600px;">
+        <span class="close" onclick="closePrefs()">&times;</span>
+        <h2>⚙ Preferências</h2>
+        <p style="font-size: 12px; opacity: 0.85; margin-bottom: 16px;">Parâmetros internos do simulador. Aplicação imediata; valores persistidos com a configuração no browser.</p>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+            <label style="display:grid; grid-template-columns: 1fr 100px; gap:8px; align-items:center; font-size:13px;">
+                <span><strong>Tolerância de balanceamento</strong><br><span style="font-size:10px; opacity:0.7;">Diferença máxima (em PPM efetivo) entre estações para serem consideradas equilibradas.</span></span>
+                <input id="prefBalance" type="number" min="0" step="0.1" class="seed-input" style="width:80px;">
+            </label>
+            <label style="display:grid; grid-template-columns: 1fr 100px; gap:8px; align-items:center; font-size:13px;">
+                <span><strong>Pontos no sparkline</strong><br><span style="font-size:10px; opacity:0.7;">Quantidade de amostras retidas nos gráficos OEE/PPM da topbar.</span></span>
+                <input id="prefHistory" type="number" min="10" max="500" step="10" class="seed-input" style="width:80px;">
+            </label>
+            <label style="display:grid; grid-template-columns: 1fr 100px; gap:8px; align-items:center; font-size:13px;">
+                <span><strong>Transições no heatmap</strong><br><span style="font-size:10px; opacity:0.7;">Limite de mudanças de estado guardadas por estação. Valores maiores aumentam detalhe à custa de memória.</span></span>
+                <input id="prefHeatmap" type="number" min="100" max="5000" step="100" class="seed-input" style="width:80px;">
+            </label>
+            <label style="display:grid; grid-template-columns: 1fr 100px; gap:8px; align-items:center; font-size:13px;">
+                <span><strong>Intervalo de atualização (s)</strong><br><span style="font-size:10px; opacity:0.7;">Cadência de re-render dos gráficos. Maior → menos CPU.</span></span>
+                <input id="prefInterval" type="number" min="0.1" max="5" step="0.1" class="seed-input" style="width:80px;">
+            </label>
+            <label style="display:flex; gap:10px; align-items:center; font-size:13px; padding-top:6px; border-top:1px solid var(--modal-border);">
+                <input id="prefP90" type="checkbox" style="accent-color: var(--blue); width:16px; height:16px;">
+                <span><strong>Mostrar previsão P90 (com MTBF)</strong><br><span style="font-size:10px; opacity:0.7;">Quando há variabilidade estocástica, mostra também o percentil 90 do tempo previsto.</span></span>
+            </label>
+        </div>
+        <div style="display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end;">
+            <button class="file-pick-btn" onclick="resetPrefs()">Repor padrões</button>
+            <button class="file-pick-btn" style="background: var(--blue); color: #fff; border-color: var(--blue);" onclick="closePrefs()">Concluído</button>
+        </div>
+    </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
 <script>
 const SVG_GEAR = `<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>`;
 const SVG_BUFFER = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10l9-5 9 5-9 5-9-5z"></path><path d="M3 10v7l9 5 9-5v-7"></path></svg>`;
@@ -646,6 +874,39 @@ const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
 const clamp01 = v => clamp(v, 0, 1);
 const safeDiv = (a, b) => b <= 0 ? 0 : a / b;
 const EPSILON = 1e-6;
+
+// === Bloco 2: PRNG mulberry32 com seed para reprodutibilidade ===
+let _seedState = 0;
+let _activeSeed = 0;
+function mulberry32(a) {
+    return function() {
+        a |= 0; a = (a + 0x6D2B79F5) | 0;
+        let t = a;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+}
+let rng = Math.random; // fallback até seedRng ser chamado
+function hashSeed(str) {
+    let h = 2166136261 >>> 0;
+    for (let i = 0; i < str.length; i++) {
+        h ^= str.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0;
+    }
+    return h >>> 0;
+}
+function seedRng(seedRaw) {
+    const s = String(seedRaw ?? '').trim();
+    if (!s || s === '0') {
+        _activeSeed = 0;
+        rng = Math.random;
+        return;
+    }
+    const n = /^\d+$/.test(s) ? (parseInt(s, 10) >>> 0) : hashSeed(s);
+    _activeSeed = n;
+    _seedState = n || 1;
+    rng = mulberry32(_seedState);
+}
 
 function fmtTime(sec) {
     if (!Number.isFinite(sec) || sec < 0) return "00:00.0";
@@ -682,7 +943,15 @@ let fixedInitialEstimate = null;
 
 let historyOEE = [];
 let historyPPM = [];
-const MAX_HISTORY = 50;
+// === Bloco 5: Preferências ajustáveis em runtime ===
+const PREFS_DEFAULTS = {
+    balanceThreshold: 0.5,    // tolerância PPM para considerar linha balanceada
+    sparklineHistory: 50,     // pontos guardados em historyOEE/historyPPM
+    heatmapMaxSamples: 600,   // limite de transições gravadas por estação
+    chartUpdateInterval: 0.5, // segundos entre re-render dos sparklines
+    estimateConfidence: false // mostrar P50/P90 quando há MTBF
+};
+let PREFS = { ...PREFS_DEFAULTS };
 
 let initialWipAtStart = 0;
 let targetAtStart = 0;
@@ -695,22 +964,372 @@ let bottleneckId = 0;
 
 function openHelp() { document.getElementById('helpModal').style.display = "block"; }
 function closeHelp() { document.getElementById('helpModal').style.display = "none"; }
-window.onclick = e => { if (e.target == document.getElementById('helpModal')) closeHelp(); };
+window.onclick = e => {
+    if (e.target == document.getElementById('helpModal')) closeHelp();
+    if (e.target == document.getElementById('analyticsModal')) closeAnalytics();
+    if (e.target == document.getElementById('scenariosModal')) closeScenarios();
+    if (e.target == document.getElementById('compareModal')) closeCompare();
+    if (e.target == document.getElementById('prefsModal')) closePrefs();
+};
+
+// === Bloco 1: Diagnóstico Visual ===
+const STATE_COLORS = {
+    processing: '#22c55e', setup: '#06b6d4', down: '#ef4444',
+    blocked: '#f59e0b', starved: '#eab308', idle: '#94a3b8',
+    off: '#475569', finished: '#16a34a'
+};
+const STATE_LABELS = {
+    processing: 'Operando', setup: 'Setup', down: 'Parada',
+    blocked: 'Travada', starved: 'Aguardando', idle: 'Ociosa',
+    off: 'Desligada', finished: 'Concluída'
+};
+// HEATMAP_MAX_SAMPLES movido para PREFS.heatmapMaxSamples (Bloco 5)
+let stateHistory = []; // [[{t, s}, ...], ...] uma série por estação
+let lastSnapshot = -1;
+let analyticsOpen = false;
+let analyticsTab = 'yamazumi';
+
+function effectiveState(st, i) {
+    // Distingue 'idle' de 'starved' para histórico (mesma lógica do stationTick)
+    if (st.state === 'idle' && i > 0) {
+        const pw = buffers.wips[i-1];
+        if (pw && wipTotal(pw) === 0) return 'starved';
+    }
+    return st.state;
+}
+
+function recordStateSnapshot() {
+    if (!lineStarted) return;
+    if (t - lastSnapshot < PREFS.chartUpdateInterval && lastSnapshot >= 0) return;
+    lastSnapshot = t;
+    for (let i = 0; i < STATION_COUNT; i++) {
+        if (!stateHistory[i]) stateHistory[i] = [];
+        const s = effectiveState(S[i], i);
+        const series = stateHistory[i];
+        const last = series[series.length - 1];
+        if (last && last.s === s) continue; // colapsa runs do mesmo estado
+        series.push({ t: t, s: s });
+        if (series.length > PREFS.heatmapMaxSamples) {
+            // amostragem agressiva: descarta metade dos eventos antigos
+            const compact = [];
+            for (let k = 0; k < series.length; k += 2) compact.push(series[k]);
+            stateHistory[i] = compact;
+        }
+    }
+}
+
+function openAnalytics() {
+    analyticsOpen = true;
+    document.getElementById('analyticsModal').style.display = 'block';
+    renderAnalytics();
+}
+function closeAnalytics() {
+    analyticsOpen = false;
+    document.getElementById('analyticsModal').style.display = 'none';
+}
+function switchAnalyticsTab(tab) {
+    analyticsTab = tab;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+    document.querySelectorAll('.tab-pane').forEach(p => p.classList.toggle('active', p.id === `tab-${tab}`));
+    renderAnalytics();
+}
+
+function renderAnalytics() {
+    if (!analyticsOpen) return;
+    renderAnalyticsSummary();
+    if (analyticsTab === 'yamazumi') renderYamazumi();
+    else if (analyticsTab === 'pareto') renderPareto();
+    else if (analyticsTab === 'heatmap') renderHeatmap();
+    else if (analyticsTab === 'sankey') renderSankey();
+}
+
+function calcTaktTime() {
+    // Takt = tempo planeado / demanda (segundos por peça)
+    const target = targetAtStart > 0 ? targetAtStart : buffers.raw.target;
+    const elapsed = lineStarted ? (finalTime !== null ? finalTime : t) : initialEstimate;
+    if (target <= 0 || elapsed <= 0) return 0;
+    return elapsed / target;
+}
+
+function renderAnalyticsSummary() {
+    const el = document.getElementById('analyticsSummary');
+    if (!el) return;
+    const takt = calcTaktTime();
+    const bn = bottleneckId >= 0 && S[bottleneckId] ? S[bottleneckId] : null;
+    const bnCT = bn ? 60 / Math.max(0.1, bn.ppmNom * bn.Pset) : 0;
+    const oeeBn = bn ? oeeCalcStation(bn).OEE : 0;
+    const throughput = t > 0 ? (stats.good / (t / 60)).toFixed(1) : '0';
+    el.innerHTML = `
+        <div class="a-stat"><div class="a-stat-lbl">Gargalo</div><div class="a-stat-val bn">${bn ? bn.name : '—'}</div></div>
+        <div class="a-stat"><div class="a-stat-lbl">Takt Time</div><div class="a-stat-val takt">${takt > 0 ? takt.toFixed(1)+'s' : '—'}</div></div>
+        <div class="a-stat"><div class="a-stat-lbl">CT Gargalo</div><div class="a-stat-val">${bn ? bnCT.toFixed(1)+'s' : '—'}</div></div>
+        <div class="a-stat"><div class="a-stat-lbl">OEE Gargalo</div><div class="a-stat-val">${pct(oeeBn)}</div></div>
+        <div class="a-stat"><div class="a-stat-lbl">Throughput</div><div class="a-stat-val">${throughput} ppm</div></div>
+        <div class="a-stat"><div class="a-stat-lbl">Bons / Refugo</div><div class="a-stat-val">${stats.good} / ${stats.scrap}</div></div>
+    `;
+}
+
+function renderYamazumi() {
+    const host = document.getElementById('yamazumiChart');
+    if (!host) return;
+    if (!lineStarted) { host.innerHTML = `<div class="empty-note">Inicie a simulação para visualizar o Yamazumi.</div>`; return; }
+
+    // Tempo por estado dividido pelo nº de peças processadas → CT médio decomposto
+    const cats = [
+        { key: 'tRun', color: STATE_COLORS.processing, label: 'Operando' },
+        { key: 'tSetup', color: STATE_COLORS.setup, label: 'Setup' },
+        { key: 'tDown', color: STATE_COLORS.down, label: 'Parada' },
+        { key: 'tBlocked', color: STATE_COLORS.blocked, label: 'Travada' },
+        { key: 'tStarved', color: STATE_COLORS.starved, label: 'Aguardando' },
+        { key: 'tIdle', color: STATE_COLORS.idle, label: 'Ociosa' },
+    ];
+    const rows = S.map(st => {
+        const n = Math.max(1, st.totalCount);
+        const parts = cats.map(c => ({ ...c, v: st[c.key] / n }));
+        const total = parts.reduce((a, b) => a + b.v, 0);
+        return { name: st.name, parts, total, enabled: st.enabled, id: st.id };
+    });
+    const maxTotal = Math.max(...rows.map(r => r.total), calcTaktTime() * 1.2, 1);
+
+    const W = 980, padL = 100, padR = 30, padT = 20, padB = 50;
+    const barH = 36, gap = 14;
+    const H = padT + padB + rows.length * (barH + gap);
+    const innerW = W - padL - padR;
+
+    const takt = calcTaktTime();
+    const taktX = padL + (takt / maxTotal) * innerW;
+
+    let svg = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">`;
+
+    // Eixo X (segundos)
+    const ticks = 5;
+    for (let k = 0; k <= ticks; k++) {
+        const x = padL + (k / ticks) * innerW;
+        const v = (k / ticks) * maxTotal;
+        svg += `<line x1="${x}" y1="${padT}" x2="${x}" y2="${H - padB}" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>`;
+        svg += `<text x="${x}" y="${H - padB + 14}" fill="#94a3b8" font-size="10" text-anchor="middle">${v.toFixed(1)}s</text>`;
+    }
+
+    rows.forEach((r, i) => {
+        const y = padT + i * (barH + gap);
+        svg += `<text x="${padL - 8}" y="${y + barH/2 + 4}" fill="${r.id === bottleneckId ? '#d946ef' : '#e2e8f0'}" font-size="11" font-weight="700" text-anchor="end">${r.name}${r.id === bottleneckId ? ' ★' : ''}</text>`;
+        let cx = padL;
+        r.parts.forEach(p => {
+            const w = (p.v / maxTotal) * innerW;
+            if (w < 0.3) return;
+            svg += `<rect x="${cx}" y="${y}" width="${w}" height="${barH}" fill="${p.color}" stroke="rgba(0,0,0,0.2)" stroke-width="0.5">`;
+            svg += `<title>${r.name} — ${p.label}: ${p.v.toFixed(2)}s/peça</title></rect>`;
+            if (w > 36) svg += `<text x="${cx + w/2}" y="${y + barH/2 + 4}" fill="#0f172a" font-size="10" font-weight="700" text-anchor="middle">${p.v.toFixed(1)}</text>`;
+            cx += w;
+        });
+        svg += `<text x="${cx + 6}" y="${y + barH/2 + 4}" fill="#cbd5e1" font-size="10" font-weight="600">${r.total.toFixed(1)}s</text>`;
+    });
+
+    // Linha de Takt
+    if (takt > 0 && taktX > padL && taktX < W - padR) {
+        svg += `<line x1="${taktX}" y1="${padT - 4}" x2="${taktX}" y2="${H - padB}" stroke="#06b6d4" stroke-width="2" stroke-dasharray="5,3"/>`;
+        svg += `<text x="${taktX + 4}" y="${padT + 10}" fill="#06b6d4" font-size="11" font-weight="800">TAKT ${takt.toFixed(1)}s</text>`;
+    }
+
+    svg += `</svg>`;
+    host.innerHTML = svg;
+}
+
+function renderPareto() {
+    const host = document.getElementById('paretoChart');
+    if (!host) return;
+    if (!lineStarted) { host.innerHTML = `<div class="empty-note">Inicie a simulação para visualizar o Pareto de perdas.</div>`; return; }
+
+    // Agrega perdas por categoria, somando todas as estações
+    const lossCats = [
+        { key: 'tDown', label: 'Parada (Disp.)', color: STATE_COLORS.down },
+        { key: 'tSetup', label: 'Setup', color: STATE_COLORS.setup },
+        { key: 'tBlocked', label: 'Travada', color: STATE_COLORS.blocked },
+        { key: 'tStarved', label: 'Aguardando', color: STATE_COLORS.starved },
+        { key: 'tIdle', label: 'Ociosa', color: STATE_COLORS.idle },
+    ];
+    // Perda de Performance: tempo extra além do ideal durante operação
+    const perfLoss = S.reduce((a, s) => a + Math.max(0, s.tRun - s.idealTime), 0);
+    // Perda de Qualidade: tempo gasto em peças refugadas (estimado)
+    const qualLoss = S.reduce((a, s) => {
+        const scrapCount = s.totalCount - s.goodCount;
+        return a + scrapCount * idealCT_nom(s);
+    }, 0);
+
+    const cats = lossCats.map(c => ({
+        label: c.label,
+        color: c.color,
+        value: S.reduce((a, s) => a + s[c.key], 0),
+    }));
+    cats.push({ label: 'Performance', color: '#f97316', value: perfLoss });
+    cats.push({ label: 'Qualidade', color: '#a855f7', value: qualLoss });
+
+    cats.sort((a, b) => b.value - a.value);
+    const total = cats.reduce((a, c) => a + c.value, 0);
+    if (total <= EPSILON) { host.innerHTML = `<div class="empty-note">Sem perdas registradas ainda.</div>`; return; }
+
+    const W = 980, padL = 50, padR = 60, padT = 30, padB = 80, H = 380;
+    const innerW = W - padL - padR, innerH = H - padT - padB;
+    const bw = innerW / cats.length * 0.7;
+    const gap = innerW / cats.length * 0.3;
+    const maxV = Math.max(...cats.map(c => c.value));
+
+    let svg = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">`;
+
+    // Grid horizontal
+    for (let k = 0; k <= 5; k++) {
+        const y = padT + (k / 5) * innerH;
+        const v = maxV * (1 - k/5);
+        svg += `<line x1="${padL}" y1="${y}" x2="${W - padR}" y2="${y}" stroke="rgba(255,255,255,0.06)"/>`;
+        svg += `<text x="${padL - 6}" y="${y + 4}" fill="#94a3b8" font-size="10" text-anchor="end">${fmtMMSSd(v)}</text>`;
+    }
+    // Eixo cumulativo (direita) 0-100%
+    for (let k = 0; k <= 4; k++) {
+        const y = padT + (k / 4) * innerH;
+        const v = 100 - k * 25;
+        svg += `<text x="${W - padR + 6}" y="${y + 4}" fill="#06b6d4" font-size="10">${v}%</text>`;
+    }
+
+    // Barras
+    let cum = 0;
+    const cumPts = [];
+    cats.forEach((c, i) => {
+        const x = padL + i * (bw + gap) + gap/2;
+        const h = (c.value / maxV) * innerH;
+        const y = padT + innerH - h;
+        svg += `<rect x="${x}" y="${y}" width="${bw}" height="${h}" fill="${c.color}" rx="3">`;
+        svg += `<title>${c.label}: ${fmtMMSSd(c.value)} (${(c.value/total*100).toFixed(1)}%)</title></rect>`;
+        svg += `<text x="${x + bw/2}" y="${y - 5}" fill="#e2e8f0" font-size="10" font-weight="700" text-anchor="middle">${(c.value/total*100).toFixed(0)}%</text>`;
+        // Rótulo eixo X (rodado)
+        svg += `<text transform="translate(${x + bw/2},${padT + innerH + 14}) rotate(-25)" fill="#cbd5e1" font-size="10" text-anchor="end">${c.label}</text>`;
+
+        cum += c.value;
+        const cumPct = cum / total;
+        const px = x + bw/2;
+        const py = padT + innerH - cumPct * innerH;
+        cumPts.push([px, py]);
+    });
+
+    // Linha cumulativa
+    const polyPts = cumPts.map(p => `${p[0]},${p[1]}`).join(' ');
+    svg += `<polyline points="${polyPts}" fill="none" stroke="#06b6d4" stroke-width="2"/>`;
+    cumPts.forEach(p => {
+        svg += `<circle cx="${p[0]}" cy="${p[1]}" r="3.5" fill="#06b6d4" stroke="#0f172a" stroke-width="1.5"/>`;
+    });
+
+    // Linha 80%
+    const y80 = padT + innerH - 0.8 * innerH;
+    svg += `<line x1="${padL}" y1="${y80}" x2="${W - padR}" y2="${y80}" stroke="#ef4444" stroke-width="1" stroke-dasharray="4,3"/>`;
+    svg += `<text x="${W - padR}" y="${y80 - 4}" fill="#ef4444" font-size="10" font-weight="700" text-anchor="end">80%</text>`;
+
+    svg += `</svg>`;
+    host.innerHTML = svg;
+}
+
+function renderHeatmap() {
+    const host = document.getElementById('heatmapChart');
+    if (!host) return;
+    if (!lineStarted || stateHistory.length === 0) {
+        host.innerHTML = `<div class="empty-note">Inicie a simulação — a linha do tempo é gravada automaticamente.</div>`;
+        return;
+    }
+
+    const tMax = finalTime !== null ? finalTime : t;
+    if (tMax <= 0) { host.innerHTML = `<div class="empty-note">Aguardando dados...</div>`; return; }
+
+    const W = 980, padL = 100, padR = 30, padT = 20, padB = 40;
+    const rowH = 30, gap = 8;
+    const H = padT + padB + STATION_COUNT * (rowH + gap);
+    const innerW = W - padL - padR;
+
+    let svg = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">`;
+
+    // Eixo X — tempo
+    const ticks = 6;
+    for (let k = 0; k <= ticks; k++) {
+        const x = padL + (k / ticks) * innerW;
+        const v = (k / ticks) * tMax;
+        svg += `<line x1="${x}" y1="${padT}" x2="${x}" y2="${H - padB}" stroke="rgba(255,255,255,0.06)"/>`;
+        svg += `<text x="${x}" y="${H - padB + 14}" fill="#94a3b8" font-size="10" text-anchor="middle">${fmtMMSSd(v)}</text>`;
+    }
+
+    for (let i = 0; i < STATION_COUNT; i++) {
+        const y = padT + i * (rowH + gap);
+        const st = S[i];
+        const series = stateHistory[i] || [];
+        svg += `<text x="${padL - 8}" y="${y + rowH/2 + 4}" fill="${i === bottleneckId ? '#d946ef' : '#e2e8f0'}" font-size="11" font-weight="700" text-anchor="end">${st.name}${i === bottleneckId ? ' ★' : ''}</text>`;
+        // Fundo
+        svg += `<rect x="${padL}" y="${y}" width="${innerW}" height="${rowH}" fill="rgba(255,255,255,0.04)" rx="3"/>`;
+
+        // Segmentos
+        for (let k = 0; k < series.length; k++) {
+            const start = series[k].t;
+            const end = k + 1 < series.length ? series[k+1].t : tMax;
+            const x1 = padL + (start / tMax) * innerW;
+            const x2 = padL + (end / tMax) * innerW;
+            const w = Math.max(0.5, x2 - x1);
+            const color = STATE_COLORS[series[k].s] || '#475569';
+            svg += `<rect x="${x1}" y="${y}" width="${w}" height="${rowH}" fill="${color}">`;
+            svg += `<title>${st.name} — ${STATE_LABELS[series[k].s] || series[k].s}: ${fmtMMSSd(start)} → ${fmtMMSSd(end)}</title></rect>`;
+        }
+    }
+
+    svg += `</svg>`;
+    host.innerHTML = svg;
+}
 
 function makeWip() { return { ready: 0, reserved: 0, max: DEFAULT_WIP_MAX }; }
 
 function stationTemplate(i) {
-    return { 
-        id: i, enabled: true, name: `ESTAÇÃO ${i+1}`, ppmNom: 60, Aset: 1, Pset: 1, Qset: 1, 
+    return {
+        id: i, enabled: true, name: `ESTAÇÃO ${i+1}`, ppmNom: 60, Aset: 1, Pset: 1, Qset: 1,
         setupConfig: 0, setupRem: 0, setupDone: false, setupStarted: false,
-        state: 'idle', resumeState: 'idle', curIdealCT: 0, curProcTot: 0, remProc: 0, downRem: 0, 
-        holding: false, holdDestIndex: null, runTime: 0, idealTime: 0, totalCount: 0, goodCount: 0, 
-        tRun: 0, tDown: 0, tStarved: 0, tBlocked: 0, tIdle: 0, tSetup: 0 
+        state: 'idle', resumeState: 'idle', curIdealCT: 0, curProcTot: 0, remProc: 0, downRem: 0,
+        holding: false, holdDestIndex: null, runTime: 0, idealTime: 0, totalCount: 0, goodCount: 0,
+        tRun: 0, tDown: 0, tStarved: 0, tBlocked: 0, tIdle: 0, tSetup: 0,
+        // Bloco 3: modelação realista
+        batchSize: 0,            // peças por lote (0 = sem lotes)
+        piecesInBatch: 0,        // contador interno
+        batchSetups: 0,          // nº de setups feitos por lote
+        mtbfMin: 0,              // minutos médios entre falhas (0 = usa Aset determinístico)
+        mttrMin: 5,              // minutos médios de reparo
+        nextFailIn: 0,           // segundos até próxima falha (estocástico)
+        failuresCount: 0,        // contador de quebras
+        learningPieces: 0,       // peças até atingir Pset pleno (0 = sem curva)
+        learningStart: 0.6,      // fator inicial (0..1) sobre Pset
+        reworkEnabled: false,    // peças refugadas voltam à estação
+        reworkQueue: 0,          // contador de peças à espera de rework
+        reworkCount: 0           // total de retrabalhos efetuados
     };
 }
 
 function idealCT_nom(st) { return 60 / Math.max(0.1, st.ppmNom); }
-function ppmReal(st) { return Math.max(0, st.ppmNom * st.Pset); }
+function ppmReal(st) { return Math.max(0, st.ppmNom * effectivePset(st)); }
+
+// === Bloco 3: helpers de modelação realista ===
+function expRand(meanSeconds) {
+    // amostragem exponencial com média = meanSeconds, usando rng() seedado
+    const u = Math.max(1e-9, rng());
+    return -meanSeconds * Math.log(u);
+}
+function effectivePset(st) {
+    // Aplica curva de aprendizagem (Wright-like log) se ativada
+    if (!st.learningPieces || st.learningPieces <= 0) return st.Pset;
+    const n = st.totalCount;
+    const N = st.learningPieces;
+    // factor cresce de 0 a 1 (log2(1+n/N), saturado em n=N)
+    const factor = Math.min(1, Math.log2(1 + n / N));
+    const start = clamp01(st.learningStart || 0.6);
+    const eff = st.Pset * (start + (1 - start) * factor);
+    return clamp(eff, 0.0001, 1);
+}
+function scheduleNextFailure(st) {
+    if (st.mtbfMin > 0) {
+        st.nextFailIn = expRand(st.mtbfMin * 60);
+    } else {
+        st.nextFailIn = Infinity;
+    }
+}
 
 function oeeCalcStation(st) {
     const planned = Math.max(0.0001, st.tRun + st.tDown + st.tStarved + st.tBlocked + st.tSetup + st.tIdle);
@@ -800,76 +1419,103 @@ function isLineClear() {
 }
 
 function startNewPiece(i) {
-    const st = S[i]; 
+    const st = S[i];
     if (st.Pset <= 0) return false;
-    
-    if (i === 0) {
+
+    // Bloco 3: consumir do rework queue antes de buscar nova peça
+    const isRework = st.reworkEnabled && st.reworkQueue > 0;
+
+    if (i === 0 && !isRework) {
         const target = targetAtStart;
         const hasStock = buffers.raw.count > 0;
-        
-        if (flushLine && makeToGood) { 
+
+        if (flushLine && makeToGood) {
             if (stats.good >= target && !hasStock) return false;
-            if (!hasStock) return false; 
+            if (!hasStock) return false;
         }
-        else if (flushLine && !makeToGood) { 
-            if (!hasStock) return false; 
+        else if (flushLine && !makeToGood) {
+            if (!hasStock) return false;
         }
-        else if (!flushLine && makeToGood) { 
+        else if (!flushLine && makeToGood) {
             if (stats.good >= target) return false;
-            if (!hasStock) return false; 
+            if (!hasStock) return false;
         }
-        else { 
+        else {
             const maxFromStock = target - initialWipAtStart;
             if (st.totalCount >= maxFromStock) return false;
-            if (!hasStock) return false; 
+            if (!hasStock) return false;
         }
     }
-    
-    if (!takeFromInput(i)) return false;
-    
+
+    if (isRework) {
+        st.reworkQueue--;
+        st.reworkCount++;
+    } else if (!takeFromInput(i)) return false;
+
     const to = document.getElementById(`stationVisual_${i}`);
-    if (i === 0) spawnAnimBox(document.getElementById('stockNode'), to, 'normal', 1000);
+    if (isRework) {
+        spawnAnimBox(to, to, 'normal', 300); // animação curta de rework
+    } else if (i === 0) spawnAnimBox(document.getElementById('stockNode'), to, 'normal', 1000);
     else spawnAnimBox(document.getElementById(`thermoTrack_${i-1}`), to, 'wip_to_station', 600);
-    
-    st.curIdealCT = idealCT_nom(st); 
-    const P = clamp(st.Pset, 0.0001, 1); 
-    st.curProcTot = st.curIdealCT / P; 
+
+    st.curIdealCT = idealCT_nom(st);
+    const P = clamp(effectivePset(st), 0.0001, 1);
+    st.curProcTot = st.curIdealCT / P;
     st.remProc = st.curProcTot;
-    st.downRem = st.Aset <= 0 ? Infinity : st.curProcTot * (1 - clamp(st.Aset, 0.0001, 1)) / clamp(st.Aset, 0.0001, 1);
-    st.state = 'processing'; 
+
+    // Disponibilidade: estocástica se MTBF definido, senão usa o modelo determinístico
+    if (st.mtbfMin > 0) {
+        st.downRem = 0;
+        if (st.nextFailIn === undefined || !Number.isFinite(st.nextFailIn) || st.nextFailIn === 0) {
+            scheduleNextFailure(st);
+        }
+    } else {
+        st.downRem = st.Aset <= 0 ? Infinity : st.curProcTot * (1 - clamp(st.Aset, 0.0001, 1)) / clamp(st.Aset, 0.0001, 1);
+        st.nextFailIn = Infinity;
+    }
+    st.state = 'processing';
     return true;
 }
 
 function finishProcessing(i) {
-    const st = S[i]; 
-    st.totalCount++; 
+    const st = S[i];
+    st.totalCount++;
     st.idealTime += st.curIdealCT;
-    const isGood = Math.random() < st.Qset;
+    const isGood = rng() < st.Qset;
     const fromEl = document.getElementById(`stationVisual_${i}`);
-    
-    if (!isGood) { 
-        stats.scrap++; 
-        stats.scrapByStation[i]++; 
-        spawnAnimBox(fromEl, null, 'scrap', 600); 
-    }
-    else { 
-        st.goodCount++; 
-        if (i === S.length - 1) { 
-            stats.good++; 
-            spawnAnimBox(fromEl, document.getElementById('endNode'), 'finish', 1000); 
+
+    if (!isGood) {
+        if (st.reworkEnabled) {
+            // Bloco 3: peça volta para retrabalho na mesma estação
+            st.reworkQueue++;
+            spawnAnimBox(fromEl, fromEl, 'normal', 400);
+        } else {
+            stats.scrap++;
+            stats.scrapByStation[i]++;
+            spawnAnimBox(fromEl, null, 'scrap', 600);
         }
-        else { 
-            const w = buffers.wips[i]; 
-            if (wipCanReceive(w)) { 
-                sendToWip(i, TRANSIT_TIME); 
-                spawnAnimBox(fromEl, document.getElementById(`thermoTrack_${i}`), 'station_to_wip', TRANSIT_TIME * 1000); 
-            }
-            else { 
-                st.holding = true; st.holdDestIndex = i; st.state = 'blocked'; 
-            } 
-        } 
     }
-    
+    else {
+        st.goodCount++;
+        // Bloco 3: contador de lote (apenas peças boas avançam o lote)
+        if (st.batchSize > 0) st.piecesInBatch++;
+
+        if (i === S.length - 1) {
+            stats.good++;
+            spawnAnimBox(fromEl, document.getElementById('endNode'), 'finish', 1000);
+        }
+        else {
+            const w = buffers.wips[i];
+            if (wipCanReceive(w)) {
+                sendToWip(i, TRANSIT_TIME);
+                spawnAnimBox(fromEl, document.getElementById(`thermoTrack_${i}`), 'station_to_wip', TRANSIT_TIME * 1000);
+            }
+            else {
+                st.holding = true; st.holdDestIndex = i; st.state = 'blocked';
+            }
+        }
+    }
+
     st.remProc = 0; st.curIdealCT = 0; st.curProcTot = 0;
     if (st.state !== 'blocked') { 
         if (st.downRem > EPSILON && st.enabled) st.state = 'down'; 
@@ -949,56 +1595,97 @@ function stationTick(i, dt) {
     let rem = dt;
     
     while (rem > EPSILON && st.state !== 'finished') {
-        if (st.state === 'setup') { 
+        if (st.state === 'setup') {
             const use = Math.min(rem, st.setupRem);
             st.tSetup += use; st.setupRem -= use; rem -= use;
-            if (st.setupRem <= EPSILON) { st.setupRem = 0; st.setupDone = true; st.state = 'finished'; }
+            if (st.setupRem <= EPSILON) {
+                st.setupRem = 0;
+                if (st.isBatchSetup) {
+                    // Setup de troca de lote: volta a operar
+                    st.isBatchSetup = false;
+                    st.setupStarted = false;
+                    st.piecesInBatch = 0;
+                    st.batchSetups++;
+                    st.state = 'idle';
+                } else {
+                    st.setupDone = true;
+                    st.state = 'finished';
+                }
+            }
             continue;
         }
-        
-        if (st.state === 'blocked') { 
-            if (lineStarted && !isLineDone) st.tBlocked += rem; 
-            if (st.downRem > 0) st.downRem -= Math.min(rem, st.downRem); 
-            rem = 0; tryReleaseBlocked(i); continue; 
+
+        if (st.state === 'blocked') {
+            if (lineStarted && !isLineDone) st.tBlocked += rem;
+            if (st.downRem > 0) st.downRem -= Math.min(rem, st.downRem);
+            rem = 0; tryReleaseBlocked(i); continue;
         }
-        
-        if (st.state === 'down') { 
-            const use = st.downRem < Infinity ? Math.min(rem, st.downRem) : rem; 
-            if (lineStarted && !isLineDone) st.tDown += use; 
-            if (st.downRem < Infinity) { 
-                st.downRem -= use; 
-                if (st.downRem <= EPSILON) { st.downRem = 0; st.state = 'idle'; } 
-            } 
-            rem -= use; continue; 
+
+        if (st.state === 'down') {
+            const use = st.downRem < Infinity ? Math.min(rem, st.downRem) : rem;
+            if (lineStarted && !isLineDone) st.tDown += use;
+            if (st.downRem < Infinity) {
+                st.downRem -= use;
+                if (st.downRem <= EPSILON) {
+                    st.downRem = 0;
+                    // Bloco 3: se havia peça em processamento interrompida por falha, retomar
+                    if (st.remProc > EPSILON) {
+                        st.state = 'processing';
+                    } else {
+                        st.state = 'idle';
+                    }
+                    if (st.mtbfMin > 0) scheduleNextFailure(st);
+                }
+            }
+            rem -= use; continue;
         }
-        
-        if (st.state === 'processing') { 
-            const use = Math.min(rem, st.remProc); 
-            if (lineStarted && !isLineDone) st.tRun += use; 
-            st.runTime += use; st.remProc -= use; rem -= use; 
-            if (st.remProc <= EPSILON) finishProcessing(i); 
-            continue; 
+
+        if (st.state === 'processing') {
+            // Bloco 3: MTBF estocástico — se chegar a falha antes de terminar a peça
+            if (st.mtbfMin > 0 && Number.isFinite(st.nextFailIn) && st.nextFailIn <= rem && st.nextFailIn < st.remProc) {
+                const use = st.nextFailIn;
+                if (lineStarted && !isLineDone) st.tRun += use;
+                st.runTime += use; st.remProc -= use; rem -= use; st.nextFailIn = 0;
+                // Inicia parada (peça em processamento fica suspensa em remProc)
+                st.downRem = expRand(st.mttrMin * 60);
+                st.failuresCount++;
+                st.state = 'down';
+                continue;
+            }
+            const use = Math.min(rem, st.remProc);
+            if (lineStarted && !isLineDone) st.tRun += use;
+            st.runTime += use; st.remProc -= use; rem -= use;
+            if (st.mtbfMin > 0 && Number.isFinite(st.nextFailIn)) st.nextFailIn -= use;
+            if (st.remProc <= EPSILON) finishProcessing(i);
+            continue;
         }
-        
-        if (st.state === 'idle') { 
+
+        if (st.state === 'idle') {
+            // Bloco 3: setup forçado por mudança de lote
+            if (lineStarted && st.batchSize > 0 && st.piecesInBatch >= st.batchSize && st.setupConfig > EPSILON) {
+                st.isBatchSetup = true;
+                st.setupRem = st.setupConfig * 60;
+                st.state = 'setup';
+                continue;
+            }
             if (lineStarted && shouldStartSetup(st, i)) {
                 st.setupStarted = true; st.setupRem = st.setupConfig * 60; st.state = 'setup'; continue;
             }
-            
-            if (lineStarted && (st.Aset <= EPSILON || st.Pset <= EPSILON)) { 
-                if (!isLineDone) st.tDown += rem; rem = 0; continue; 
+
+            if (lineStarted && (st.Aset <= EPSILON || st.Pset <= EPSILON)) {
+                if (!isLineDone) st.tDown += rem; rem = 0; continue;
             }
-            
+
             if (startNewPiece(i)) continue;
-            
-            if (lineStarted && !isLineDone) { 
-                if (i === 0) st.tIdle += rem; 
-                else { 
-                    const pw = buffers.wips[i-1]; 
-                    if (wipTotal(pw) === 0) st.tStarved += rem; else st.tIdle += rem; 
-                } 
-            } 
-            rem = 0; 
+
+            if (lineStarted && !isLineDone) {
+                if (i === 0) st.tIdle += rem;
+                else {
+                    const pw = buffers.wips[i-1];
+                    if (wipTotal(pw) === 0) st.tStarved += rem; else st.tIdle += rem;
+                }
+            }
+            rem = 0;
         }
     }
 }
@@ -1008,7 +1695,7 @@ function updateBottlenecks() {
     if (active.length === 0) return;
     const effs = active.map(s => s.ppmNom * s.Aset * s.Pset);
     const minEff = Math.min(...effs);
-    const isBalanced = Math.max(...effs) - minEff < 0.5;
+    const isBalanced = Math.max(...effs) - minEff < PREFS.balanceThreshold;
     let bId = -1;
     
     if (isBalanced) { 
@@ -1062,17 +1749,37 @@ function drawSparkline(data, color, elId, forceScale = false) {
 
 function calculateCurrentEstimate() {
     let latency = 0, maxCT = 0, count = 0, totalSetup = 0;
-    for (let s of S) { 
-        if (!s.enabled) continue; 
-        const effPPM = Math.max(0.1, s.ppmNom * s.Aset * s.Pset);
-        const ct = 60 / effPPM; 
-        latency += ct; 
+    for (let s of S) {
+        if (!s.enabled) continue;
+        // Bloco 3: aplicar A efetivo se MTBF estiver definido
+        const effA = s.mtbfMin > 0 ? s.mtbfMin / (s.mtbfMin + s.mttrMin) : s.Aset;
+        const effPPM = Math.max(0.1, s.ppmNom * effA * s.Pset);
+        const ct = 60 / effPPM;
+        latency += ct;
         if (ct > maxCT) maxCT = ct;
         totalSetup += s.setupConfig * 60;
-        count++; 
+        count++;
     }
     if (count > 1) latency += (count - 1) * TRANSIT_TIME;
     return latency + Math.max(0, buffers.raw.target - 1) * maxCT + totalSetup;
+}
+
+// Bloco 5: estimativa com intervalo de confiança (P50/P90) quando há variabilidade
+function calculateEstimateBand() {
+    const base = calculateCurrentEstimate();
+    const hasStochastic = S.some(s => s.enabled && s.mtbfMin > 0);
+    if (!hasStochastic || !PREFS.estimateConfidence) return { p50: base, p90: base, hasBand: false };
+    // Aproximação: variância adicional do gargalo proporcional ao número esperado de falhas
+    let bn = bottleneckId >= 0 ? S[bottleneckId] : null;
+    if (!bn || bn.mtbfMin <= 0) return { p50: base, p90: base, hasBand: false };
+    const expectedFailures = base / (bn.mtbfMin * 60);
+    // Σ de MTTRs exponenciais: variância = N * MTTR² → desvio = MTTR * sqrt(N)
+    const sigma = bn.mttrMin * 60 * Math.sqrt(Math.max(1, expectedFailures));
+    return {
+        p50: base,
+        p90: base + 1.282 * sigma, // z-score 1.282 para P90 numa normal
+        hasBand: true
+    };
 }
 
 function calculateInitialMeta() {
@@ -1082,13 +1789,13 @@ function calculateInitialMeta() {
 function updateCharts() {
     let oee = bottleneckId >= 0 && S[bottleneckId] ? oeeCalcStation(S[bottleneckId]).OEE : 0;
     historyOEE.push(oee); 
-    if (historyOEE.length > MAX_HISTORY) historyOEE.shift();
+    while (historyOEE.length > PREFS.sparklineHistory) historyOEE.shift();
     drawSparkline(historyOEE, '#3b82f6', 'chartOEE', true);
     document.getElementById('val_oee_now').textContent = pct(oee);
     
     let ppm = bottleneckId >= 0 && S[bottleneckId]?.state === 'processing' ? ppmReal(S[bottleneckId]) : 0;
     historyPPM.push(ppm); 
-    if (historyPPM.length > MAX_HISTORY) historyPPM.shift();
+    while (historyPPM.length > PREFS.sparklineHistory) historyPPM.shift();
     drawSparkline(historyPPM, '#22c55e', 'chartPPM', false);
     document.getElementById('val_ppm_now').textContent = Math.round(ppm);
     document.getElementById('val_ppm_avg').textContent = t > 0 ? (stats.good / (t / 60)).toFixed(1) : '0';
@@ -1116,7 +1823,7 @@ function buildDOM() {
         const isLast = i === STATION_COUNT - 1, st = S[i];
         const stEl = document.createElement('div'); 
         stEl.className = 'station'; stEl.id = `st${i}`;
-        stEl.innerHTML = `<div class="stationHead"><div class="stationTitle"><span class="dot"></span><input class="station-name-input" type="text" value="${st.name}" onchange="S[${i}].name=this.value"></div><div class="bottleneck-badge">GARGALO</div><div class="toggle on" id="toggle_${i}"></div></div><div class="visual" id="stationVisual_${i}"><div class="machineIcon" id="icon_${i}">${SVG_GEAR}</div><div class="statusPill gray" id="status_${i}">PRONTA</div></div><div class="kpiRow"><div class="kbox"><div class="klabel">OEE</div><div class="kval" id="oee_${i}">0%</div></div><div class="kbox"><div class="klabel">A%</div><div class="kval small" id="A_${i}">100</div></div><div class="kbox"><div class="klabel">P%</div><div class="kval small" id="P_${i}">100</div></div><div class="kbox"><div class="klabel">Q%</div><div class="kval small" id="Q_${i}">100</div></div></div><div class="info-header"><div>PPM NOM: <b id="ppmNomShow_${i}">${st.ppmNom}</b></div><div>PPM REAL: <b id="ppmRealShow_${i}" class="blue">${Math.round(ppmReal(st))}</b></div></div><div class="info-cards"><div class="card-stat green"><span>BONS</span><b id="good_${i}">0</b></div><div class="card-stat red"><span>REFUGO</span><b id="refugo_${i}">0</b></div></div><div class="sliders"><div class="srow nom"><div class="name">PPM</div><input id="ppmR_${i}" type="range" min="1" max="300" value="${st.ppmNom}"><input id="ppmN_${i}" type="number" min="1" max="300" value="${st.ppmNom}"></div><div class="srow a"><div class="name">DISP</div><input id="aR_${i}" type="range" min="0" max="100" value="${st.Aset*100}"><input id="aN_${i}" type="number" min="0" max="100" value="${st.Aset*100}"></div><div class="srow p"><div class="name">PERF</div><input id="pR_${i}" type="range" min="0" max="100" value="${st.Pset*100}"><input id="pN_${i}" type="number" min="0" max="100" value="${st.Pset*100}"></div><div class="srow q"><div class="name">QUAL</div><input id="qR_${i}" type="range" min="0" max="100" value="${st.Qset*100}"><input id="qN_${i}" type="number" min="0" max="100" value="${st.Qset*100}"></div><div class="srow setup-row"><div class="name">SETUP</div><input id="setupInp_${i}" type="number" step="0.1" min="0" value="${st.setupConfig}"><span style="font-size:9px;font-weight:800;color:#64748b;">min</span></div></div><div class="times"><div class="trow"><span class="tname op">OPERANDO</span><span id="tRun_${i}">00:00.0</span></div><div class="trow"><span class="tname setup">SETUP</span><span id="tSetup_${i}">00:00.0</span></div><div class="trow"><span class="tname down">PARADA</span><span id="tDown_${i}">00:00.0</span></div><div class="trow" style="${i===0?'display:none':''}"><span class="tname wait">AGUARDANDO</span><span id="tWait_${i}">00:00.0</span></div><div class="trow" style="${isLast?'display:none':''}"><span class="tname block">TRAVADA</span><span id="tBlock_${i}">00:00.0</span></div><div class="trow"><span class="tname idle">OCIOSIDADE</span><span id="tIdle_${i}">00:00.0</span></div></div>`;
+        stEl.innerHTML = `<div class="stationHead"><div class="stationTitle"><span class="dot"></span><input class="station-name-input" type="text" value="${st.name}" onchange="S[${i}].name=this.value"></div><div class="bottleneck-badge">GARGALO</div><div class="toggle on" id="toggle_${i}"></div></div><div class="visual" id="stationVisual_${i}"><div class="machineIcon" id="icon_${i}">${SVG_GEAR}</div><div class="statusPill gray" id="status_${i}">PRONTA</div></div><div class="kpiRow"><div class="kbox"><div class="klabel">OEE</div><div class="kval" id="oee_${i}">0%</div></div><div class="kbox"><div class="klabel">A%</div><div class="kval small" id="A_${i}">100</div></div><div class="kbox"><div class="klabel">P%</div><div class="kval small" id="P_${i}">100</div></div><div class="kbox"><div class="klabel">Q%</div><div class="kval small" id="Q_${i}">100</div></div></div><div class="info-header"><div>PPM NOM: <b id="ppmNomShow_${i}">${st.ppmNom}</b></div><div>PPM REAL: <b id="ppmRealShow_${i}" class="blue">${Math.round(ppmReal(st))}</b></div></div><div class="info-cards"><div class="card-stat green"><span>BONS</span><b id="good_${i}">0</b></div><div class="card-stat red"><span>REFUGO</span><b id="refugo_${i}">0</b></div></div><div class="sliders"><div class="srow nom"><div class="name">PPM</div><input id="ppmR_${i}" type="range" min="1" max="300" value="${st.ppmNom}"><input id="ppmN_${i}" type="number" min="1" max="300" value="${st.ppmNom}"></div><div class="srow a"><div class="name">DISP</div><input id="aR_${i}" type="range" min="0" max="100" value="${st.Aset*100}"><input id="aN_${i}" type="number" min="0" max="100" value="${st.Aset*100}"></div><div class="srow p"><div class="name">PERF</div><input id="pR_${i}" type="range" min="0" max="100" value="${st.Pset*100}"><input id="pN_${i}" type="number" min="0" max="100" value="${st.Pset*100}"></div><div class="srow q"><div class="name">QUAL</div><input id="qR_${i}" type="range" min="0" max="100" value="${st.Qset*100}"><input id="qN_${i}" type="number" min="0" max="100" value="${st.Qset*100}"></div><div class="srow setup-row"><div class="name">SETUP</div><input id="setupInp_${i}" type="number" step="0.1" min="0" value="${st.setupConfig}"><span style="font-size:9px;font-weight:800;color:#64748b;">min</span></div></div><div class="times"><div class="trow"><span class="tname op">OPERANDO</span><span id="tRun_${i}">00:00.0</span></div><div class="trow"><span class="tname setup">SETUP</span><span id="tSetup_${i}">00:00.0</span></div><div class="trow"><span class="tname down">PARADA</span><span id="tDown_${i}">00:00.0</span></div><div class="trow" style="${i===0?'display:none':''}"><span class="tname wait">AGUARDANDO</span><span id="tWait_${i}">00:00.0</span></div><div class="trow" style="${isLast?'display:none':''}"><span class="tname block">TRAVADA</span><span id="tBlock_${i}">00:00.0</span></div><div class="trow"><span class="tname idle">OCIOSIDADE</span><span id="tIdle_${i}">00:00.0</span></div></div><div class="adv-toggle" onclick="document.getElementById('adv_${i}').classList.toggle('open')">⚙ Avançado ▾</div><div class="adv-panel" id="adv_${i}"><div class="adv-row"><span class="nm">Lote</span><input id="batchInp_${i}" type="number" min="0" max="9999" value="${st.batchSize}"><span class="un">pç</span></div><div class="adv-row"><span class="nm">MTBF</span><input id="mtbfInp_${i}" type="number" min="0" max="9999" step="0.5" value="${st.mtbfMin}"><span class="un">min</span></div><div class="adv-row"><span class="nm">MTTR</span><input id="mttrInp_${i}" type="number" min="0" max="9999" step="0.5" value="${st.mttrMin}"><span class="un">min</span></div><div class="adv-row"><span class="nm">Aprendiz.</span><input id="learnInp_${i}" type="number" min="0" max="9999" value="${st.learningPieces}"><span class="un">pç</span></div><div class="adv-row"><span class="nm">P inicial</span><input id="learnStartInp_${i}" type="number" min="0" max="100" step="5" value="${Math.round(st.learningStart*100)}"><span class="un">%</span></div><div class="adv-row chk"><span class="nm">Rework loop</span><input id="reworkChk_${i}" type="checkbox" ${st.reworkEnabled?'checked':''}></div><div class="adv-counters"><span>Falhas: <b id="advFails_${i}">0</b></span><span>Setups: <b id="advSetups_${i}">0</b></span><span>Rework: <b id="advRework_${i}">0</b></span></div></div>`;
         board.appendChild(stEl); setupStationBinds(i);
         document.getElementById(`toggle_${i}`).classList.toggle('on', st.enabled);
         
@@ -1202,6 +1909,23 @@ function setupStationBinds(i) {
     bindDual(`qR_${i}`, `qN_${i}`, v => st.Qset = clamp01(v / 100));
     const setupInp = document.getElementById(`setupInp_${i}`);
     if (setupInp) setupInp.oninput = e => { st.setupConfig = Math.max(0, parseFloat(e.target.value) || 0); calculateInitialMeta(); render(); };
+
+    // Bloco 3: bindings dos campos avançados
+    const batchInp = document.getElementById(`batchInp_${i}`);
+    if (batchInp) batchInp.oninput = e => { st.batchSize = Math.max(0, parseInt(e.target.value) || 0); };
+    const mtbfInp = document.getElementById(`mtbfInp_${i}`);
+    if (mtbfInp) mtbfInp.oninput = e => {
+        st.mtbfMin = Math.max(0, parseFloat(e.target.value) || 0);
+        if (st.mtbfMin > 0 && !Number.isFinite(st.nextFailIn)) scheduleNextFailure(st);
+    };
+    const mttrInp = document.getElementById(`mttrInp_${i}`);
+    if (mttrInp) mttrInp.oninput = e => { st.mttrMin = Math.max(0, parseFloat(e.target.value) || 0); };
+    const learnInp = document.getElementById(`learnInp_${i}`);
+    if (learnInp) learnInp.oninput = e => { st.learningPieces = Math.max(0, parseInt(e.target.value) || 0); };
+    const learnStartInp = document.getElementById(`learnStartInp_${i}`);
+    if (learnStartInp) learnStartInp.oninput = e => { st.learningStart = clamp01((parseFloat(e.target.value) || 0) / 100); };
+    const reworkChk = document.getElementById(`reworkChk_${i}`);
+    if (reworkChk) reworkChk.onchange = e => { st.reworkEnabled = !!e.target.checked; };
 }
 
 function setupWipBinds(i) {
@@ -1222,6 +1946,10 @@ function updateStationUI(i) {
     setEl(`ppmNomShow_${i}`, Math.round(st.ppmNom)); setEl(`ppmRealShow_${i}`, Math.round(ppmReal(st)));
     setEl(`good_${i}`, st.goodCount); setEl(`refugo_${i}`, stats.scrapByStation[i]);
     setEl(`tRun_${i}`, fmtMMSSd(st.tRun)); setEl(`tDown_${i}`, fmtMMSSd(st.tDown)); setEl(`tSetup_${i}`, fmtMMSSd(st.tSetup)); setEl(`tWait_${i}`, fmtMMSSd(st.tStarved)); setEl(`tBlock_${i}`, fmtMMSSd(st.tBlocked)); setEl(`tIdle_${i}`, fmtMMSSd(st.tIdle));
+    // Bloco 3: contadores do painel avançado
+    setEl(`advFails_${i}`, st.failuresCount);
+    setEl(`advSetups_${i}`, st.batchSetups);
+    setEl(`advRework_${i}`, `${st.reworkCount}${st.reworkQueue > 0 ? ' (+'+st.reworkQueue+')' : ''}`);
 }
 
 function updateWipUI(i) {
@@ -1249,6 +1977,16 @@ function render() {
     document.getElementById('t_init').textContent = fmtTime(metaInicial);
     const previsaoAtual = calculateCurrentEstimate();
     document.getElementById('t_est_curr').textContent = fmtTime(previsaoAtual);
+    const band = calculateEstimateBand();
+    const p90El = document.getElementById('t_est_p90');
+    if (p90El) {
+        if (band.hasBand && band.p90 > band.p50) {
+            p90El.style.display = 'block';
+            p90El.textContent = `P90: ${fmtTime(band.p90)}`;
+        } else {
+            p90El.style.display = 'none';
+        }
+    }
     const curTime = t;
     document.getElementById('t_elap').textContent = fmtTime(curTime);
     const restante = Math.max(0, previsaoAtual - curTime);
@@ -1321,7 +2059,7 @@ function spawnAnimBox(fromEl, toEl, type, duration) {
 function reset() {
     const keep = document.getElementById('chkKeepParams').checked;
     let saved = null;
-    if (keep && S.length > 0) { let wI = [], wM = []; for (let i = 0; i < STATION_COUNT - 1; i++) { wI.push(parseInt(document.getElementById(`wipInitInput_${i}`)?.value) || 0); wM.push(parseInt(document.getElementById(`wipMaxInput_${i}`)?.value) || 100); } saved = { transit: TRANSIT_TIME, stock: buffers.raw.stock, target: buffers.raw.target, makeToGood, timeScale, flushLine, wI, wM, stations: S.map(s => ({ enabled: s.enabled, name: s.name, ppm: s.ppmNom, A: s.Aset, P: s.Pset, Q: s.Qset, setup: s.setupConfig })) }; }
+    if (keep && S.length > 0) { let wI = [], wM = []; for (let i = 0; i < STATION_COUNT - 1; i++) { wI.push(parseInt(document.getElementById(`wipInitInput_${i}`)?.value) || 0); wM.push(parseInt(document.getElementById(`wipMaxInput_${i}`)?.value) || 100); } saved = { transit: TRANSIT_TIME, stock: buffers.raw.stock, target: buffers.raw.target, makeToGood, timeScale, flushLine, wI, wM, stations: S.map(s => ({ enabled: s.enabled, name: s.name, ppm: s.ppmNom, A: s.Aset, P: s.Pset, Q: s.Qset, setup: s.setupConfig, batchSize: s.batchSize, mtbfMin: s.mtbfMin, mttrMin: s.mttrMin, learningPieces: s.learningPieces, learningStart: s.learningStart, reworkEnabled: s.reworkEnabled })) }; }
     
     running = false; lineStarted = false; t = 0; finalTime = null; isFastForwarding = false; initialWipAtStart = 0; targetAtStart = 0; fixedInitialEstimate = null;
     lastChartUpdate = 0; // CORRIGIDO: Reset do timer do gráfico
@@ -1330,6 +2068,10 @@ function reset() {
     historyOEE = []; historyPPM = [];
     document.getElementById('chartOEE').innerHTML = '';
     document.getElementById('chartPPM').innerHTML = '';
+
+    // Bloco 1: reset histórico de estados
+    stateHistory = []; lastSnapshot = -1;
+    if (analyticsOpen) renderAnalytics();
 
     let stockVal = 100, targetVal = 60;
     if (keep && saved) { stockVal = saved.stock; targetVal = saved.target; TRANSIT_TIME = saved.transit; makeToGood = saved.makeToGood; flushLine = saved.flushLine; timeScale = saved.timeScale; }
@@ -1341,7 +2083,23 @@ function reset() {
     stats = { good: 0, scrap: 0, scrapByStation: Array(STATION_COUNT).fill(0) }; transfers.length = 0;
     S = []; buffers.wips = [];
     
-    for (let i = 0; i < STATION_COUNT; i++) { let st = stationTemplate(i); if (keep && saved?.stations[i]) Object.assign(st, { enabled: saved.stations[i].enabled, name: saved.stations[i].name, ppmNom: saved.stations[i].ppm, Aset: saved.stations[i].A, Pset: saved.stations[i].P, Qset: saved.stations[i].Q, setupConfig: saved.stations[i].setup || 0 }); S.push(st); }
+    for (let i = 0; i < STATION_COUNT; i++) {
+        let st = stationTemplate(i);
+        if (keep && saved?.stations[i]) {
+            const sv = saved.stations[i];
+            Object.assign(st, {
+                enabled: sv.enabled, name: sv.name, ppmNom: sv.ppm,
+                Aset: sv.A, Pset: sv.P, Qset: sv.Q, setupConfig: sv.setup || 0,
+                batchSize: sv.batchSize || 0,
+                mtbfMin: sv.mtbfMin || 0,
+                mttrMin: sv.mttrMin || 5,
+                learningPieces: sv.learningPieces || 0,
+                learningStart: sv.learningStart ?? 0.6,
+                reworkEnabled: !!sv.reworkEnabled
+            });
+        }
+        S.push(st);
+    }
     for (let i = 0; i < STATION_COUNT - 1; i++) { let w = makeWip(); if (keep && saved) { w.max = saved.wM[i] || 100; w.ready = saved.wI[i] || 0; } buffers.wips.push(w); }
     
     buildDOM();
@@ -1368,11 +2126,618 @@ function tick(dt, doRender) {
     }
     
     t += finalTime !== null ? 0 : dt;
-    transfersTick(dt); 
+    transfersTick(dt);
     for (let i = 0; i < STATION_COUNT; i++) stationTick(i, dt);
-    
-    if (t - lastChartUpdate > 0.5) { updateCharts(); lastChartUpdate = t; }
+
+    recordStateSnapshot();
+    if (t - lastChartUpdate > PREFS.chartUpdateInterval) {
+        updateCharts(); lastChartUpdate = t;
+        if (analyticsOpen) renderAnalytics();
+    }
     if (doRender) render();
+}
+
+// === Bloco 5: Preferências ===
+function openPrefs() {
+    document.getElementById('dataMenu').classList.remove('open');
+    document.getElementById('prefBalance').value = PREFS.balanceThreshold;
+    document.getElementById('prefHistory').value = PREFS.sparklineHistory;
+    document.getElementById('prefHeatmap').value = PREFS.heatmapMaxSamples;
+    document.getElementById('prefInterval').value = PREFS.chartUpdateInterval;
+    document.getElementById('prefP90').checked = !!PREFS.estimateConfidence;
+    document.getElementById('prefsModal').style.display = 'block';
+}
+function closePrefs() {
+    // Aplica
+    PREFS.balanceThreshold = Math.max(0, parseFloat(document.getElementById('prefBalance').value) || 0);
+    PREFS.sparklineHistory = clamp(parseInt(document.getElementById('prefHistory').value) || 50, 10, 500);
+    PREFS.heatmapMaxSamples = clamp(parseInt(document.getElementById('prefHeatmap').value) || 600, 100, 5000);
+    PREFS.chartUpdateInterval = clamp(parseFloat(document.getElementById('prefInterval').value) || 0.5, 0.1, 5);
+    PREFS.estimateConfidence = !!document.getElementById('prefP90').checked;
+    document.getElementById('prefsModal').style.display = 'none';
+    updateBottlenecks(); render();
+    showToast('Preferências atualizadas');
+}
+function resetPrefs() {
+    PREFS = { ...PREFS_DEFAULTS };
+    document.getElementById('prefBalance').value = PREFS.balanceThreshold;
+    document.getElementById('prefHistory').value = PREFS.sparklineHistory;
+    document.getElementById('prefHeatmap').value = PREFS.heatmapMaxSamples;
+    document.getElementById('prefInterval').value = PREFS.chartUpdateInterval;
+    document.getElementById('prefP90').checked = PREFS.estimateConfidence;
+}
+
+// === Bloco 4: Cenários e Comparador ===
+const SCENARIOS = [
+    {
+        id: 'balanced',
+        title: 'Linha Balanceada',
+        objective: 'Demonstrar uma linha equilibrada (CT iguais)',
+        desc: 'Todas as estações com a mesma capacidade efetiva. Observe que mesmo balanceada, o sistema tem perdas por starving devido às variações estatísticas (sem MTBF aqui, só ruído de qualidade).',
+        tags: ['TOC', 'Iniciante'],
+        config: {
+            stationCount: 3, stock: 200, target: 100, transit: 0, timeScale: 4,
+            stations: [
+                { ppmNom: 60, Aset: 0.95, Pset: 1, Qset: 0.98, setupConfig: 0 },
+                { ppmNom: 60, Aset: 0.95, Pset: 1, Qset: 0.98, setupConfig: 0 },
+                { ppmNom: 60, Aset: 0.95, Pset: 1, Qset: 0.98, setupConfig: 0 },
+            ],
+            wipInit: [10, 10], wipMax: [50, 50]
+        }
+    },
+    {
+        id: 'mid-bottleneck',
+        title: 'Gargalo no Meio',
+        objective: 'Identificar e quantificar o efeito de um gargalo central',
+        desc: 'A estação 2 tem metade do PPM. Observe o WIP a acumular antes dela e a estação 3 a sofrer starving. A linha inteira opera ao ritmo do gargalo.',
+        tags: ['TOC', 'Gargalo'],
+        config: {
+            stationCount: 4, stock: 250, target: 80, transit: 0, timeScale: 4,
+            stations: [
+                { ppmNom: 80, Aset: 0.95, Pset: 1, Qset: 1, setupConfig: 0 },
+                { ppmNom: 80, Aset: 0.95, Pset: 1, Qset: 1, setupConfig: 0 },
+                { ppmNom: 40, Aset: 0.95, Pset: 1, Qset: 1, setupConfig: 0 },
+                { ppmNom: 80, Aset: 0.95, Pset: 1, Qset: 1, setupConfig: 0 },
+            ],
+            wipInit: [5, 5, 5], wipMax: [40, 40, 40]
+        }
+    },
+    {
+        id: 'starve-cascade',
+        title: 'Starving em Cascata',
+        objective: 'Visualizar como uma estação inicial lenta esgota toda a linha',
+        desc: 'A estação 1 é o gargalo e tem baixa disponibilidade (MTBF baixo). As estações seguintes vão alternar entre AGUARDANDO e processamento. Observe o heatmap.',
+        tags: ['MTBF', 'Avançado'],
+        config: {
+            stationCount: 3, stock: 200, target: 100, transit: 0, timeScale: 4,
+            stations: [
+                { ppmNom: 40, Aset: 1, Pset: 1, Qset: 1, setupConfig: 0, mtbfMin: 3, mttrMin: 1 },
+                { ppmNom: 80, Aset: 0.98, Pset: 1, Qset: 1, setupConfig: 0 },
+                { ppmNom: 80, Aset: 0.98, Pset: 1, Qset: 1, setupConfig: 0 },
+            ],
+            wipInit: [0, 0], wipMax: [30, 30]
+        }
+    },
+    {
+        id: 'quality-killer',
+        title: 'Refugo Concentrado',
+        objective: 'Demonstrar impacto da qualidade no throughput',
+        desc: 'A estação 2 tem Q=80% (alta taxa de refugo). Note como o gargalo aparente muda quando se considera apenas peças boas. Active o REWORK para ver o impacto no tempo.',
+        tags: ['Qualidade', 'Rework'],
+        config: {
+            stationCount: 3, stock: 300, target: 80, transit: 0, timeScale: 4,
+            stations: [
+                { ppmNom: 60, Aset: 0.95, Pset: 1, Qset: 1, setupConfig: 0 },
+                { ppmNom: 60, Aset: 0.95, Pset: 1, Qset: 0.8, setupConfig: 0 },
+                { ppmNom: 60, Aset: 0.95, Pset: 1, Qset: 1, setupConfig: 0 },
+            ],
+            wipInit: [5, 5], wipMax: [50, 50]
+        }
+    },
+    {
+        id: 'setup-trade-off',
+        title: 'Lotes vs Setup (SMED)',
+        objective: 'Explorar trade-off entre tamanho de lote e tempo de setup',
+        desc: 'Cada estação tem setup longo (3 min) acionado a cada 20 peças. Tente reduzir setupConfig para 0.5 min e veja o ganho — é o princípio do SMED (troca rápida).',
+        tags: ['Setup', 'SMED', 'Lotes'],
+        config: {
+            stationCount: 3, stock: 200, target: 60, transit: 0, timeScale: 4,
+            stations: [
+                { ppmNom: 60, Aset: 0.98, Pset: 1, Qset: 0.99, setupConfig: 3, batchSize: 20 },
+                { ppmNom: 60, Aset: 0.98, Pset: 1, Qset: 0.99, setupConfig: 3, batchSize: 20 },
+                { ppmNom: 60, Aset: 0.98, Pset: 1, Qset: 0.99, setupConfig: 3, batchSize: 20 },
+            ],
+            wipInit: [10, 10], wipMax: [60, 60]
+        }
+    },
+    {
+        id: 'learning-curve',
+        title: 'Curva de Aprendizagem',
+        objective: 'Visualizar o efeito de operadores em treino',
+        desc: 'Todas as estações começam a 50% do P nominal e melhoram ao longo de 40 peças. Útil para simular ramp-up de turno ou novo produto. O PPM real cresce ao longo do tempo.',
+        tags: ['Aprendizagem', 'Lean'],
+        config: {
+            stationCount: 3, stock: 200, target: 80, transit: 0, timeScale: 4,
+            stations: [
+                { ppmNom: 60, Aset: 0.97, Pset: 1, Qset: 0.99, setupConfig: 0, learningPieces: 40, learningStart: 0.5 },
+                { ppmNom: 60, Aset: 0.97, Pset: 1, Qset: 0.99, setupConfig: 0, learningPieces: 40, learningStart: 0.5 },
+                { ppmNom: 60, Aset: 0.97, Pset: 1, Qset: 0.99, setupConfig: 0, learningPieces: 40, learningStart: 0.5 },
+            ],
+            wipInit: [10, 10], wipMax: [50, 50]
+        }
+    }
+];
+
+function openScenarios() {
+    const grid = document.getElementById('scenariosGrid');
+    grid.innerHTML = SCENARIOS.map(s => `
+        <div class="scenario-card" onclick="loadScenario('${s.id}')">
+            <div class="scenario-title">${s.title}</div>
+            <div class="scenario-objective">🎯 ${s.objective}</div>
+            <div class="scenario-desc">${s.desc}</div>
+            <div class="scenario-tags">${s.tags.map(t => `<span class="scenario-tag">${t}</span>`).join('')}</div>
+        </div>
+    `).join('');
+    document.getElementById('scenariosModal').style.display = 'block';
+}
+function closeScenarios() { document.getElementById('scenariosModal').style.display = 'none'; }
+
+function loadScenario(id) {
+    const sc = SCENARIOS.find(s => s.id === id);
+    if (!sc) return;
+    const cfg = JSON.parse(JSON.stringify(sc.config));
+    // Normaliza estações com defaults
+    cfg.stations = cfg.stations.map((s, idx) => ({
+        enabled: true, name: `ESTAÇÃO ${idx+1}`,
+        ppmNom: 60, Aset: 1, Pset: 1, Qset: 1, setupConfig: 0,
+        batchSize: 0, mtbfMin: 0, mttrMin: 5,
+        learningPieces: 0, learningStart: 0.6, reworkEnabled: false,
+        ...s
+    }));
+    cfg.version = 1;
+    applyConfig(cfg);
+    closeScenarios();
+    showToast(`Cenário carregado: ${sc.title}`);
+}
+
+// --- Comparador ---
+let _cmpA = null, _cmpB = null;
+
+function openCompare() {
+    document.getElementById('compareModal').style.display = 'block';
+    renderCompare();
+}
+function closeCompare() { document.getElementById('compareModal').style.display = 'none'; }
+
+function loadCompareFile(ev, slot) {
+    const file = ev.target.files && ev.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+        try {
+            const data = JSON.parse(e.target.result);
+            if (slot === 'A') _cmpA = { name: file.name, data };
+            else _cmpB = { name: file.name, data };
+            renderCompare();
+            showToast(`Snapshot ${slot} carregado`);
+        } catch (err) { showToast('Erro: ' + err.message, true); }
+    };
+    reader.readAsText(file);
+    ev.target.value = '';
+}
+
+function useCurrentAsCompare(slot) {
+    const snap = {
+        ...collectConfig(),
+        runtime: {
+            t, finalTime, lineStarted, seed_active: _activeSeed,
+            stats: { good: stats.good, scrap: stats.scrap },
+            stations: S.map(s => ({
+                name: s.name, totalCount: s.totalCount, goodCount: s.goodCount,
+                tRun: s.tRun, tSetup: s.tSetup, tDown: s.tDown,
+                tBlocked: s.tBlocked, tStarved: s.tStarved, tIdle: s.tIdle,
+                idealTime: s.idealTime
+            }))
+        }
+    };
+    const wrapped = { name: `Atual (t=${fmtMMSSd(t)})`, data: snap };
+    if (slot === 'A') _cmpA = wrapped; else _cmpB = wrapped;
+    renderCompare();
+    showToast(`Estado atual definido como ${slot}`);
+}
+
+function snapshotKPIs(snap) {
+    if (!snap || !snap.data) return null;
+    const d = snap.data;
+    const rt = d.runtime || {};
+    const stations = rt.stations || [];
+    let totRun = 0, totIdeal = 0, totPlanned = 0, totGood = 0, totTotal = 0;
+    stations.forEach(s => {
+        const planned = (s.tRun||0) + (s.tDown||0) + (s.tStarved||0) + (s.tBlocked||0) + (s.tSetup||0) + (s.tIdle||0);
+        totRun += s.tRun || 0; totIdeal += s.idealTime || 0;
+        totPlanned += planned; totGood += s.goodCount || 0; totTotal += s.totalCount || 0;
+    });
+    const elapsed = rt.t || 0;
+    const good = rt.stats?.good || 0;
+    const scrap = rt.stats?.scrap || 0;
+    return {
+        elapsed,
+        good, scrap,
+        finished: rt.finalTime != null,
+        throughput: elapsed > 0 ? (good / (elapsed/60)) : 0,
+        stationCount: d.stationCount || stations.length,
+        target: d.target || 0,
+        seed: rt.seed_active ?? d.seed,
+        oeeLine: totPlanned > 0 ? (totRun/totPlanned) * (totRun > 0 ? totIdeal/totRun : 1) * (totTotal > 0 ? totGood/totTotal : 1) : 0,
+        stations
+    };
+}
+
+function renderCompare() {
+    const cA = document.getElementById('cmpColA');
+    const cB = document.getElementById('cmpColB');
+    const diff = document.getElementById('cmpDiff');
+    const fmtCol = (slot, snap) => {
+        if (!snap) return `<div class="empty-note">Carregue um snapshot ${slot}</div>`;
+        const k = snapshotKPIs(snap);
+        const row = (l, v) => `<div style="display:flex; justify-content:space-between; padding:4px 2px; font-size:11px; border-bottom:1px dotted rgba(255,255,255,0.06);"><span>${l}</span><span style="font-weight:700;">${v}</span></div>`;
+        return `
+            <div class="compare-head"><span>${slot}: ${snap.name}</span><span style="font-size:10px; color: var(--gray);">seed=${k.seed || '—'}</span></div>
+            ${row('Tempo decorrido', fmtMMSSd(k.elapsed))}
+            ${row('Bons', k.good)}
+            ${row('Refugo', k.scrap)}
+            ${row('Throughput', k.throughput.toFixed(1) + ' ppm')}
+            ${row('OEE linha (aprox)', (k.oeeLine*100).toFixed(1) + '%')}
+            ${row('Estações', k.stationCount)}
+            ${row('Meta', k.target)}
+            ${row('Concluído', k.finished ? 'Sim' : 'Não')}
+        `;
+    };
+    cA.innerHTML = fmtCol('A', _cmpA);
+    cB.innerHTML = fmtCol('B', _cmpB);
+
+    if (_cmpA && _cmpB) {
+        const a = snapshotKPIs(_cmpA), b = snapshotKPIs(_cmpB);
+        const cmp = (label, va, vb, isPctOrUnit, betterUp) => {
+            const delta = vb - va;
+            const pct = va !== 0 ? (delta/Math.abs(va))*100 : 0;
+            const dir = Math.abs(delta) < 1e-6 ? 'flat' : (delta > 0 ? 'up' : 'down');
+            const isGood = (betterUp && delta > 0) || (!betterUp && delta < 0);
+            const arrow = dir === 'flat' ? '—' : (isGood ? '✓' : '✗');
+            return `<div class="compare-row">
+                <span><strong>${label}</strong></span>
+                <span>${typeof va === 'number' ? (isPctOrUnit === '%' ? (va*100).toFixed(1)+'%' : va.toFixed(1)+(isPctOrUnit||'')) : va}</span>
+                <span>${typeof vb === 'number' ? (isPctOrUnit === '%' ? (vb*100).toFixed(1)+'%' : vb.toFixed(1)+(isPctOrUnit||'')) : vb}</span>
+                <span class="delta ${dir}">${arrow} ${delta >= 0 ? '+' : ''}${pct.toFixed(1)}%</span>
+            </div>`;
+        };
+        diff.innerHTML = `
+            <h3 style="font-size:14px; color: var(--cyan); margin-bottom:8px;">Δ A → B</h3>
+            <div class="compare-row header"><span>Métrica</span><span>A</span><span>B</span><span style="text-align:right;">Δ</span></div>
+            ${cmp('Bons', a.good, b.good, '', true)}
+            ${cmp('Refugo', a.scrap, b.scrap, '', false)}
+            ${cmp('Throughput (ppm)', a.throughput, b.throughput, '', true)}
+            ${cmp('OEE linha', a.oeeLine, b.oeeLine, '%', true)}
+            ${cmp('Tempo decorrido (s)', a.elapsed, b.elapsed, 's', false)}
+        `;
+    } else {
+        diff.innerHTML = '';
+    }
+}
+
+// === Bloco 2: Export, Import, Save/Load, Sankey ===
+function showToast(msg, isError) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.toggle('error', !!isError);
+    el.classList.add('show');
+    clearTimeout(el._tHide);
+    el._tHide = setTimeout(() => el.classList.remove('show'), 2400);
+}
+
+function toggleDataMenu(ev) {
+    ev.stopPropagation();
+    document.getElementById('dataMenu').classList.toggle('open');
+}
+
+function collectConfig() {
+    const wI = [], wM = [];
+    for (let i = 0; i < STATION_COUNT - 1; i++) {
+        wI.push(parseInt(document.getElementById(`wipInitInput_${i}`)?.value) || 0);
+        wM.push(parseInt(document.getElementById(`wipMaxInput_${i}`)?.value) || 100);
+    }
+    return {
+        version: 1,
+        savedAt: new Date().toISOString(),
+        stationCount: STATION_COUNT,
+        transit: TRANSIT_TIME,
+        stock: buffers.raw.stock,
+        target: buffers.raw.target,
+        timeScale,
+        flushLine,
+        makeToGood,
+        seed: document.getElementById('seedInput')?.value || '0',
+        prefs: { ...PREFS },
+        wipInit: wI,
+        wipMax: wM,
+        stations: S.map(s => ({
+            enabled: s.enabled, name: s.name, ppmNom: s.ppmNom,
+            Aset: s.Aset, Pset: s.Pset, Qset: s.Qset, setupConfig: s.setupConfig,
+            batchSize: s.batchSize, mtbfMin: s.mtbfMin, mttrMin: s.mttrMin,
+            learningPieces: s.learningPieces, learningStart: s.learningStart,
+            reworkEnabled: s.reworkEnabled
+        }))
+    };
+}
+
+function applyConfig(cfg) {
+    if (!cfg || typeof cfg !== 'object') throw new Error('Configuração inválida');
+    if (cfg.stationCount && cfg.stationCount !== STATION_COUNT) {
+        STATION_COUNT = clamp(parseInt(cfg.stationCount) || 3, 2, 8);
+        document.getElementById('stationsSelect').value = STATION_COUNT;
+    }
+    TRANSIT_TIME = Math.max(0, parseInt(cfg.transit) || 0);
+    document.getElementById('transitTimeInput').value = TRANSIT_TIME;
+    timeScale = parseInt(cfg.timeScale) || 1;
+    document.getElementById('speedSelect').value = timeScale;
+    flushLine = !!cfg.flushLine;
+    document.getElementById('chkFlushLine').checked = flushLine;
+    makeToGood = !!cfg.makeToGood;
+    if (cfg.seed !== undefined) document.getElementById('seedInput').value = String(cfg.seed);
+    if (cfg.prefs && typeof cfg.prefs === 'object') {
+        PREFS = { ...PREFS_DEFAULTS, ...cfg.prefs };
+    }
+
+    buffers.raw.stock = parseInt(cfg.stock) || 100;
+    buffers.raw.target = parseInt(cfg.target) || 60;
+    buffers.raw.count = buffers.raw.stock;
+
+    S = [];
+    for (let i = 0; i < STATION_COUNT; i++) {
+        const st = stationTemplate(i);
+        const src = cfg.stations && cfg.stations[i];
+        if (src) Object.assign(st, {
+            enabled: src.enabled !== false,
+            name: src.name || st.name,
+            ppmNom: parseFloat(src.ppmNom) || 60,
+            Aset: clamp01(parseFloat(src.Aset) ?? 1),
+            Pset: clamp01(parseFloat(src.Pset) ?? 1),
+            Qset: clamp01(parseFloat(src.Qset) ?? 1),
+            setupConfig: parseFloat(src.setupConfig) || 0,
+            batchSize: Math.max(0, parseInt(src.batchSize) || 0),
+            mtbfMin: Math.max(0, parseFloat(src.mtbfMin) || 0),
+            mttrMin: Math.max(0, parseFloat(src.mttrMin) || 5),
+            learningPieces: Math.max(0, parseInt(src.learningPieces) || 0),
+            learningStart: clamp01(parseFloat(src.learningStart) ?? 0.6),
+            reworkEnabled: !!src.reworkEnabled,
+        });
+        S.push(st);
+    }
+    buffers.wips = [];
+    for (let i = 0; i < STATION_COUNT - 1; i++) {
+        const w = makeWip();
+        w.max = (cfg.wipMax && cfg.wipMax[i]) || 100;
+        w.ready = (cfg.wipInit && cfg.wipInit[i]) || 0;
+        buffers.wips.push(w);
+    }
+
+    running = false; lineStarted = false; t = 0; finalTime = null;
+    initialWipAtStart = 0; targetAtStart = 0; fixedInitialEstimate = null;
+    historyOEE = []; historyPPM = [];
+    stateHistory = []; lastSnapshot = -1;
+    stats = { good: 0, scrap: 0, scrapByStation: Array(STATION_COUNT).fill(0) };
+    transfers.length = 0;
+
+    document.getElementById('chartOEE').innerHTML = '';
+    document.getElementById('chartPPM').innerHTML = '';
+
+    buildDOM();
+    calculateInitialMeta();
+    render();
+    document.getElementById('btnStart').innerHTML = '<span>▶</span> INICIAR';
+    document.getElementById('animLayer').innerHTML = '';
+}
+
+function downloadFile(filename, content, mime) {
+    const blob = new Blob([content], { type: mime || 'application/octet-stream' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click();
+    setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+}
+
+function tsForFilename() {
+    const d = new Date(), p = n => String(n).padStart(2,'0');
+    return `${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
+}
+
+function exportCSV() {
+    document.getElementById('dataMenu').classList.remove('open');
+    const headers = [
+        'estacao','nome','ativa','ppm_nom','A_set','P_set','Q_set','setup_min',
+        'tempo_run_s','tempo_setup_s','tempo_down_s','tempo_blocked_s','tempo_starved_s','tempo_idle_s',
+        'ideal_time_s','total_pecas','boas','refugo','OEE','A_real','P_real','Q_real'
+    ];
+    const rows = [headers.join(',')];
+    S.forEach((st, i) => {
+        const k = oeeCalcStation(st);
+        const scrap = st.totalCount - st.goodCount;
+        rows.push([
+            i+1, `"${(st.name||'').replace(/"/g,'""')}"`, st.enabled ? 1 : 0,
+            st.ppmNom, st.Aset.toFixed(4), st.Pset.toFixed(4), st.Qset.toFixed(4), st.setupConfig,
+            st.tRun.toFixed(2), st.tSetup.toFixed(2), st.tDown.toFixed(2),
+            st.tBlocked.toFixed(2), st.tStarved.toFixed(2), st.tIdle.toFixed(2),
+            st.idealTime.toFixed(2), st.totalCount, st.goodCount, scrap,
+            k.OEE.toFixed(4), k.A.toFixed(4), k.P.toFixed(4), k.Q.toFixed(4)
+        ].join(','));
+    });
+    // Linha de totais da linha
+    rows.push('');
+    rows.push('# Resumo da linha');
+    rows.push(`tempo_decorrido_s,${t.toFixed(2)}`);
+    rows.push(`finalizada,${finalTime !== null ? 1 : 0}`);
+    rows.push(`bons_total,${stats.good}`);
+    rows.push(`refugo_total,${stats.scrap}`);
+    rows.push(`throughput_ppm,${t > 0 ? (stats.good/(t/60)).toFixed(2) : 0}`);
+    rows.push(`takt_s,${calcTaktTime().toFixed(2)}`);
+    rows.push(`seed,${_activeSeed || 'random'}`);
+
+    downloadFile(`sim-oee-kpis-${tsForFilename()}.csv`, rows.join('\n'), 'text/csv');
+    showToast('CSV exportado');
+}
+
+function exportSnapshot() {
+    document.getElementById('dataMenu').classList.remove('open');
+    const snap = {
+        ...collectConfig(),
+        runtime: {
+            t, finalTime, lineStarted, running,
+            seed_active: _activeSeed,
+            stats: { good: stats.good, scrap: stats.scrap, scrapByStation: stats.scrapByStation },
+            stations: S.map(s => ({
+                name: s.name, totalCount: s.totalCount, goodCount: s.goodCount,
+                tRun: s.tRun, tSetup: s.tSetup, tDown: s.tDown, tBlocked: s.tBlocked,
+                tStarved: s.tStarved, tIdle: s.tIdle, idealTime: s.idealTime,
+                state: s.state
+            })),
+            stateHistory
+        }
+    };
+    downloadFile(`sim-oee-snapshot-${tsForFilename()}.json`, JSON.stringify(snap, null, 2), 'application/json');
+    showToast('Snapshot exportado');
+}
+
+function saveConfig() {
+    document.getElementById('dataMenu').classList.remove('open');
+    const cfg = collectConfig();
+    downloadFile(`sim-oee-config-${tsForFilename()}.json`, JSON.stringify(cfg, null, 2), 'application/json');
+    showToast('Configuração guardada');
+}
+
+function loadConfigFile(ev) {
+    const file = ev.target.files && ev.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+        try {
+            const cfg = JSON.parse(e.target.result);
+            applyConfig(cfg);
+            showToast('Configuração carregada');
+        } catch (err) {
+            showToast('Erro ao carregar: ' + err.message, true);
+        }
+    };
+    reader.readAsText(file);
+    ev.target.value = ''; // permite re-carregar o mesmo ficheiro
+}
+
+const LS_KEY = 'sim_oee_config_v1';
+function saveConfigLocal() {
+    document.getElementById('dataMenu').classList.remove('open');
+    try {
+        localStorage.setItem(LS_KEY, JSON.stringify(collectConfig()));
+        showToast('Guardado no browser');
+    } catch (e) { showToast('Falha: ' + e.message, true); }
+}
+function loadConfigLocal() {
+    document.getElementById('dataMenu').classList.remove('open');
+    try {
+        const raw = localStorage.getItem(LS_KEY);
+        if (!raw) { showToast('Nenhuma configuração guardada', true); return; }
+        applyConfig(JSON.parse(raw));
+        showToast('Configuração restaurada');
+    } catch (e) { showToast('Falha: ' + e.message, true); }
+}
+
+function renderSankey() {
+    const host = document.getElementById('sankeyChart');
+    if (!host) return;
+    if (!lineStarted) { host.innerHTML = `<div class="empty-note">Inicie a simulação para visualizar o fluxo.</div>`; return; }
+
+    // Modelo simples: cada estação tem entrada (= totalCount) e divide em "passa adiante" e "refugo"
+    // Mais o estoque inicial → estação 1
+    const W = 980, padL = 80, padR = 120, padT = 30, padB = 30, H = 380;
+    const innerW = W - padL - padR;
+    const nodeW = 16;
+    const cols = STATION_COUNT + 1; // estoque + estações
+    const colGap = innerW / (cols - 1);
+    const flowMax = Math.max(1, S[0]?.totalCount || 1, buffers.raw.stock);
+    const hScale = (H - padT - padB) / flowMax * 0.85;
+
+    let svg = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">`;
+
+    // Calcula posição Y de cada nó (centrado verticalmente, proporcional ao fluxo)
+    const nodes = [];
+    // Coluna 0: estoque inicial
+    nodes.push({ x: padL, label: 'ESTOQUE', flow: S[0]?.totalCount || 0, color: '#94a3b8' });
+    for (let i = 0; i < STATION_COUNT; i++) {
+        nodes.push({
+            x: padL + (i + 1) * colGap,
+            label: S[i].name,
+            flow: S[i].totalCount,
+            color: i === bottleneckId ? '#d946ef' : '#3b82f6'
+        });
+    }
+
+    // Desenha nós (barras verticais)
+    nodes.forEach((n, idx) => {
+        const h = Math.max(4, n.flow * hScale);
+        const y = (H - h) / 2;
+        n.yTop = y; n.yBot = y + h; n.h = h;
+        svg += `<rect x="${n.x}" y="${y}" width="${nodeW}" height="${h}" fill="${n.color}" rx="2">`;
+        svg += `<title>${n.label}: ${n.flow} peças</title></rect>`;
+        svg += `<text x="${n.x + nodeW/2}" y="${y - 6}" fill="#e2e8f0" font-size="10" font-weight="700" text-anchor="middle">${n.label}</text>`;
+        svg += `<text x="${n.x + nodeW/2}" y="${n.yBot + 14}" fill="#94a3b8" font-size="10" text-anchor="middle">${n.flow}</text>`;
+    });
+
+    // Fluxos entre nós + saída de refugo
+    for (let i = 0; i < STATION_COUNT; i++) {
+        const src = nodes[i], dst = nodes[i+1];
+        const passed = S[i].totalCount; // tudo que entrou na estação
+        const good = S[i].goodCount;
+        const scrap = passed - good;
+
+        // Fluxo entrada → estação (azul claro)
+        const flowH = passed * hScale;
+        const y1a = src.yTop, y1b = src.yTop + flowH;
+        const y2a = dst.yTop, y2b = dst.yTop + flowH;
+        const x1 = src.x + nodeW, x2 = dst.x;
+        const cx1 = x1 + (x2 - x1) * 0.5;
+        svg += `<path d="M${x1},${y1a} C${cx1},${y1a} ${cx1},${y2a} ${x2},${y2a} L${x2},${y2b} C${cx1},${y2b} ${cx1},${y1b} ${x1},${y1b} Z" fill="rgba(59,130,246,0.35)" stroke="rgba(59,130,246,0.6)" stroke-width="0.5">`;
+        svg += `<title>${src.label} → ${dst.label}: ${passed} peças</title></path>`;
+
+        // Fluxo de refugo (vermelho, sai pela base)
+        if (scrap > 0) {
+            const sh = scrap * hScale;
+            const scrapX = dst.x + nodeW;
+            const scrapY1 = dst.yBot - sh;
+            const scrapY2 = dst.yBot;
+            const targetX = scrapX + 50;
+            const targetY = H - padB - 10;
+            svg += `<path d="M${scrapX},${scrapY1} C${scrapX+30},${scrapY1} ${targetX-20},${targetY-20} ${targetX},${targetY-Math.min(40,sh)} L${targetX},${targetY} C${targetX-20},${targetY} ${scrapX+30},${scrapY2} ${scrapX},${scrapY2} Z" fill="rgba(239,68,68,0.4)" stroke="rgba(239,68,68,0.7)" stroke-width="0.5">`;
+            svg += `<title>Refugo em ${dst.label}: ${scrap} peças</title></path>`;
+            svg += `<text x="${targetX + 6}" y="${targetY}" fill="#ef4444" font-size="10" font-weight="700">✗ ${scrap}</text>`;
+        }
+    }
+
+    // Saída final (bons)
+    const lastNode = nodes[nodes.length - 1];
+    if (stats.good > 0) {
+        const finishX = lastNode.x + nodeW + 40;
+        const finishY = (H - stats.good * hScale) / 2;
+        const finishH = Math.max(4, stats.good * hScale);
+        svg += `<rect x="${finishX}" y="${finishY}" width="${nodeW}" height="${finishH}" fill="#22c55e" rx="2">`;
+        svg += `<title>BONS: ${stats.good}</title></rect>`;
+        svg += `<text x="${finishX + nodeW/2}" y="${finishY - 6}" fill="#22c55e" font-size="10" font-weight="800" text-anchor="middle">BONS</text>`;
+        svg += `<text x="${finishX + nodeW/2}" y="${finishY + finishH + 14}" fill="#22c55e" font-size="10" text-anchor="middle">${stats.good}</text>`;
+        // Fluxo último nó → finish
+        const yA = lastNode.yTop + (lastNode.h - finishH) * 0;
+        svg += `<path d="M${lastNode.x + nodeW},${lastNode.yTop} C${lastNode.x + nodeW + 20},${lastNode.yTop} ${finishX - 20},${finishY} ${finishX},${finishY} L${finishX},${finishY + finishH} C${finishX - 20},${finishY + finishH} ${lastNode.x + nodeW + 20},${lastNode.yTop + lastNode.h * (stats.good/(S[S.length-1].totalCount||1))} ${lastNode.x + nodeW},${lastNode.yTop + lastNode.h * (stats.good/(S[S.length-1].totalCount||1))} Z" fill="rgba(34,197,94,0.35)" stroke="rgba(34,197,94,0.6)" stroke-width="0.5"/>`;
+    }
+
+    svg += `</svg>`;
+    host.innerHTML = svg;
 }
 
 window.onload = function() {
@@ -1383,7 +2748,20 @@ window.onload = function() {
     zSlider.oninput = e => { zInput.value = e.target.value; board.style.transform = `scale(${e.target.value / 100})`; };
     zInput.onchange = e => { let v = clamp(parseInt(e.target.value) || 100, 30, 150); zInput.value = v; zSlider.value = v; board.style.transform = `scale(${v / 100})`; };
     document.getElementById('btnReset').onclick = reset;
-    document.getElementById('btnStart').onclick = () => { running = !running; if (running && !lineStarted) { lineStarted = true; initialWipAtStart = getInitialWipSum(); targetAtStart = buffers.raw.target; fixedInitialEstimate = initialEstimate; } document.getElementById('btnStart').innerHTML = running ? '<span>⏸</span> PAUSAR' : '<span>▶</span> INICIAR'; };
+    document.getElementById('btnStart').onclick = () => {
+        running = !running;
+        if (running && !lineStarted) {
+            seedRng(document.getElementById('seedInput').value);
+            lineStarted = true; initialWipAtStart = getInitialWipSum(); targetAtStart = buffers.raw.target; fixedInitialEstimate = initialEstimate;
+        }
+        document.getElementById('btnStart').innerHTML = running ? '<span>⏸</span> PAUSAR' : '<span>▶</span> INICIAR';
+    };
+    document.getElementById('seedInput').addEventListener('input', e => { if (!lineStarted) seedRng(e.target.value); });
+    // Fecha menu de dados ao clicar fora
+    document.addEventListener('click', (e) => {
+        const menu = document.getElementById('dataMenu');
+        if (menu && menu.classList.contains('open') && !e.target.closest('.data-menu-wrap')) menu.classList.remove('open');
+    });
     document.getElementById('chkTheme').onchange = e => { document.body.classList.toggle('light-mode', e.target.checked); };
     reset();
     let last = performance.now();
