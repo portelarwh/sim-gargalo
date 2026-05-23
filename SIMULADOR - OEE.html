@@ -300,6 +300,20 @@
         .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(20px); background: #0f172a; color: #fff; padding: 10px 18px; border-radius: 8px; font-size: 12px; font-weight: 600; box-shadow: 0 10px 30px rgba(0,0,0,0.4); border: 1px solid rgba(34,197,94,0.4); opacity: 0; transition: all 0.25s; z-index: 200; pointer-events: none; }
         .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
         .toast.error { border-color: rgba(239,68,68,0.5); }
+
+        /* === Bloco 3: Painel Avançado por estação === */
+        .adv-toggle { margin-top: 6px; background: rgba(217, 70, 239, 0.08); border: 1px dashed rgba(217, 70, 239, 0.4); color: var(--purple); font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; padding: 4px 6px; border-radius: 6px; cursor: pointer; text-align: center; user-select: none; }
+        .adv-toggle:hover { background: rgba(217, 70, 239, 0.15); }
+        .adv-panel { display: none; margin-top: 6px; padding: 8px; border-radius: 10px; background: linear-gradient(180deg, rgba(217, 70, 239, 0.05), rgba(217, 70, 239, 0.02)); border: 1px solid rgba(217, 70, 239, 0.2); flex-direction: column; gap: 5px; }
+        .adv-panel.open { display: flex; }
+        .adv-row { display: grid; grid-template-columns: 1fr 50px 26px; gap: 4px; align-items: center; font-size: 9px; }
+        .adv-row .nm { font-weight: 800; color: #334155; text-transform: uppercase; letter-spacing: 0.02em; }
+        .adv-row .un { font-size: 8px; font-weight: 700; color: #94a3b8; }
+        .adv-row input[type=number] { width: 100%; border-radius: 4px; border: 1px solid #cbd5e1; background: #fff; padding: 2px 0; font-weight: 700; text-align: center; font-size: 10px; outline: none; }
+        .adv-row.chk { grid-template-columns: 1fr auto; }
+        .adv-row.chk input[type=checkbox] { accent-color: var(--purple); width: 14px; height: 14px; cursor: pointer; }
+        .adv-counters { display: flex; gap: 5px; font-size: 8px; color: var(--muted-main); padding-top: 4px; border-top: 1px dashed rgba(15,23,42,0.1); justify-content: space-between; }
+        .adv-counters b { color: var(--purple); }
     </style>
 </head>
 <body>
@@ -1164,17 +1178,55 @@ function renderHeatmap() {
 function makeWip() { return { ready: 0, reserved: 0, max: DEFAULT_WIP_MAX }; }
 
 function stationTemplate(i) {
-    return { 
-        id: i, enabled: true, name: `ESTAÇÃO ${i+1}`, ppmNom: 60, Aset: 1, Pset: 1, Qset: 1, 
+    return {
+        id: i, enabled: true, name: `ESTAÇÃO ${i+1}`, ppmNom: 60, Aset: 1, Pset: 1, Qset: 1,
         setupConfig: 0, setupRem: 0, setupDone: false, setupStarted: false,
-        state: 'idle', resumeState: 'idle', curIdealCT: 0, curProcTot: 0, remProc: 0, downRem: 0, 
-        holding: false, holdDestIndex: null, runTime: 0, idealTime: 0, totalCount: 0, goodCount: 0, 
-        tRun: 0, tDown: 0, tStarved: 0, tBlocked: 0, tIdle: 0, tSetup: 0 
+        state: 'idle', resumeState: 'idle', curIdealCT: 0, curProcTot: 0, remProc: 0, downRem: 0,
+        holding: false, holdDestIndex: null, runTime: 0, idealTime: 0, totalCount: 0, goodCount: 0,
+        tRun: 0, tDown: 0, tStarved: 0, tBlocked: 0, tIdle: 0, tSetup: 0,
+        // Bloco 3: modelação realista
+        batchSize: 0,            // peças por lote (0 = sem lotes)
+        piecesInBatch: 0,        // contador interno
+        batchSetups: 0,          // nº de setups feitos por lote
+        mtbfMin: 0,              // minutos médios entre falhas (0 = usa Aset determinístico)
+        mttrMin: 5,              // minutos médios de reparo
+        nextFailIn: 0,           // segundos até próxima falha (estocástico)
+        failuresCount: 0,        // contador de quebras
+        learningPieces: 0,       // peças até atingir Pset pleno (0 = sem curva)
+        learningStart: 0.6,      // fator inicial (0..1) sobre Pset
+        reworkEnabled: false,    // peças refugadas voltam à estação
+        reworkQueue: 0,          // contador de peças à espera de rework
+        reworkCount: 0           // total de retrabalhos efetuados
     };
 }
 
 function idealCT_nom(st) { return 60 / Math.max(0.1, st.ppmNom); }
-function ppmReal(st) { return Math.max(0, st.ppmNom * st.Pset); }
+function ppmReal(st) { return Math.max(0, st.ppmNom * effectivePset(st)); }
+
+// === Bloco 3: helpers de modelação realista ===
+function expRand(meanSeconds) {
+    // amostragem exponencial com média = meanSeconds, usando rng() seedado
+    const u = Math.max(1e-9, rng());
+    return -meanSeconds * Math.log(u);
+}
+function effectivePset(st) {
+    // Aplica curva de aprendizagem (Wright-like log) se ativada
+    if (!st.learningPieces || st.learningPieces <= 0) return st.Pset;
+    const n = st.totalCount;
+    const N = st.learningPieces;
+    // factor cresce de 0 a 1 (log2(1+n/N), saturado em n=N)
+    const factor = Math.min(1, Math.log2(1 + n / N));
+    const start = clamp01(st.learningStart || 0.6);
+    const eff = st.Pset * (start + (1 - start) * factor);
+    return clamp(eff, 0.0001, 1);
+}
+function scheduleNextFailure(st) {
+    if (st.mtbfMin > 0) {
+        st.nextFailIn = expRand(st.mtbfMin * 60);
+    } else {
+        st.nextFailIn = Infinity;
+    }
+}
 
 function oeeCalcStation(st) {
     const planned = Math.max(0.0001, st.tRun + st.tDown + st.tStarved + st.tBlocked + st.tSetup + st.tIdle);
@@ -1264,76 +1316,103 @@ function isLineClear() {
 }
 
 function startNewPiece(i) {
-    const st = S[i]; 
+    const st = S[i];
     if (st.Pset <= 0) return false;
-    
-    if (i === 0) {
+
+    // Bloco 3: consumir do rework queue antes de buscar nova peça
+    const isRework = st.reworkEnabled && st.reworkQueue > 0;
+
+    if (i === 0 && !isRework) {
         const target = targetAtStart;
         const hasStock = buffers.raw.count > 0;
-        
-        if (flushLine && makeToGood) { 
+
+        if (flushLine && makeToGood) {
             if (stats.good >= target && !hasStock) return false;
-            if (!hasStock) return false; 
+            if (!hasStock) return false;
         }
-        else if (flushLine && !makeToGood) { 
-            if (!hasStock) return false; 
+        else if (flushLine && !makeToGood) {
+            if (!hasStock) return false;
         }
-        else if (!flushLine && makeToGood) { 
+        else if (!flushLine && makeToGood) {
             if (stats.good >= target) return false;
-            if (!hasStock) return false; 
+            if (!hasStock) return false;
         }
-        else { 
+        else {
             const maxFromStock = target - initialWipAtStart;
             if (st.totalCount >= maxFromStock) return false;
-            if (!hasStock) return false; 
+            if (!hasStock) return false;
         }
     }
-    
-    if (!takeFromInput(i)) return false;
-    
+
+    if (isRework) {
+        st.reworkQueue--;
+        st.reworkCount++;
+    } else if (!takeFromInput(i)) return false;
+
     const to = document.getElementById(`stationVisual_${i}`);
-    if (i === 0) spawnAnimBox(document.getElementById('stockNode'), to, 'normal', 1000);
+    if (isRework) {
+        spawnAnimBox(to, to, 'normal', 300); // animação curta de rework
+    } else if (i === 0) spawnAnimBox(document.getElementById('stockNode'), to, 'normal', 1000);
     else spawnAnimBox(document.getElementById(`thermoTrack_${i-1}`), to, 'wip_to_station', 600);
-    
-    st.curIdealCT = idealCT_nom(st); 
-    const P = clamp(st.Pset, 0.0001, 1); 
-    st.curProcTot = st.curIdealCT / P; 
+
+    st.curIdealCT = idealCT_nom(st);
+    const P = clamp(effectivePset(st), 0.0001, 1);
+    st.curProcTot = st.curIdealCT / P;
     st.remProc = st.curProcTot;
-    st.downRem = st.Aset <= 0 ? Infinity : st.curProcTot * (1 - clamp(st.Aset, 0.0001, 1)) / clamp(st.Aset, 0.0001, 1);
-    st.state = 'processing'; 
+
+    // Disponibilidade: estocástica se MTBF definido, senão usa o modelo determinístico
+    if (st.mtbfMin > 0) {
+        st.downRem = 0;
+        if (st.nextFailIn === undefined || !Number.isFinite(st.nextFailIn) || st.nextFailIn === 0) {
+            scheduleNextFailure(st);
+        }
+    } else {
+        st.downRem = st.Aset <= 0 ? Infinity : st.curProcTot * (1 - clamp(st.Aset, 0.0001, 1)) / clamp(st.Aset, 0.0001, 1);
+        st.nextFailIn = Infinity;
+    }
+    st.state = 'processing';
     return true;
 }
 
 function finishProcessing(i) {
-    const st = S[i]; 
-    st.totalCount++; 
+    const st = S[i];
+    st.totalCount++;
     st.idealTime += st.curIdealCT;
     const isGood = rng() < st.Qset;
     const fromEl = document.getElementById(`stationVisual_${i}`);
-    
-    if (!isGood) { 
-        stats.scrap++; 
-        stats.scrapByStation[i]++; 
-        spawnAnimBox(fromEl, null, 'scrap', 600); 
-    }
-    else { 
-        st.goodCount++; 
-        if (i === S.length - 1) { 
-            stats.good++; 
-            spawnAnimBox(fromEl, document.getElementById('endNode'), 'finish', 1000); 
+
+    if (!isGood) {
+        if (st.reworkEnabled) {
+            // Bloco 3: peça volta para retrabalho na mesma estação
+            st.reworkQueue++;
+            spawnAnimBox(fromEl, fromEl, 'normal', 400);
+        } else {
+            stats.scrap++;
+            stats.scrapByStation[i]++;
+            spawnAnimBox(fromEl, null, 'scrap', 600);
         }
-        else { 
-            const w = buffers.wips[i]; 
-            if (wipCanReceive(w)) { 
-                sendToWip(i, TRANSIT_TIME); 
-                spawnAnimBox(fromEl, document.getElementById(`thermoTrack_${i}`), 'station_to_wip', TRANSIT_TIME * 1000); 
-            }
-            else { 
-                st.holding = true; st.holdDestIndex = i; st.state = 'blocked'; 
-            } 
-        } 
     }
-    
+    else {
+        st.goodCount++;
+        // Bloco 3: contador de lote (apenas peças boas avançam o lote)
+        if (st.batchSize > 0) st.piecesInBatch++;
+
+        if (i === S.length - 1) {
+            stats.good++;
+            spawnAnimBox(fromEl, document.getElementById('endNode'), 'finish', 1000);
+        }
+        else {
+            const w = buffers.wips[i];
+            if (wipCanReceive(w)) {
+                sendToWip(i, TRANSIT_TIME);
+                spawnAnimBox(fromEl, document.getElementById(`thermoTrack_${i}`), 'station_to_wip', TRANSIT_TIME * 1000);
+            }
+            else {
+                st.holding = true; st.holdDestIndex = i; st.state = 'blocked';
+            }
+        }
+    }
+
     st.remProc = 0; st.curIdealCT = 0; st.curProcTot = 0;
     if (st.state !== 'blocked') { 
         if (st.downRem > EPSILON && st.enabled) st.state = 'down'; 
@@ -1413,56 +1492,97 @@ function stationTick(i, dt) {
     let rem = dt;
     
     while (rem > EPSILON && st.state !== 'finished') {
-        if (st.state === 'setup') { 
+        if (st.state === 'setup') {
             const use = Math.min(rem, st.setupRem);
             st.tSetup += use; st.setupRem -= use; rem -= use;
-            if (st.setupRem <= EPSILON) { st.setupRem = 0; st.setupDone = true; st.state = 'finished'; }
+            if (st.setupRem <= EPSILON) {
+                st.setupRem = 0;
+                if (st.isBatchSetup) {
+                    // Setup de troca de lote: volta a operar
+                    st.isBatchSetup = false;
+                    st.setupStarted = false;
+                    st.piecesInBatch = 0;
+                    st.batchSetups++;
+                    st.state = 'idle';
+                } else {
+                    st.setupDone = true;
+                    st.state = 'finished';
+                }
+            }
             continue;
         }
-        
-        if (st.state === 'blocked') { 
-            if (lineStarted && !isLineDone) st.tBlocked += rem; 
-            if (st.downRem > 0) st.downRem -= Math.min(rem, st.downRem); 
-            rem = 0; tryReleaseBlocked(i); continue; 
+
+        if (st.state === 'blocked') {
+            if (lineStarted && !isLineDone) st.tBlocked += rem;
+            if (st.downRem > 0) st.downRem -= Math.min(rem, st.downRem);
+            rem = 0; tryReleaseBlocked(i); continue;
         }
-        
-        if (st.state === 'down') { 
-            const use = st.downRem < Infinity ? Math.min(rem, st.downRem) : rem; 
-            if (lineStarted && !isLineDone) st.tDown += use; 
-            if (st.downRem < Infinity) { 
-                st.downRem -= use; 
-                if (st.downRem <= EPSILON) { st.downRem = 0; st.state = 'idle'; } 
-            } 
-            rem -= use; continue; 
+
+        if (st.state === 'down') {
+            const use = st.downRem < Infinity ? Math.min(rem, st.downRem) : rem;
+            if (lineStarted && !isLineDone) st.tDown += use;
+            if (st.downRem < Infinity) {
+                st.downRem -= use;
+                if (st.downRem <= EPSILON) {
+                    st.downRem = 0;
+                    // Bloco 3: se havia peça em processamento interrompida por falha, retomar
+                    if (st.remProc > EPSILON) {
+                        st.state = 'processing';
+                    } else {
+                        st.state = 'idle';
+                    }
+                    if (st.mtbfMin > 0) scheduleNextFailure(st);
+                }
+            }
+            rem -= use; continue;
         }
-        
-        if (st.state === 'processing') { 
-            const use = Math.min(rem, st.remProc); 
-            if (lineStarted && !isLineDone) st.tRun += use; 
-            st.runTime += use; st.remProc -= use; rem -= use; 
-            if (st.remProc <= EPSILON) finishProcessing(i); 
-            continue; 
+
+        if (st.state === 'processing') {
+            // Bloco 3: MTBF estocástico — se chegar a falha antes de terminar a peça
+            if (st.mtbfMin > 0 && Number.isFinite(st.nextFailIn) && st.nextFailIn <= rem && st.nextFailIn < st.remProc) {
+                const use = st.nextFailIn;
+                if (lineStarted && !isLineDone) st.tRun += use;
+                st.runTime += use; st.remProc -= use; rem -= use; st.nextFailIn = 0;
+                // Inicia parada (peça em processamento fica suspensa em remProc)
+                st.downRem = expRand(st.mttrMin * 60);
+                st.failuresCount++;
+                st.state = 'down';
+                continue;
+            }
+            const use = Math.min(rem, st.remProc);
+            if (lineStarted && !isLineDone) st.tRun += use;
+            st.runTime += use; st.remProc -= use; rem -= use;
+            if (st.mtbfMin > 0 && Number.isFinite(st.nextFailIn)) st.nextFailIn -= use;
+            if (st.remProc <= EPSILON) finishProcessing(i);
+            continue;
         }
-        
-        if (st.state === 'idle') { 
+
+        if (st.state === 'idle') {
+            // Bloco 3: setup forçado por mudança de lote
+            if (lineStarted && st.batchSize > 0 && st.piecesInBatch >= st.batchSize && st.setupConfig > EPSILON) {
+                st.isBatchSetup = true;
+                st.setupRem = st.setupConfig * 60;
+                st.state = 'setup';
+                continue;
+            }
             if (lineStarted && shouldStartSetup(st, i)) {
                 st.setupStarted = true; st.setupRem = st.setupConfig * 60; st.state = 'setup'; continue;
             }
-            
-            if (lineStarted && (st.Aset <= EPSILON || st.Pset <= EPSILON)) { 
-                if (!isLineDone) st.tDown += rem; rem = 0; continue; 
+
+            if (lineStarted && (st.Aset <= EPSILON || st.Pset <= EPSILON)) {
+                if (!isLineDone) st.tDown += rem; rem = 0; continue;
             }
-            
+
             if (startNewPiece(i)) continue;
-            
-            if (lineStarted && !isLineDone) { 
-                if (i === 0) st.tIdle += rem; 
-                else { 
-                    const pw = buffers.wips[i-1]; 
-                    if (wipTotal(pw) === 0) st.tStarved += rem; else st.tIdle += rem; 
-                } 
-            } 
-            rem = 0; 
+
+            if (lineStarted && !isLineDone) {
+                if (i === 0) st.tIdle += rem;
+                else {
+                    const pw = buffers.wips[i-1];
+                    if (wipTotal(pw) === 0) st.tStarved += rem; else st.tIdle += rem;
+                }
+            }
+            rem = 0;
         }
     }
 }
@@ -1580,7 +1700,7 @@ function buildDOM() {
         const isLast = i === STATION_COUNT - 1, st = S[i];
         const stEl = document.createElement('div'); 
         stEl.className = 'station'; stEl.id = `st${i}`;
-        stEl.innerHTML = `<div class="stationHead"><div class="stationTitle"><span class="dot"></span><input class="station-name-input" type="text" value="${st.name}" onchange="S[${i}].name=this.value"></div><div class="bottleneck-badge">GARGALO</div><div class="toggle on" id="toggle_${i}"></div></div><div class="visual" id="stationVisual_${i}"><div class="machineIcon" id="icon_${i}">${SVG_GEAR}</div><div class="statusPill gray" id="status_${i}">PRONTA</div></div><div class="kpiRow"><div class="kbox"><div class="klabel">OEE</div><div class="kval" id="oee_${i}">0%</div></div><div class="kbox"><div class="klabel">A%</div><div class="kval small" id="A_${i}">100</div></div><div class="kbox"><div class="klabel">P%</div><div class="kval small" id="P_${i}">100</div></div><div class="kbox"><div class="klabel">Q%</div><div class="kval small" id="Q_${i}">100</div></div></div><div class="info-header"><div>PPM NOM: <b id="ppmNomShow_${i}">${st.ppmNom}</b></div><div>PPM REAL: <b id="ppmRealShow_${i}" class="blue">${Math.round(ppmReal(st))}</b></div></div><div class="info-cards"><div class="card-stat green"><span>BONS</span><b id="good_${i}">0</b></div><div class="card-stat red"><span>REFUGO</span><b id="refugo_${i}">0</b></div></div><div class="sliders"><div class="srow nom"><div class="name">PPM</div><input id="ppmR_${i}" type="range" min="1" max="300" value="${st.ppmNom}"><input id="ppmN_${i}" type="number" min="1" max="300" value="${st.ppmNom}"></div><div class="srow a"><div class="name">DISP</div><input id="aR_${i}" type="range" min="0" max="100" value="${st.Aset*100}"><input id="aN_${i}" type="number" min="0" max="100" value="${st.Aset*100}"></div><div class="srow p"><div class="name">PERF</div><input id="pR_${i}" type="range" min="0" max="100" value="${st.Pset*100}"><input id="pN_${i}" type="number" min="0" max="100" value="${st.Pset*100}"></div><div class="srow q"><div class="name">QUAL</div><input id="qR_${i}" type="range" min="0" max="100" value="${st.Qset*100}"><input id="qN_${i}" type="number" min="0" max="100" value="${st.Qset*100}"></div><div class="srow setup-row"><div class="name">SETUP</div><input id="setupInp_${i}" type="number" step="0.1" min="0" value="${st.setupConfig}"><span style="font-size:9px;font-weight:800;color:#64748b;">min</span></div></div><div class="times"><div class="trow"><span class="tname op">OPERANDO</span><span id="tRun_${i}">00:00.0</span></div><div class="trow"><span class="tname setup">SETUP</span><span id="tSetup_${i}">00:00.0</span></div><div class="trow"><span class="tname down">PARADA</span><span id="tDown_${i}">00:00.0</span></div><div class="trow" style="${i===0?'display:none':''}"><span class="tname wait">AGUARDANDO</span><span id="tWait_${i}">00:00.0</span></div><div class="trow" style="${isLast?'display:none':''}"><span class="tname block">TRAVADA</span><span id="tBlock_${i}">00:00.0</span></div><div class="trow"><span class="tname idle">OCIOSIDADE</span><span id="tIdle_${i}">00:00.0</span></div></div>`;
+        stEl.innerHTML = `<div class="stationHead"><div class="stationTitle"><span class="dot"></span><input class="station-name-input" type="text" value="${st.name}" onchange="S[${i}].name=this.value"></div><div class="bottleneck-badge">GARGALO</div><div class="toggle on" id="toggle_${i}"></div></div><div class="visual" id="stationVisual_${i}"><div class="machineIcon" id="icon_${i}">${SVG_GEAR}</div><div class="statusPill gray" id="status_${i}">PRONTA</div></div><div class="kpiRow"><div class="kbox"><div class="klabel">OEE</div><div class="kval" id="oee_${i}">0%</div></div><div class="kbox"><div class="klabel">A%</div><div class="kval small" id="A_${i}">100</div></div><div class="kbox"><div class="klabel">P%</div><div class="kval small" id="P_${i}">100</div></div><div class="kbox"><div class="klabel">Q%</div><div class="kval small" id="Q_${i}">100</div></div></div><div class="info-header"><div>PPM NOM: <b id="ppmNomShow_${i}">${st.ppmNom}</b></div><div>PPM REAL: <b id="ppmRealShow_${i}" class="blue">${Math.round(ppmReal(st))}</b></div></div><div class="info-cards"><div class="card-stat green"><span>BONS</span><b id="good_${i}">0</b></div><div class="card-stat red"><span>REFUGO</span><b id="refugo_${i}">0</b></div></div><div class="sliders"><div class="srow nom"><div class="name">PPM</div><input id="ppmR_${i}" type="range" min="1" max="300" value="${st.ppmNom}"><input id="ppmN_${i}" type="number" min="1" max="300" value="${st.ppmNom}"></div><div class="srow a"><div class="name">DISP</div><input id="aR_${i}" type="range" min="0" max="100" value="${st.Aset*100}"><input id="aN_${i}" type="number" min="0" max="100" value="${st.Aset*100}"></div><div class="srow p"><div class="name">PERF</div><input id="pR_${i}" type="range" min="0" max="100" value="${st.Pset*100}"><input id="pN_${i}" type="number" min="0" max="100" value="${st.Pset*100}"></div><div class="srow q"><div class="name">QUAL</div><input id="qR_${i}" type="range" min="0" max="100" value="${st.Qset*100}"><input id="qN_${i}" type="number" min="0" max="100" value="${st.Qset*100}"></div><div class="srow setup-row"><div class="name">SETUP</div><input id="setupInp_${i}" type="number" step="0.1" min="0" value="${st.setupConfig}"><span style="font-size:9px;font-weight:800;color:#64748b;">min</span></div></div><div class="times"><div class="trow"><span class="tname op">OPERANDO</span><span id="tRun_${i}">00:00.0</span></div><div class="trow"><span class="tname setup">SETUP</span><span id="tSetup_${i}">00:00.0</span></div><div class="trow"><span class="tname down">PARADA</span><span id="tDown_${i}">00:00.0</span></div><div class="trow" style="${i===0?'display:none':''}"><span class="tname wait">AGUARDANDO</span><span id="tWait_${i}">00:00.0</span></div><div class="trow" style="${isLast?'display:none':''}"><span class="tname block">TRAVADA</span><span id="tBlock_${i}">00:00.0</span></div><div class="trow"><span class="tname idle">OCIOSIDADE</span><span id="tIdle_${i}">00:00.0</span></div></div><div class="adv-toggle" onclick="document.getElementById('adv_${i}').classList.toggle('open')">⚙ Avançado ▾</div><div class="adv-panel" id="adv_${i}"><div class="adv-row"><span class="nm">Lote</span><input id="batchInp_${i}" type="number" min="0" max="9999" value="${st.batchSize}"><span class="un">pç</span></div><div class="adv-row"><span class="nm">MTBF</span><input id="mtbfInp_${i}" type="number" min="0" max="9999" step="0.5" value="${st.mtbfMin}"><span class="un">min</span></div><div class="adv-row"><span class="nm">MTTR</span><input id="mttrInp_${i}" type="number" min="0" max="9999" step="0.5" value="${st.mttrMin}"><span class="un">min</span></div><div class="adv-row"><span class="nm">Aprendiz.</span><input id="learnInp_${i}" type="number" min="0" max="9999" value="${st.learningPieces}"><span class="un">pç</span></div><div class="adv-row"><span class="nm">P inicial</span><input id="learnStartInp_${i}" type="number" min="0" max="100" step="5" value="${Math.round(st.learningStart*100)}"><span class="un">%</span></div><div class="adv-row chk"><span class="nm">Rework loop</span><input id="reworkChk_${i}" type="checkbox" ${st.reworkEnabled?'checked':''}></div><div class="adv-counters"><span>Falhas: <b id="advFails_${i}">0</b></span><span>Setups: <b id="advSetups_${i}">0</b></span><span>Rework: <b id="advRework_${i}">0</b></span></div></div>`;
         board.appendChild(stEl); setupStationBinds(i);
         document.getElementById(`toggle_${i}`).classList.toggle('on', st.enabled);
         
@@ -1666,6 +1786,23 @@ function setupStationBinds(i) {
     bindDual(`qR_${i}`, `qN_${i}`, v => st.Qset = clamp01(v / 100));
     const setupInp = document.getElementById(`setupInp_${i}`);
     if (setupInp) setupInp.oninput = e => { st.setupConfig = Math.max(0, parseFloat(e.target.value) || 0); calculateInitialMeta(); render(); };
+
+    // Bloco 3: bindings dos campos avançados
+    const batchInp = document.getElementById(`batchInp_${i}`);
+    if (batchInp) batchInp.oninput = e => { st.batchSize = Math.max(0, parseInt(e.target.value) || 0); };
+    const mtbfInp = document.getElementById(`mtbfInp_${i}`);
+    if (mtbfInp) mtbfInp.oninput = e => {
+        st.mtbfMin = Math.max(0, parseFloat(e.target.value) || 0);
+        if (st.mtbfMin > 0 && !Number.isFinite(st.nextFailIn)) scheduleNextFailure(st);
+    };
+    const mttrInp = document.getElementById(`mttrInp_${i}`);
+    if (mttrInp) mttrInp.oninput = e => { st.mttrMin = Math.max(0, parseFloat(e.target.value) || 0); };
+    const learnInp = document.getElementById(`learnInp_${i}`);
+    if (learnInp) learnInp.oninput = e => { st.learningPieces = Math.max(0, parseInt(e.target.value) || 0); };
+    const learnStartInp = document.getElementById(`learnStartInp_${i}`);
+    if (learnStartInp) learnStartInp.oninput = e => { st.learningStart = clamp01((parseFloat(e.target.value) || 0) / 100); };
+    const reworkChk = document.getElementById(`reworkChk_${i}`);
+    if (reworkChk) reworkChk.onchange = e => { st.reworkEnabled = !!e.target.checked; };
 }
 
 function setupWipBinds(i) {
@@ -1686,6 +1823,10 @@ function updateStationUI(i) {
     setEl(`ppmNomShow_${i}`, Math.round(st.ppmNom)); setEl(`ppmRealShow_${i}`, Math.round(ppmReal(st)));
     setEl(`good_${i}`, st.goodCount); setEl(`refugo_${i}`, stats.scrapByStation[i]);
     setEl(`tRun_${i}`, fmtMMSSd(st.tRun)); setEl(`tDown_${i}`, fmtMMSSd(st.tDown)); setEl(`tSetup_${i}`, fmtMMSSd(st.tSetup)); setEl(`tWait_${i}`, fmtMMSSd(st.tStarved)); setEl(`tBlock_${i}`, fmtMMSSd(st.tBlocked)); setEl(`tIdle_${i}`, fmtMMSSd(st.tIdle));
+    // Bloco 3: contadores do painel avançado
+    setEl(`advFails_${i}`, st.failuresCount);
+    setEl(`advSetups_${i}`, st.batchSetups);
+    setEl(`advRework_${i}`, `${st.reworkCount}${st.reworkQueue > 0 ? ' (+'+st.reworkQueue+')' : ''}`);
 }
 
 function updateWipUI(i) {
@@ -1785,7 +1926,7 @@ function spawnAnimBox(fromEl, toEl, type, duration) {
 function reset() {
     const keep = document.getElementById('chkKeepParams').checked;
     let saved = null;
-    if (keep && S.length > 0) { let wI = [], wM = []; for (let i = 0; i < STATION_COUNT - 1; i++) { wI.push(parseInt(document.getElementById(`wipInitInput_${i}`)?.value) || 0); wM.push(parseInt(document.getElementById(`wipMaxInput_${i}`)?.value) || 100); } saved = { transit: TRANSIT_TIME, stock: buffers.raw.stock, target: buffers.raw.target, makeToGood, timeScale, flushLine, wI, wM, stations: S.map(s => ({ enabled: s.enabled, name: s.name, ppm: s.ppmNom, A: s.Aset, P: s.Pset, Q: s.Qset, setup: s.setupConfig })) }; }
+    if (keep && S.length > 0) { let wI = [], wM = []; for (let i = 0; i < STATION_COUNT - 1; i++) { wI.push(parseInt(document.getElementById(`wipInitInput_${i}`)?.value) || 0); wM.push(parseInt(document.getElementById(`wipMaxInput_${i}`)?.value) || 100); } saved = { transit: TRANSIT_TIME, stock: buffers.raw.stock, target: buffers.raw.target, makeToGood, timeScale, flushLine, wI, wM, stations: S.map(s => ({ enabled: s.enabled, name: s.name, ppm: s.ppmNom, A: s.Aset, P: s.Pset, Q: s.Qset, setup: s.setupConfig, batchSize: s.batchSize, mtbfMin: s.mtbfMin, mttrMin: s.mttrMin, learningPieces: s.learningPieces, learningStart: s.learningStart, reworkEnabled: s.reworkEnabled })) }; }
     
     running = false; lineStarted = false; t = 0; finalTime = null; isFastForwarding = false; initialWipAtStart = 0; targetAtStart = 0; fixedInitialEstimate = null;
     lastChartUpdate = 0; // CORRIGIDO: Reset do timer do gráfico
@@ -1809,7 +1950,23 @@ function reset() {
     stats = { good: 0, scrap: 0, scrapByStation: Array(STATION_COUNT).fill(0) }; transfers.length = 0;
     S = []; buffers.wips = [];
     
-    for (let i = 0; i < STATION_COUNT; i++) { let st = stationTemplate(i); if (keep && saved?.stations[i]) Object.assign(st, { enabled: saved.stations[i].enabled, name: saved.stations[i].name, ppmNom: saved.stations[i].ppm, Aset: saved.stations[i].A, Pset: saved.stations[i].P, Qset: saved.stations[i].Q, setupConfig: saved.stations[i].setup || 0 }); S.push(st); }
+    for (let i = 0; i < STATION_COUNT; i++) {
+        let st = stationTemplate(i);
+        if (keep && saved?.stations[i]) {
+            const sv = saved.stations[i];
+            Object.assign(st, {
+                enabled: sv.enabled, name: sv.name, ppmNom: sv.ppm,
+                Aset: sv.A, Pset: sv.P, Qset: sv.Q, setupConfig: sv.setup || 0,
+                batchSize: sv.batchSize || 0,
+                mtbfMin: sv.mtbfMin || 0,
+                mttrMin: sv.mttrMin || 5,
+                learningPieces: sv.learningPieces || 0,
+                learningStart: sv.learningStart ?? 0.6,
+                reworkEnabled: !!sv.reworkEnabled
+            });
+        }
+        S.push(st);
+    }
     for (let i = 0; i < STATION_COUNT - 1; i++) { let w = makeWip(); if (keep && saved) { w.max = saved.wM[i] || 100; w.ready = saved.wI[i] || 0; } buffers.wips.push(w); }
     
     buildDOM();
@@ -1883,7 +2040,10 @@ function collectConfig() {
         wipMax: wM,
         stations: S.map(s => ({
             enabled: s.enabled, name: s.name, ppmNom: s.ppmNom,
-            Aset: s.Aset, Pset: s.Pset, Qset: s.Qset, setupConfig: s.setupConfig
+            Aset: s.Aset, Pset: s.Pset, Qset: s.Qset, setupConfig: s.setupConfig,
+            batchSize: s.batchSize, mtbfMin: s.mtbfMin, mttrMin: s.mttrMin,
+            learningPieces: s.learningPieces, learningStart: s.learningStart,
+            reworkEnabled: s.reworkEnabled
         }))
     };
 }
@@ -1919,6 +2079,12 @@ function applyConfig(cfg) {
             Pset: clamp01(parseFloat(src.Pset) ?? 1),
             Qset: clamp01(parseFloat(src.Qset) ?? 1),
             setupConfig: parseFloat(src.setupConfig) || 0,
+            batchSize: Math.max(0, parseInt(src.batchSize) || 0),
+            mtbfMin: Math.max(0, parseFloat(src.mtbfMin) || 0),
+            mttrMin: Math.max(0, parseFloat(src.mttrMin) || 5),
+            learningPieces: Math.max(0, parseInt(src.learningPieces) || 0),
+            learningStart: clamp01(parseFloat(src.learningStart) ?? 0.6),
+            reworkEnabled: !!src.reworkEnabled,
         });
         S.push(st);
     }
