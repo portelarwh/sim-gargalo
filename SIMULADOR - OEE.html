@@ -252,6 +252,35 @@
         .extra-stat-label { font-size: 8px; font-weight: 700; color: #64748b; text-transform: uppercase; }
         .extra-stat-value { font-size: 16px; font-weight: 800; color: #334155; font-variant-numeric: tabular-nums; }
         .extra-stat-value.wip-balance { font-size: 14px; color: #0369a1; }
+
+        /* === Bloco 1: Diagnóstico Visual === */
+        .analytics-btn { background: rgba(217, 70, 239, 0.15); border: 1px solid rgba(217, 70, 239, 0.35); color: var(--purple); padding: 4px 8px; border-radius: 4px; font-size: 9px; font-weight: 700; cursor: pointer; transition: all 0.2s; text-transform: uppercase; white-space: nowrap; }
+        .analytics-btn:hover { background: var(--purple); color: #fff; }
+        .modal-content.analytics { max-width: 1100px; }
+        .tab-bar { display: flex; gap: 4px; margin: 10px 0 18px; border-bottom: 1px solid var(--modal-border); }
+        .tab-btn { background: transparent; border: none; color: var(--modal-text); opacity: 0.6; padding: 8px 14px; cursor: pointer; font-size: 12px; font-weight: 700; border-bottom: 2px solid transparent; text-transform: uppercase; letter-spacing: 0.04em; }
+        .tab-btn:hover { opacity: 1; }
+        .tab-btn.active { opacity: 1; color: var(--blue); border-bottom-color: var(--blue); }
+        .tab-pane { display: none; }
+        .tab-pane.active { display: block; }
+        .analytics-summary { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+        .a-stat { background: rgba(255,255,255,0.04); border: 1px solid var(--modal-border); padding: 8px 14px; border-radius: 8px; min-width: 110px; }
+        .a-stat-lbl { font-size: 9px; color: var(--gray); font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; }
+        .a-stat-val { font-size: 18px; font-weight: 800; color: var(--modal-text); margin-top: 2px; font-variant-numeric: tabular-nums; }
+        .a-stat-val.bn { color: var(--purple); }
+        .a-stat-val.takt { color: var(--cyan); }
+        .chart-wrap { background: rgba(255,255,255,0.03); border: 1px solid var(--modal-border); border-radius: 10px; padding: 14px; }
+        .chart-wrap svg { display: block; width: 100%; }
+        .legend { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 10px; font-size: 11px; }
+        .legend-item { display: flex; align-items: center; gap: 5px; color: var(--modal-text); opacity: 0.9; }
+        .legend-swatch { width: 12px; height: 12px; border-radius: 3px; }
+        .swatch-run { background: #22c55e; }
+        .swatch-setup { background: #06b6d4; }
+        .swatch-down { background: #ef4444; }
+        .swatch-block { background: #f59e0b; }
+        .swatch-wait { background: #eab308; }
+        .swatch-idle { background: #94a3b8; }
+        .empty-note { text-align: center; padding: 30px; color: var(--gray); font-size: 13px; font-style: italic; }
     </style>
 </head>
 <body>
@@ -268,6 +297,7 @@
                 Pedro Portela
             </a>
             <button class="help-btn" onclick="openHelp()">AJUDA</button>
+            <button class="analytics-btn" onclick="openAnalytics()">ANÁLISE</button>
         </div>
 
         <div class="center-configs">
@@ -634,6 +664,52 @@
     </div>
 </div>
 
+<div id="analyticsModal" class="modal">
+    <div class="modal-content analytics">
+        <span class="close" onclick="closeAnalytics()">&times;</span>
+        <h2>📊 Análise da Linha</h2>
+
+        <div class="analytics-summary" id="analyticsSummary"></div>
+
+        <div class="tab-bar">
+            <button class="tab-btn active" data-tab="yamazumi" onclick="switchAnalyticsTab('yamazumi')">Yamazumi</button>
+            <button class="tab-btn" data-tab="pareto" onclick="switchAnalyticsTab('pareto')">Pareto de Perdas</button>
+            <button class="tab-btn" data-tab="heatmap" onclick="switchAnalyticsTab('heatmap')">Heatmap de Estados</button>
+        </div>
+
+        <div class="tab-pane active" id="tab-yamazumi">
+            <p style="font-size:12px; opacity:0.8; margin:0 0 10px;">Tempo de ciclo efetivo decomposto por estação. Cada barra mostra a média de segundos por peça produzida em cada estado. A <strong style="color:var(--cyan);">linha tracejada</strong> indica o <strong>Takt time</strong> (ritmo necessário para atingir a meta).</p>
+            <div class="chart-wrap"><div id="yamazumiChart"></div></div>
+            <div class="legend">
+                <span class="legend-item"><span class="legend-swatch swatch-run"></span>Operando</span>
+                <span class="legend-item"><span class="legend-swatch swatch-setup"></span>Setup</span>
+                <span class="legend-item"><span class="legend-swatch swatch-down"></span>Parada</span>
+                <span class="legend-item"><span class="legend-swatch swatch-block"></span>Travada</span>
+                <span class="legend-item"><span class="legend-swatch swatch-wait"></span>Aguardando</span>
+                <span class="legend-item"><span class="legend-swatch swatch-idle"></span>Ociosa</span>
+            </div>
+        </div>
+
+        <div class="tab-pane" id="tab-pareto">
+            <p style="font-size:12px; opacity:0.8; margin:0 0 10px;">Perdas agregadas da linha, ordenadas do maior para o menor impacto. A linha sobreposta mostra a <strong>% cumulativa</strong>. Foque nas barras à esquerda — geralmente 20% das categorias causam 80% das perdas (Princípio de Pareto).</p>
+            <div class="chart-wrap"><div id="paretoChart"></div></div>
+        </div>
+
+        <div class="tab-pane" id="tab-heatmap">
+            <p style="font-size:12px; opacity:0.8; margin:0 0 10px;">Linha do tempo de cada estação. Cada faixa horizontal mostra o estado ao longo da simulação — útil para identificar padrões (ex: starving cíclico, blocos prolongados, propagação de paradas).</p>
+            <div class="chart-wrap"><div id="heatmapChart"></div></div>
+            <div class="legend">
+                <span class="legend-item"><span class="legend-swatch swatch-run"></span>Operando</span>
+                <span class="legend-item"><span class="legend-swatch swatch-setup"></span>Setup</span>
+                <span class="legend-item"><span class="legend-swatch swatch-down"></span>Parada</span>
+                <span class="legend-item"><span class="legend-swatch swatch-block"></span>Travada</span>
+                <span class="legend-item"><span class="legend-swatch swatch-wait"></span>Aguardando</span>
+                <span class="legend-item"><span class="legend-swatch swatch-idle"></span>Ociosa</span>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 const SVG_GEAR = `<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>`;
 const SVG_BUFFER = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10l9-5 9 5-9 5-9-5z"></path><path d="M3 10v7l9 5 9-5v-7"></path></svg>`;
@@ -695,7 +771,315 @@ let bottleneckId = 0;
 
 function openHelp() { document.getElementById('helpModal').style.display = "block"; }
 function closeHelp() { document.getElementById('helpModal').style.display = "none"; }
-window.onclick = e => { if (e.target == document.getElementById('helpModal')) closeHelp(); };
+window.onclick = e => {
+    if (e.target == document.getElementById('helpModal')) closeHelp();
+    if (e.target == document.getElementById('analyticsModal')) closeAnalytics();
+};
+
+// === Bloco 1: Diagnóstico Visual ===
+const STATE_COLORS = {
+    processing: '#22c55e', setup: '#06b6d4', down: '#ef4444',
+    blocked: '#f59e0b', starved: '#eab308', idle: '#94a3b8',
+    off: '#475569', finished: '#16a34a'
+};
+const STATE_LABELS = {
+    processing: 'Operando', setup: 'Setup', down: 'Parada',
+    blocked: 'Travada', starved: 'Aguardando', idle: 'Ociosa',
+    off: 'Desligada', finished: 'Concluída'
+};
+const HEATMAP_MAX_SAMPLES = 600;
+let stateHistory = []; // [[{t, s}, ...], ...] uma série por estação
+let lastSnapshot = -1;
+let analyticsOpen = false;
+let analyticsTab = 'yamazumi';
+
+function effectiveState(st, i) {
+    // Distingue 'idle' de 'starved' para histórico (mesma lógica do stationTick)
+    if (st.state === 'idle' && i > 0) {
+        const pw = buffers.wips[i-1];
+        if (pw && wipTotal(pw) === 0) return 'starved';
+    }
+    return st.state;
+}
+
+function recordStateSnapshot() {
+    if (!lineStarted) return;
+    if (t - lastSnapshot < 0.5 && lastSnapshot >= 0) return;
+    lastSnapshot = t;
+    for (let i = 0; i < STATION_COUNT; i++) {
+        if (!stateHistory[i]) stateHistory[i] = [];
+        const s = effectiveState(S[i], i);
+        const series = stateHistory[i];
+        const last = series[series.length - 1];
+        if (last && last.s === s) continue; // colapsa runs do mesmo estado
+        series.push({ t: t, s: s });
+        if (series.length > HEATMAP_MAX_SAMPLES) {
+            // amostragem agressiva: descarta metade dos eventos antigos
+            const compact = [];
+            for (let k = 0; k < series.length; k += 2) compact.push(series[k]);
+            stateHistory[i] = compact;
+        }
+    }
+}
+
+function openAnalytics() {
+    analyticsOpen = true;
+    document.getElementById('analyticsModal').style.display = 'block';
+    renderAnalytics();
+}
+function closeAnalytics() {
+    analyticsOpen = false;
+    document.getElementById('analyticsModal').style.display = 'none';
+}
+function switchAnalyticsTab(tab) {
+    analyticsTab = tab;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+    document.querySelectorAll('.tab-pane').forEach(p => p.classList.toggle('active', p.id === `tab-${tab}`));
+    renderAnalytics();
+}
+
+function renderAnalytics() {
+    if (!analyticsOpen) return;
+    renderAnalyticsSummary();
+    if (analyticsTab === 'yamazumi') renderYamazumi();
+    else if (analyticsTab === 'pareto') renderPareto();
+    else if (analyticsTab === 'heatmap') renderHeatmap();
+}
+
+function calcTaktTime() {
+    // Takt = tempo planeado / demanda (segundos por peça)
+    const target = targetAtStart > 0 ? targetAtStart : buffers.raw.target;
+    const elapsed = lineStarted ? (finalTime !== null ? finalTime : t) : initialEstimate;
+    if (target <= 0 || elapsed <= 0) return 0;
+    return elapsed / target;
+}
+
+function renderAnalyticsSummary() {
+    const el = document.getElementById('analyticsSummary');
+    if (!el) return;
+    const takt = calcTaktTime();
+    const bn = bottleneckId >= 0 && S[bottleneckId] ? S[bottleneckId] : null;
+    const bnCT = bn ? 60 / Math.max(0.1, bn.ppmNom * bn.Pset) : 0;
+    const oeeBn = bn ? oeeCalcStation(bn).OEE : 0;
+    const throughput = t > 0 ? (stats.good / (t / 60)).toFixed(1) : '0';
+    el.innerHTML = `
+        <div class="a-stat"><div class="a-stat-lbl">Gargalo</div><div class="a-stat-val bn">${bn ? bn.name : '—'}</div></div>
+        <div class="a-stat"><div class="a-stat-lbl">Takt Time</div><div class="a-stat-val takt">${takt > 0 ? takt.toFixed(1)+'s' : '—'}</div></div>
+        <div class="a-stat"><div class="a-stat-lbl">CT Gargalo</div><div class="a-stat-val">${bn ? bnCT.toFixed(1)+'s' : '—'}</div></div>
+        <div class="a-stat"><div class="a-stat-lbl">OEE Gargalo</div><div class="a-stat-val">${pct(oeeBn)}</div></div>
+        <div class="a-stat"><div class="a-stat-lbl">Throughput</div><div class="a-stat-val">${throughput} ppm</div></div>
+        <div class="a-stat"><div class="a-stat-lbl">Bons / Refugo</div><div class="a-stat-val">${stats.good} / ${stats.scrap}</div></div>
+    `;
+}
+
+function renderYamazumi() {
+    const host = document.getElementById('yamazumiChart');
+    if (!host) return;
+    if (!lineStarted) { host.innerHTML = `<div class="empty-note">Inicie a simulação para visualizar o Yamazumi.</div>`; return; }
+
+    // Tempo por estado dividido pelo nº de peças processadas → CT médio decomposto
+    const cats = [
+        { key: 'tRun', color: STATE_COLORS.processing, label: 'Operando' },
+        { key: 'tSetup', color: STATE_COLORS.setup, label: 'Setup' },
+        { key: 'tDown', color: STATE_COLORS.down, label: 'Parada' },
+        { key: 'tBlocked', color: STATE_COLORS.blocked, label: 'Travada' },
+        { key: 'tStarved', color: STATE_COLORS.starved, label: 'Aguardando' },
+        { key: 'tIdle', color: STATE_COLORS.idle, label: 'Ociosa' },
+    ];
+    const rows = S.map(st => {
+        const n = Math.max(1, st.totalCount);
+        const parts = cats.map(c => ({ ...c, v: st[c.key] / n }));
+        const total = parts.reduce((a, b) => a + b.v, 0);
+        return { name: st.name, parts, total, enabled: st.enabled, id: st.id };
+    });
+    const maxTotal = Math.max(...rows.map(r => r.total), calcTaktTime() * 1.2, 1);
+
+    const W = 980, padL = 100, padR = 30, padT = 20, padB = 50;
+    const barH = 36, gap = 14;
+    const H = padT + padB + rows.length * (barH + gap);
+    const innerW = W - padL - padR;
+
+    const takt = calcTaktTime();
+    const taktX = padL + (takt / maxTotal) * innerW;
+
+    let svg = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">`;
+
+    // Eixo X (segundos)
+    const ticks = 5;
+    for (let k = 0; k <= ticks; k++) {
+        const x = padL + (k / ticks) * innerW;
+        const v = (k / ticks) * maxTotal;
+        svg += `<line x1="${x}" y1="${padT}" x2="${x}" y2="${H - padB}" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>`;
+        svg += `<text x="${x}" y="${H - padB + 14}" fill="#94a3b8" font-size="10" text-anchor="middle">${v.toFixed(1)}s</text>`;
+    }
+
+    rows.forEach((r, i) => {
+        const y = padT + i * (barH + gap);
+        svg += `<text x="${padL - 8}" y="${y + barH/2 + 4}" fill="${r.id === bottleneckId ? '#d946ef' : '#e2e8f0'}" font-size="11" font-weight="700" text-anchor="end">${r.name}${r.id === bottleneckId ? ' ★' : ''}</text>`;
+        let cx = padL;
+        r.parts.forEach(p => {
+            const w = (p.v / maxTotal) * innerW;
+            if (w < 0.3) return;
+            svg += `<rect x="${cx}" y="${y}" width="${w}" height="${barH}" fill="${p.color}" stroke="rgba(0,0,0,0.2)" stroke-width="0.5">`;
+            svg += `<title>${r.name} — ${p.label}: ${p.v.toFixed(2)}s/peça</title></rect>`;
+            if (w > 36) svg += `<text x="${cx + w/2}" y="${y + barH/2 + 4}" fill="#0f172a" font-size="10" font-weight="700" text-anchor="middle">${p.v.toFixed(1)}</text>`;
+            cx += w;
+        });
+        svg += `<text x="${cx + 6}" y="${y + barH/2 + 4}" fill="#cbd5e1" font-size="10" font-weight="600">${r.total.toFixed(1)}s</text>`;
+    });
+
+    // Linha de Takt
+    if (takt > 0 && taktX > padL && taktX < W - padR) {
+        svg += `<line x1="${taktX}" y1="${padT - 4}" x2="${taktX}" y2="${H - padB}" stroke="#06b6d4" stroke-width="2" stroke-dasharray="5,3"/>`;
+        svg += `<text x="${taktX + 4}" y="${padT + 10}" fill="#06b6d4" font-size="11" font-weight="800">TAKT ${takt.toFixed(1)}s</text>`;
+    }
+
+    svg += `</svg>`;
+    host.innerHTML = svg;
+}
+
+function renderPareto() {
+    const host = document.getElementById('paretoChart');
+    if (!host) return;
+    if (!lineStarted) { host.innerHTML = `<div class="empty-note">Inicie a simulação para visualizar o Pareto de perdas.</div>`; return; }
+
+    // Agrega perdas por categoria, somando todas as estações
+    const lossCats = [
+        { key: 'tDown', label: 'Parada (Disp.)', color: STATE_COLORS.down },
+        { key: 'tSetup', label: 'Setup', color: STATE_COLORS.setup },
+        { key: 'tBlocked', label: 'Travada', color: STATE_COLORS.blocked },
+        { key: 'tStarved', label: 'Aguardando', color: STATE_COLORS.starved },
+        { key: 'tIdle', label: 'Ociosa', color: STATE_COLORS.idle },
+    ];
+    // Perda de Performance: tempo extra além do ideal durante operação
+    const perfLoss = S.reduce((a, s) => a + Math.max(0, s.tRun - s.idealTime), 0);
+    // Perda de Qualidade: tempo gasto em peças refugadas (estimado)
+    const qualLoss = S.reduce((a, s) => {
+        const scrapCount = s.totalCount - s.goodCount;
+        return a + scrapCount * idealCT_nom(s);
+    }, 0);
+
+    const cats = lossCats.map(c => ({
+        label: c.label,
+        color: c.color,
+        value: S.reduce((a, s) => a + s[c.key], 0),
+    }));
+    cats.push({ label: 'Performance', color: '#f97316', value: perfLoss });
+    cats.push({ label: 'Qualidade', color: '#a855f7', value: qualLoss });
+
+    cats.sort((a, b) => b.value - a.value);
+    const total = cats.reduce((a, c) => a + c.value, 0);
+    if (total <= EPSILON) { host.innerHTML = `<div class="empty-note">Sem perdas registradas ainda.</div>`; return; }
+
+    const W = 980, padL = 50, padR = 60, padT = 30, padB = 80, H = 380;
+    const innerW = W - padL - padR, innerH = H - padT - padB;
+    const bw = innerW / cats.length * 0.7;
+    const gap = innerW / cats.length * 0.3;
+    const maxV = Math.max(...cats.map(c => c.value));
+
+    let svg = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">`;
+
+    // Grid horizontal
+    for (let k = 0; k <= 5; k++) {
+        const y = padT + (k / 5) * innerH;
+        const v = maxV * (1 - k/5);
+        svg += `<line x1="${padL}" y1="${y}" x2="${W - padR}" y2="${y}" stroke="rgba(255,255,255,0.06)"/>`;
+        svg += `<text x="${padL - 6}" y="${y + 4}" fill="#94a3b8" font-size="10" text-anchor="end">${fmtMMSSd(v)}</text>`;
+    }
+    // Eixo cumulativo (direita) 0-100%
+    for (let k = 0; k <= 4; k++) {
+        const y = padT + (k / 4) * innerH;
+        const v = 100 - k * 25;
+        svg += `<text x="${W - padR + 6}" y="${y + 4}" fill="#06b6d4" font-size="10">${v}%</text>`;
+    }
+
+    // Barras
+    let cum = 0;
+    const cumPts = [];
+    cats.forEach((c, i) => {
+        const x = padL + i * (bw + gap) + gap/2;
+        const h = (c.value / maxV) * innerH;
+        const y = padT + innerH - h;
+        svg += `<rect x="${x}" y="${y}" width="${bw}" height="${h}" fill="${c.color}" rx="3">`;
+        svg += `<title>${c.label}: ${fmtMMSSd(c.value)} (${(c.value/total*100).toFixed(1)}%)</title></rect>`;
+        svg += `<text x="${x + bw/2}" y="${y - 5}" fill="#e2e8f0" font-size="10" font-weight="700" text-anchor="middle">${(c.value/total*100).toFixed(0)}%</text>`;
+        // Rótulo eixo X (rodado)
+        svg += `<text transform="translate(${x + bw/2},${padT + innerH + 14}) rotate(-25)" fill="#cbd5e1" font-size="10" text-anchor="end">${c.label}</text>`;
+
+        cum += c.value;
+        const cumPct = cum / total;
+        const px = x + bw/2;
+        const py = padT + innerH - cumPct * innerH;
+        cumPts.push([px, py]);
+    });
+
+    // Linha cumulativa
+    const polyPts = cumPts.map(p => `${p[0]},${p[1]}`).join(' ');
+    svg += `<polyline points="${polyPts}" fill="none" stroke="#06b6d4" stroke-width="2"/>`;
+    cumPts.forEach(p => {
+        svg += `<circle cx="${p[0]}" cy="${p[1]}" r="3.5" fill="#06b6d4" stroke="#0f172a" stroke-width="1.5"/>`;
+    });
+
+    // Linha 80%
+    const y80 = padT + innerH - 0.8 * innerH;
+    svg += `<line x1="${padL}" y1="${y80}" x2="${W - padR}" y2="${y80}" stroke="#ef4444" stroke-width="1" stroke-dasharray="4,3"/>`;
+    svg += `<text x="${W - padR}" y="${y80 - 4}" fill="#ef4444" font-size="10" font-weight="700" text-anchor="end">80%</text>`;
+
+    svg += `</svg>`;
+    host.innerHTML = svg;
+}
+
+function renderHeatmap() {
+    const host = document.getElementById('heatmapChart');
+    if (!host) return;
+    if (!lineStarted || stateHistory.length === 0) {
+        host.innerHTML = `<div class="empty-note">Inicie a simulação — a linha do tempo é gravada automaticamente.</div>`;
+        return;
+    }
+
+    const tMax = finalTime !== null ? finalTime : t;
+    if (tMax <= 0) { host.innerHTML = `<div class="empty-note">Aguardando dados...</div>`; return; }
+
+    const W = 980, padL = 100, padR = 30, padT = 20, padB = 40;
+    const rowH = 30, gap = 8;
+    const H = padT + padB + STATION_COUNT * (rowH + gap);
+    const innerW = W - padL - padR;
+
+    let svg = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">`;
+
+    // Eixo X — tempo
+    const ticks = 6;
+    for (let k = 0; k <= ticks; k++) {
+        const x = padL + (k / ticks) * innerW;
+        const v = (k / ticks) * tMax;
+        svg += `<line x1="${x}" y1="${padT}" x2="${x}" y2="${H - padB}" stroke="rgba(255,255,255,0.06)"/>`;
+        svg += `<text x="${x}" y="${H - padB + 14}" fill="#94a3b8" font-size="10" text-anchor="middle">${fmtMMSSd(v)}</text>`;
+    }
+
+    for (let i = 0; i < STATION_COUNT; i++) {
+        const y = padT + i * (rowH + gap);
+        const st = S[i];
+        const series = stateHistory[i] || [];
+        svg += `<text x="${padL - 8}" y="${y + rowH/2 + 4}" fill="${i === bottleneckId ? '#d946ef' : '#e2e8f0'}" font-size="11" font-weight="700" text-anchor="end">${st.name}${i === bottleneckId ? ' ★' : ''}</text>`;
+        // Fundo
+        svg += `<rect x="${padL}" y="${y}" width="${innerW}" height="${rowH}" fill="rgba(255,255,255,0.04)" rx="3"/>`;
+
+        // Segmentos
+        for (let k = 0; k < series.length; k++) {
+            const start = series[k].t;
+            const end = k + 1 < series.length ? series[k+1].t : tMax;
+            const x1 = padL + (start / tMax) * innerW;
+            const x2 = padL + (end / tMax) * innerW;
+            const w = Math.max(0.5, x2 - x1);
+            const color = STATE_COLORS[series[k].s] || '#475569';
+            svg += `<rect x="${x1}" y="${y}" width="${w}" height="${rowH}" fill="${color}">`;
+            svg += `<title>${st.name} — ${STATE_LABELS[series[k].s] || series[k].s}: ${fmtMMSSd(start)} → ${fmtMMSSd(end)}</title></rect>`;
+        }
+    }
+
+    svg += `</svg>`;
+    host.innerHTML = svg;
+}
 
 function makeWip() { return { ready: 0, reserved: 0, max: DEFAULT_WIP_MAX }; }
 
@@ -1331,6 +1715,10 @@ function reset() {
     document.getElementById('chartOEE').innerHTML = '';
     document.getElementById('chartPPM').innerHTML = '';
 
+    // Bloco 1: reset histórico de estados
+    stateHistory = []; lastSnapshot = -1;
+    if (analyticsOpen) renderAnalytics();
+
     let stockVal = 100, targetVal = 60;
     if (keep && saved) { stockVal = saved.stock; targetVal = saved.target; TRANSIT_TIME = saved.transit; makeToGood = saved.makeToGood; flushLine = saved.flushLine; timeScale = saved.timeScale; }
     else { TRANSIT_TIME = parseInt(document.getElementById('transitTimeInput')?.value) || 0; timeScale = parseInt(document.getElementById('speedSelect')?.value) || 1; makeToGood = false; flushLine = false; }
@@ -1368,10 +1756,14 @@ function tick(dt, doRender) {
     }
     
     t += finalTime !== null ? 0 : dt;
-    transfersTick(dt); 
+    transfersTick(dt);
     for (let i = 0; i < STATION_COUNT; i++) stationTick(i, dt);
-    
-    if (t - lastChartUpdate > 0.5) { updateCharts(); lastChartUpdate = t; }
+
+    recordStateSnapshot();
+    if (t - lastChartUpdate > 0.5) {
+        updateCharts(); lastChartUpdate = t;
+        if (analyticsOpen) renderAnalytics();
+    }
     if (doRender) render();
 }
 
