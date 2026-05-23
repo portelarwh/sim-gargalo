@@ -281,6 +281,25 @@
         .swatch-wait { background: #eab308; }
         .swatch-idle { background: #94a3b8; }
         .empty-note { text-align: center; padding: 30px; color: var(--gray); font-size: 13px; font-style: italic; }
+
+        /* === Bloco 2: Export & Reprodutibilidade === */
+        .data-btn { background: rgba(34, 197, 94, 0.15); border: 1px solid rgba(34, 197, 94, 0.35); color: var(--green); padding: 4px 8px; border-radius: 4px; font-size: 9px; font-weight: 700; cursor: pointer; transition: all 0.2s; text-transform: uppercase; white-space: nowrap; }
+        .data-btn:hover { background: var(--green); color: #052e16; }
+        .data-menu-wrap { position: relative; display: inline-block; }
+        .data-menu { display: none; position: absolute; top: calc(100% + 4px); left: 0; background: #0f172a; border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 4px; min-width: 200px; box-shadow: 0 10px 30px rgba(0,0,0,0.4); z-index: 50; }
+        body.light-mode .data-menu { background: #fff; border-color: #cbd5e1; }
+        .data-menu.open { display: block; }
+        .data-menu button { display: block; width: 100%; text-align: left; background: transparent; border: none; color: var(--top-text); padding: 7px 10px; font-size: 11px; font-weight: 600; cursor: pointer; border-radius: 4px; }
+        .data-menu button:hover { background: rgba(255,255,255,0.08); }
+        body.light-mode .data-menu button:hover { background: rgba(0,0,0,0.05); }
+        .data-menu hr { border: none; border-top: 1px solid rgba(255,255,255,0.08); margin: 4px 0; }
+        body.light-mode .data-menu hr { border-top-color: #e2e8f0; }
+        .data-menu .group-title { font-size: 9px; color: var(--gray); font-weight: 800; text-transform: uppercase; padding: 6px 10px 2px; letter-spacing: 0.05em; }
+        .seed-input { background: var(--input-bg); border: 1px solid var(--input-border); color: var(--input-text); padding: 3px 5px; border-radius: 4px; font-weight: bold; font-size: 11px; width: 70px; text-align: center; font-family: 'Roboto Mono', monospace; }
+        .seed-input:focus { outline: none; border-color: var(--blue); }
+        .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(20px); background: #0f172a; color: #fff; padding: 10px 18px; border-radius: 8px; font-size: 12px; font-weight: 600; box-shadow: 0 10px 30px rgba(0,0,0,0.4); border: 1px solid rgba(34,197,94,0.4); opacity: 0; transition: all 0.25s; z-index: 200; pointer-events: none; }
+        .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+        .toast.error { border-color: rgba(239,68,68,0.5); }
     </style>
 </head>
 <body>
@@ -298,6 +317,21 @@
             </a>
             <button class="help-btn" onclick="openHelp()">AJUDA</button>
             <button class="analytics-btn" onclick="openAnalytics()">ANÁLISE</button>
+            <div class="data-menu-wrap">
+                <button class="data-btn" onclick="toggleDataMenu(event)">DADOS ▾</button>
+                <div class="data-menu" id="dataMenu">
+                    <div class="group-title">Exportar</div>
+                    <button onclick="exportCSV()">📊 KPIs por estação (CSV)</button>
+                    <button onclick="exportSnapshot()">📦 Snapshot completo (JSON)</button>
+                    <hr>
+                    <div class="group-title">Configuração</div>
+                    <button onclick="saveConfig()">💾 Guardar configuração</button>
+                    <button onclick="document.getElementById('loadConfigInput').click()">📂 Carregar configuração</button>
+                    <button onclick="saveConfigLocal()">⭐ Guardar em browser</button>
+                    <button onclick="loadConfigLocal()">↻ Restaurar do browser</button>
+                </div>
+                <input type="file" id="loadConfigInput" accept=".json,application/json" style="display:none" onchange="loadConfigFile(event)">
+            </div>
         </div>
 
         <div class="center-configs">
@@ -323,6 +357,10 @@
                     <input id="zoomSlider" type="range" min="30" max="150" step="5" value="100">
                     <input id="zoomInput" type="number" min="30" max="150" value="100">
                 </div>
+            </div>
+            <div class="cfg" title="Semente para reprodutibilidade (0 = aleatório)">
+                <span class="cfg-lbl">SEED</span>
+                <input id="seedInput" class="seed-input" type="text" value="0" maxlength="10">
             </div>
         </div>
 
@@ -675,6 +713,7 @@
             <button class="tab-btn active" data-tab="yamazumi" onclick="switchAnalyticsTab('yamazumi')">Yamazumi</button>
             <button class="tab-btn" data-tab="pareto" onclick="switchAnalyticsTab('pareto')">Pareto de Perdas</button>
             <button class="tab-btn" data-tab="heatmap" onclick="switchAnalyticsTab('heatmap')">Heatmap de Estados</button>
+            <button class="tab-btn" data-tab="sankey" onclick="switchAnalyticsTab('sankey')">Fluxo (Sankey)</button>
         </div>
 
         <div class="tab-pane active" id="tab-yamazumi">
@@ -707,8 +746,15 @@
                 <span class="legend-item"><span class="legend-swatch swatch-idle"></span>Ociosa</span>
             </div>
         </div>
+
+        <div class="tab-pane" id="tab-sankey">
+            <p style="font-size:12px; opacity:0.8; margin:0 0 10px;">Fluxo de peças do estoque até ao destino final. A largura de cada fluxo é proporcional ao número de peças. Permite ver instantaneamente onde se concentra o refugo.</p>
+            <div class="chart-wrap"><div id="sankeyChart"></div></div>
+        </div>
     </div>
 </div>
+
+<div id="toast" class="toast"></div>
 
 <script>
 const SVG_GEAR = `<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>`;
@@ -722,6 +768,39 @@ const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
 const clamp01 = v => clamp(v, 0, 1);
 const safeDiv = (a, b) => b <= 0 ? 0 : a / b;
 const EPSILON = 1e-6;
+
+// === Bloco 2: PRNG mulberry32 com seed para reprodutibilidade ===
+let _seedState = 0;
+let _activeSeed = 0;
+function mulberry32(a) {
+    return function() {
+        a |= 0; a = (a + 0x6D2B79F5) | 0;
+        let t = a;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+}
+let rng = Math.random; // fallback até seedRng ser chamado
+function hashSeed(str) {
+    let h = 2166136261 >>> 0;
+    for (let i = 0; i < str.length; i++) {
+        h ^= str.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0;
+    }
+    return h >>> 0;
+}
+function seedRng(seedRaw) {
+    const s = String(seedRaw ?? '').trim();
+    if (!s || s === '0') {
+        _activeSeed = 0;
+        rng = Math.random;
+        return;
+    }
+    const n = /^\d+$/.test(s) ? (parseInt(s, 10) >>> 0) : hashSeed(s);
+    _activeSeed = n;
+    _seedState = n || 1;
+    rng = mulberry32(_seedState);
+}
 
 function fmtTime(sec) {
     if (!Number.isFinite(sec) || sec < 0) return "00:00.0";
@@ -844,6 +923,7 @@ function renderAnalytics() {
     if (analyticsTab === 'yamazumi') renderYamazumi();
     else if (analyticsTab === 'pareto') renderPareto();
     else if (analyticsTab === 'heatmap') renderHeatmap();
+    else if (analyticsTab === 'sankey') renderSankey();
 }
 
 function calcTaktTime() {
@@ -1228,7 +1308,7 @@ function finishProcessing(i) {
     const st = S[i]; 
     st.totalCount++; 
     st.idealTime += st.curIdealCT;
-    const isGood = Math.random() < st.Qset;
+    const isGood = rng() < st.Qset;
     const fromEl = document.getElementById(`stationVisual_${i}`);
     
     if (!isGood) { 
@@ -1767,6 +1847,308 @@ function tick(dt, doRender) {
     if (doRender) render();
 }
 
+// === Bloco 2: Export, Import, Save/Load, Sankey ===
+function showToast(msg, isError) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.toggle('error', !!isError);
+    el.classList.add('show');
+    clearTimeout(el._tHide);
+    el._tHide = setTimeout(() => el.classList.remove('show'), 2400);
+}
+
+function toggleDataMenu(ev) {
+    ev.stopPropagation();
+    document.getElementById('dataMenu').classList.toggle('open');
+}
+
+function collectConfig() {
+    const wI = [], wM = [];
+    for (let i = 0; i < STATION_COUNT - 1; i++) {
+        wI.push(parseInt(document.getElementById(`wipInitInput_${i}`)?.value) || 0);
+        wM.push(parseInt(document.getElementById(`wipMaxInput_${i}`)?.value) || 100);
+    }
+    return {
+        version: 1,
+        savedAt: new Date().toISOString(),
+        stationCount: STATION_COUNT,
+        transit: TRANSIT_TIME,
+        stock: buffers.raw.stock,
+        target: buffers.raw.target,
+        timeScale,
+        flushLine,
+        makeToGood,
+        seed: document.getElementById('seedInput')?.value || '0',
+        wipInit: wI,
+        wipMax: wM,
+        stations: S.map(s => ({
+            enabled: s.enabled, name: s.name, ppmNom: s.ppmNom,
+            Aset: s.Aset, Pset: s.Pset, Qset: s.Qset, setupConfig: s.setupConfig
+        }))
+    };
+}
+
+function applyConfig(cfg) {
+    if (!cfg || typeof cfg !== 'object') throw new Error('Configuração inválida');
+    if (cfg.stationCount && cfg.stationCount !== STATION_COUNT) {
+        STATION_COUNT = clamp(parseInt(cfg.stationCount) || 3, 2, 8);
+        document.getElementById('stationsSelect').value = STATION_COUNT;
+    }
+    TRANSIT_TIME = Math.max(0, parseInt(cfg.transit) || 0);
+    document.getElementById('transitTimeInput').value = TRANSIT_TIME;
+    timeScale = parseInt(cfg.timeScale) || 1;
+    document.getElementById('speedSelect').value = timeScale;
+    flushLine = !!cfg.flushLine;
+    document.getElementById('chkFlushLine').checked = flushLine;
+    makeToGood = !!cfg.makeToGood;
+    if (cfg.seed !== undefined) document.getElementById('seedInput').value = String(cfg.seed);
+
+    buffers.raw.stock = parseInt(cfg.stock) || 100;
+    buffers.raw.target = parseInt(cfg.target) || 60;
+    buffers.raw.count = buffers.raw.stock;
+
+    S = [];
+    for (let i = 0; i < STATION_COUNT; i++) {
+        const st = stationTemplate(i);
+        const src = cfg.stations && cfg.stations[i];
+        if (src) Object.assign(st, {
+            enabled: src.enabled !== false,
+            name: src.name || st.name,
+            ppmNom: parseFloat(src.ppmNom) || 60,
+            Aset: clamp01(parseFloat(src.Aset) ?? 1),
+            Pset: clamp01(parseFloat(src.Pset) ?? 1),
+            Qset: clamp01(parseFloat(src.Qset) ?? 1),
+            setupConfig: parseFloat(src.setupConfig) || 0,
+        });
+        S.push(st);
+    }
+    buffers.wips = [];
+    for (let i = 0; i < STATION_COUNT - 1; i++) {
+        const w = makeWip();
+        w.max = (cfg.wipMax && cfg.wipMax[i]) || 100;
+        w.ready = (cfg.wipInit && cfg.wipInit[i]) || 0;
+        buffers.wips.push(w);
+    }
+
+    running = false; lineStarted = false; t = 0; finalTime = null;
+    initialWipAtStart = 0; targetAtStart = 0; fixedInitialEstimate = null;
+    historyOEE = []; historyPPM = [];
+    stateHistory = []; lastSnapshot = -1;
+    stats = { good: 0, scrap: 0, scrapByStation: Array(STATION_COUNT).fill(0) };
+    transfers.length = 0;
+
+    document.getElementById('chartOEE').innerHTML = '';
+    document.getElementById('chartPPM').innerHTML = '';
+
+    buildDOM();
+    calculateInitialMeta();
+    render();
+    document.getElementById('btnStart').innerHTML = '<span>▶</span> INICIAR';
+    document.getElementById('animLayer').innerHTML = '';
+}
+
+function downloadFile(filename, content, mime) {
+    const blob = new Blob([content], { type: mime || 'application/octet-stream' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click();
+    setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+}
+
+function tsForFilename() {
+    const d = new Date(), p = n => String(n).padStart(2,'0');
+    return `${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
+}
+
+function exportCSV() {
+    document.getElementById('dataMenu').classList.remove('open');
+    const headers = [
+        'estacao','nome','ativa','ppm_nom','A_set','P_set','Q_set','setup_min',
+        'tempo_run_s','tempo_setup_s','tempo_down_s','tempo_blocked_s','tempo_starved_s','tempo_idle_s',
+        'ideal_time_s','total_pecas','boas','refugo','OEE','A_real','P_real','Q_real'
+    ];
+    const rows = [headers.join(',')];
+    S.forEach((st, i) => {
+        const k = oeeCalcStation(st);
+        const scrap = st.totalCount - st.goodCount;
+        rows.push([
+            i+1, `"${(st.name||'').replace(/"/g,'""')}"`, st.enabled ? 1 : 0,
+            st.ppmNom, st.Aset.toFixed(4), st.Pset.toFixed(4), st.Qset.toFixed(4), st.setupConfig,
+            st.tRun.toFixed(2), st.tSetup.toFixed(2), st.tDown.toFixed(2),
+            st.tBlocked.toFixed(2), st.tStarved.toFixed(2), st.tIdle.toFixed(2),
+            st.idealTime.toFixed(2), st.totalCount, st.goodCount, scrap,
+            k.OEE.toFixed(4), k.A.toFixed(4), k.P.toFixed(4), k.Q.toFixed(4)
+        ].join(','));
+    });
+    // Linha de totais da linha
+    rows.push('');
+    rows.push('# Resumo da linha');
+    rows.push(`tempo_decorrido_s,${t.toFixed(2)}`);
+    rows.push(`finalizada,${finalTime !== null ? 1 : 0}`);
+    rows.push(`bons_total,${stats.good}`);
+    rows.push(`refugo_total,${stats.scrap}`);
+    rows.push(`throughput_ppm,${t > 0 ? (stats.good/(t/60)).toFixed(2) : 0}`);
+    rows.push(`takt_s,${calcTaktTime().toFixed(2)}`);
+    rows.push(`seed,${_activeSeed || 'random'}`);
+
+    downloadFile(`sim-oee-kpis-${tsForFilename()}.csv`, rows.join('\n'), 'text/csv');
+    showToast('CSV exportado');
+}
+
+function exportSnapshot() {
+    document.getElementById('dataMenu').classList.remove('open');
+    const snap = {
+        ...collectConfig(),
+        runtime: {
+            t, finalTime, lineStarted, running,
+            seed_active: _activeSeed,
+            stats: { good: stats.good, scrap: stats.scrap, scrapByStation: stats.scrapByStation },
+            stations: S.map(s => ({
+                name: s.name, totalCount: s.totalCount, goodCount: s.goodCount,
+                tRun: s.tRun, tSetup: s.tSetup, tDown: s.tDown, tBlocked: s.tBlocked,
+                tStarved: s.tStarved, tIdle: s.tIdle, idealTime: s.idealTime,
+                state: s.state
+            })),
+            stateHistory
+        }
+    };
+    downloadFile(`sim-oee-snapshot-${tsForFilename()}.json`, JSON.stringify(snap, null, 2), 'application/json');
+    showToast('Snapshot exportado');
+}
+
+function saveConfig() {
+    document.getElementById('dataMenu').classList.remove('open');
+    const cfg = collectConfig();
+    downloadFile(`sim-oee-config-${tsForFilename()}.json`, JSON.stringify(cfg, null, 2), 'application/json');
+    showToast('Configuração guardada');
+}
+
+function loadConfigFile(ev) {
+    const file = ev.target.files && ev.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+        try {
+            const cfg = JSON.parse(e.target.result);
+            applyConfig(cfg);
+            showToast('Configuração carregada');
+        } catch (err) {
+            showToast('Erro ao carregar: ' + err.message, true);
+        }
+    };
+    reader.readAsText(file);
+    ev.target.value = ''; // permite re-carregar o mesmo ficheiro
+}
+
+const LS_KEY = 'sim_oee_config_v1';
+function saveConfigLocal() {
+    document.getElementById('dataMenu').classList.remove('open');
+    try {
+        localStorage.setItem(LS_KEY, JSON.stringify(collectConfig()));
+        showToast('Guardado no browser');
+    } catch (e) { showToast('Falha: ' + e.message, true); }
+}
+function loadConfigLocal() {
+    document.getElementById('dataMenu').classList.remove('open');
+    try {
+        const raw = localStorage.getItem(LS_KEY);
+        if (!raw) { showToast('Nenhuma configuração guardada', true); return; }
+        applyConfig(JSON.parse(raw));
+        showToast('Configuração restaurada');
+    } catch (e) { showToast('Falha: ' + e.message, true); }
+}
+
+function renderSankey() {
+    const host = document.getElementById('sankeyChart');
+    if (!host) return;
+    if (!lineStarted) { host.innerHTML = `<div class="empty-note">Inicie a simulação para visualizar o fluxo.</div>`; return; }
+
+    // Modelo simples: cada estação tem entrada (= totalCount) e divide em "passa adiante" e "refugo"
+    // Mais o estoque inicial → estação 1
+    const W = 980, padL = 80, padR = 120, padT = 30, padB = 30, H = 380;
+    const innerW = W - padL - padR;
+    const nodeW = 16;
+    const cols = STATION_COUNT + 1; // estoque + estações
+    const colGap = innerW / (cols - 1);
+    const flowMax = Math.max(1, S[0]?.totalCount || 1, buffers.raw.stock);
+    const hScale = (H - padT - padB) / flowMax * 0.85;
+
+    let svg = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">`;
+
+    // Calcula posição Y de cada nó (centrado verticalmente, proporcional ao fluxo)
+    const nodes = [];
+    // Coluna 0: estoque inicial
+    nodes.push({ x: padL, label: 'ESTOQUE', flow: S[0]?.totalCount || 0, color: '#94a3b8' });
+    for (let i = 0; i < STATION_COUNT; i++) {
+        nodes.push({
+            x: padL + (i + 1) * colGap,
+            label: S[i].name,
+            flow: S[i].totalCount,
+            color: i === bottleneckId ? '#d946ef' : '#3b82f6'
+        });
+    }
+
+    // Desenha nós (barras verticais)
+    nodes.forEach((n, idx) => {
+        const h = Math.max(4, n.flow * hScale);
+        const y = (H - h) / 2;
+        n.yTop = y; n.yBot = y + h; n.h = h;
+        svg += `<rect x="${n.x}" y="${y}" width="${nodeW}" height="${h}" fill="${n.color}" rx="2">`;
+        svg += `<title>${n.label}: ${n.flow} peças</title></rect>`;
+        svg += `<text x="${n.x + nodeW/2}" y="${y - 6}" fill="#e2e8f0" font-size="10" font-weight="700" text-anchor="middle">${n.label}</text>`;
+        svg += `<text x="${n.x + nodeW/2}" y="${n.yBot + 14}" fill="#94a3b8" font-size="10" text-anchor="middle">${n.flow}</text>`;
+    });
+
+    // Fluxos entre nós + saída de refugo
+    for (let i = 0; i < STATION_COUNT; i++) {
+        const src = nodes[i], dst = nodes[i+1];
+        const passed = S[i].totalCount; // tudo que entrou na estação
+        const good = S[i].goodCount;
+        const scrap = passed - good;
+
+        // Fluxo entrada → estação (azul claro)
+        const flowH = passed * hScale;
+        const y1a = src.yTop, y1b = src.yTop + flowH;
+        const y2a = dst.yTop, y2b = dst.yTop + flowH;
+        const x1 = src.x + nodeW, x2 = dst.x;
+        const cx1 = x1 + (x2 - x1) * 0.5;
+        svg += `<path d="M${x1},${y1a} C${cx1},${y1a} ${cx1},${y2a} ${x2},${y2a} L${x2},${y2b} C${cx1},${y2b} ${cx1},${y1b} ${x1},${y1b} Z" fill="rgba(59,130,246,0.35)" stroke="rgba(59,130,246,0.6)" stroke-width="0.5">`;
+        svg += `<title>${src.label} → ${dst.label}: ${passed} peças</title></path>`;
+
+        // Fluxo de refugo (vermelho, sai pela base)
+        if (scrap > 0) {
+            const sh = scrap * hScale;
+            const scrapX = dst.x + nodeW;
+            const scrapY1 = dst.yBot - sh;
+            const scrapY2 = dst.yBot;
+            const targetX = scrapX + 50;
+            const targetY = H - padB - 10;
+            svg += `<path d="M${scrapX},${scrapY1} C${scrapX+30},${scrapY1} ${targetX-20},${targetY-20} ${targetX},${targetY-Math.min(40,sh)} L${targetX},${targetY} C${targetX-20},${targetY} ${scrapX+30},${scrapY2} ${scrapX},${scrapY2} Z" fill="rgba(239,68,68,0.4)" stroke="rgba(239,68,68,0.7)" stroke-width="0.5">`;
+            svg += `<title>Refugo em ${dst.label}: ${scrap} peças</title></path>`;
+            svg += `<text x="${targetX + 6}" y="${targetY}" fill="#ef4444" font-size="10" font-weight="700">✗ ${scrap}</text>`;
+        }
+    }
+
+    // Saída final (bons)
+    const lastNode = nodes[nodes.length - 1];
+    if (stats.good > 0) {
+        const finishX = lastNode.x + nodeW + 40;
+        const finishY = (H - stats.good * hScale) / 2;
+        const finishH = Math.max(4, stats.good * hScale);
+        svg += `<rect x="${finishX}" y="${finishY}" width="${nodeW}" height="${finishH}" fill="#22c55e" rx="2">`;
+        svg += `<title>BONS: ${stats.good}</title></rect>`;
+        svg += `<text x="${finishX + nodeW/2}" y="${finishY - 6}" fill="#22c55e" font-size="10" font-weight="800" text-anchor="middle">BONS</text>`;
+        svg += `<text x="${finishX + nodeW/2}" y="${finishY + finishH + 14}" fill="#22c55e" font-size="10" text-anchor="middle">${stats.good}</text>`;
+        // Fluxo último nó → finish
+        const yA = lastNode.yTop + (lastNode.h - finishH) * 0;
+        svg += `<path d="M${lastNode.x + nodeW},${lastNode.yTop} C${lastNode.x + nodeW + 20},${lastNode.yTop} ${finishX - 20},${finishY} ${finishX},${finishY} L${finishX},${finishY + finishH} C${finishX - 20},${finishY + finishH} ${lastNode.x + nodeW + 20},${lastNode.yTop + lastNode.h * (stats.good/(S[S.length-1].totalCount||1))} ${lastNode.x + nodeW},${lastNode.yTop + lastNode.h * (stats.good/(S[S.length-1].totalCount||1))} Z" fill="rgba(34,197,94,0.35)" stroke="rgba(34,197,94,0.6)" stroke-width="0.5"/>`;
+    }
+
+    svg += `</svg>`;
+    host.innerHTML = svg;
+}
+
 window.onload = function() {
     document.getElementById('stationsSelect').onchange = e => { STATION_COUNT = Number(e.target.value); reset(); };
     document.getElementById('transitTimeInput').oninput = e => { TRANSIT_TIME = Math.max(0, parseInt(e.target.value) || 0); calculateInitialMeta(); render(); };
@@ -1775,7 +2157,20 @@ window.onload = function() {
     zSlider.oninput = e => { zInput.value = e.target.value; board.style.transform = `scale(${e.target.value / 100})`; };
     zInput.onchange = e => { let v = clamp(parseInt(e.target.value) || 100, 30, 150); zInput.value = v; zSlider.value = v; board.style.transform = `scale(${v / 100})`; };
     document.getElementById('btnReset').onclick = reset;
-    document.getElementById('btnStart').onclick = () => { running = !running; if (running && !lineStarted) { lineStarted = true; initialWipAtStart = getInitialWipSum(); targetAtStart = buffers.raw.target; fixedInitialEstimate = initialEstimate; } document.getElementById('btnStart').innerHTML = running ? '<span>⏸</span> PAUSAR' : '<span>▶</span> INICIAR'; };
+    document.getElementById('btnStart').onclick = () => {
+        running = !running;
+        if (running && !lineStarted) {
+            seedRng(document.getElementById('seedInput').value);
+            lineStarted = true; initialWipAtStart = getInitialWipSum(); targetAtStart = buffers.raw.target; fixedInitialEstimate = initialEstimate;
+        }
+        document.getElementById('btnStart').innerHTML = running ? '<span>⏸</span> PAUSAR' : '<span>▶</span> INICIAR';
+    };
+    document.getElementById('seedInput').addEventListener('input', e => { if (!lineStarted) seedRng(e.target.value); });
+    // Fecha menu de dados ao clicar fora
+    document.addEventListener('click', (e) => {
+        const menu = document.getElementById('dataMenu');
+        if (menu && menu.classList.contains('open') && !e.target.closest('.data-menu-wrap')) menu.classList.remove('open');
+    });
     document.getElementById('chkTheme').onchange = e => { document.body.classList.toggle('light-mode', e.target.checked); };
     reset();
     let last = performance.now();
