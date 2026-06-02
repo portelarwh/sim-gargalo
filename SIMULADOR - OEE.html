@@ -912,6 +912,7 @@
         <button onclick="zoomMap(1.25)" title="Zoom in">+</button>
         <button onclick="zoomMap(0.8)" title="Zoom out">−</button>
         <span style="opacity:0.4; align-self:center;">│</span>
+        <button onclick="addStationNode()" title="Inserir uma nova estação">+ Estação</button>
         <button onclick="addBufferNode()" title="Inserir um novo buffer">+ Buffer</button>
         <button id="btnMode-connect" onclick="setEditorMode('connecting')" title="Clica num nó origem, depois num destino">🔗 Conectar</button>
         <button id="btnMode-delete" onclick="setEditorMode('deleting')" title="Clica em edges ou nós BUFFER para apagar">🗑 Apagar</button>
@@ -2686,6 +2687,24 @@ function addBufferNode() {
     showToast('Buffer adicionado — agora conecte-o com [🔗 Conectar]');
 }
 
+function addStationNode() {
+    if (S.length >= 16) return showToast('Limite atingido (16 estações)', true);
+    const idx = S.length;
+    const st = stationTemplate(idx);
+    S.push(st);
+    if (stats.scrapByStation) stats.scrapByStation.push(0);
+    STATION_COUNT = S.length;
+    const id = `stn${idx}`;
+    const x = mapViewBox.x + mapViewBox.w / 2 - NODE_W / 2;
+    const y = mapViewBox.y + mapViewBox.h / 2 - NODE_H / 2 + 100;
+    nodes.push({ id, type: 'STATION', x, y, name: st.name, ref: st });
+    rebuildNodeIndex();
+    selectNode(id);
+    syncLinearView();
+    updateBottlenecks(); calculateInitialMeta();
+    showToast('Estação adicionada — conecte-a com [🔗 Conectar]');
+}
+
 function deleteNode(nodeId) {
     const n = nodeById.get(nodeId);
     if (!n) return;
@@ -2975,6 +2994,42 @@ const SCENARIOS = [
             ],
             wipInit: [10, 10], wipMax: [50, 50]
         }
+    },
+    {
+        id: 'parallel-branch',
+        title: 'Linha com Paralelo (Bifurcação)',
+        objective: 'Demonstrar topologia em grafo: 1 → 2 paralelas → 1',
+        desc: 'A estação E1 (60 PPM) alimenta um buffer que distribui para 2 estações paralelas E2/E3 (30 PPM cada) via shortest-queue. As peças convergem num buffer comum antes da saída. Abra o MAPA para visualizar. Desabilite uma das paralelas via toggle da estação para ver o throughput cair.',
+        tags: ['Topologia', 'Paralelo', 'Avançado'],
+        config: {
+            stationCount: 3, stock: 300, target: 120, transit: 0, timeScale: 4,
+            stations: [
+                { ppmNom: 60, Aset: 0.95, Pset: 1, Qset: 1, setupConfig: 0 },
+                { ppmNom: 30, Aset: 0.95, Pset: 1, Qset: 1, setupConfig: 0 },
+                { ppmNom: 30, Aset: 0.95, Pset: 1, Qset: 1, setupConfig: 0 },
+            ],
+            wipInit: [], wipMax: [], wipDwell: [],
+            topology: {
+                nodes: [
+                    { id: 'src',  type: 'SOURCE',  x:   0, y: 250, name: 'ESTOQUE' },
+                    { id: 'stn0', type: 'STATION', x: 200, y: 250, name: 'E1', stationIdx: 0 },
+                    { id: 'bufA', type: 'BUFFER',  x: 400, y: 250, name: 'WIP A', buf: { ready: 5, max: 50, dwell: 0 } },
+                    { id: 'stn1', type: 'STATION', x: 600, y: 130, name: 'E2 ║', stationIdx: 1 },
+                    { id: 'stn2', type: 'STATION', x: 600, y: 370, name: 'E3 ║', stationIdx: 2 },
+                    { id: 'bufB', type: 'BUFFER',  x: 800, y: 250, name: 'WIP B', buf: { ready: 0, max: 50, dwell: 0 } },
+                    { id: 'sink', type: 'SINK',    x: 1000, y: 250, name: 'FINAL' }
+                ],
+                edges: [
+                    { id: 'e_src_stn0',  from: 'src',  to: 'stn0' },
+                    { id: 'e_stn0_bufA', from: 'stn0', to: 'bufA' },
+                    { id: 'e_bufA_stn1', from: 'bufA', to: 'stn1' },
+                    { id: 'e_bufA_stn2', from: 'bufA', to: 'stn2' },
+                    { id: 'e_stn1_bufB', from: 'stn1', to: 'bufB' },
+                    { id: 'e_stn2_bufB', from: 'stn2', to: 'bufB' },
+                    { id: 'e_bufB_sink', from: 'bufB', to: 'sink' }
+                ]
+            }
+        }
     }
 ];
 
@@ -3004,10 +3059,12 @@ function loadScenario(id) {
         learningPieces: 0, learningStart: 0.6, reworkEnabled: false,
         ...s
     }));
-    cfg.version = 1;
+    cfg.version = cfg.topology ? 2 : 1;
     applyConfig(cfg);
     closeScenarios();
     showToast(`Cenário carregado: ${sc.title}`);
+    // Bloco 6.6: se o cenário traz topologia, abre o MAPA para o utilizador ver
+    if (cfg.topology) setTimeout(openMap, 100);
 }
 
 // --- Comparador ---
