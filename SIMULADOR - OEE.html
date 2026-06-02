@@ -315,6 +315,51 @@
         .adv-counters { display: flex; gap: 5px; font-size: 8px; color: var(--muted-main); padding-top: 4px; border-top: 1px dashed rgba(15,23,42,0.1); justify-content: space-between; }
         .adv-counters b { color: var(--purple); }
 
+        /* === Bloco 6.4: Vista MAPA === */
+        .map-btn { background: rgba(6, 182, 212, 0.15); border: 1px solid rgba(6, 182, 212, 0.35); color: var(--cyan); padding: 4px 8px; border-radius: 4px; font-size: 9px; font-weight: 700; cursor: pointer; transition: all 0.2s; text-transform: uppercase; white-space: nowrap; }
+        .map-btn:hover { background: var(--cyan); color: #052e16; }
+        .map-view { display: none; position: fixed; inset: 0; z-index: 90; background: radial-gradient(1400px 800px at 50% -10%, #1d2f55 0%, #0b1220 60%, #050810 100%); }
+        .map-view.open { display: block; }
+        .map-svg { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; }
+        .map-svg:active { cursor: grabbing; }
+        .map-toolbar { position: absolute; top: 14px; left: 14px; display: flex; gap: 6px; z-index: 5; background: rgba(15,23,42,0.75); padding: 8px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.08); backdrop-filter: blur(8px); }
+        .map-toolbar button { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #e2e8f0; padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer; }
+        .map-toolbar button:hover { background: rgba(6,182,212,0.25); border-color: var(--cyan); color: #fff; }
+        .map-toolbar button.close { background: rgba(239,68,68,0.2); border-color: rgba(239,68,68,0.4); color: #fca5a5; }
+        .map-toolbar button.close:hover { background: rgba(239,68,68,0.4); color: #fff; }
+        .map-info { position: absolute; top: 14px; right: 14px; z-index: 5; background: rgba(15,23,42,0.75); padding: 8px 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.08); color: #e2e8f0; font-size: 11px; font-weight: 600; backdrop-filter: blur(8px); }
+        .map-info b { color: var(--cyan); }
+        .minimap { position: absolute; bottom: 14px; right: 14px; width: 220px; height: 140px; background: rgba(15,23,42,0.85); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.4); cursor: pointer; }
+        .map-legend { position: absolute; bottom: 14px; left: 14px; z-index: 5; background: rgba(15,23,42,0.75); padding: 8px 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.08); display: flex; gap: 14px; font-size: 10px; color: #cbd5e1; backdrop-filter: blur(8px); }
+        .map-legend .leg-item { display: flex; align-items: center; gap: 5px; }
+        .map-legend .leg-swatch { width: 14px; height: 14px; border-radius: 3px; border: 1px solid rgba(255,255,255,0.2); }
+        .map-node-rect { rx: 8; cursor: default; transition: filter 0.2s; }
+        .map-node-rect:hover { filter: brightness(1.15); }
+        .map-node-rect.bottleneck { stroke: var(--purple); stroke-width: 3; filter: drop-shadow(0 0 12px var(--purple-glow)); }
+        .map-edge { fill: none; stroke: rgba(148,163,184,0.4); stroke-width: 2; }
+        .map-edge.active { stroke: rgba(34,197,94,0.7); stroke-width: 2.5; }
+        .map-node-label { font-family: 'Inter', sans-serif; font-weight: 700; fill: #f1f5f9; pointer-events: none; }
+        .map-node-sub { font-family: 'Roboto Mono', monospace; fill: #cbd5e1; pointer-events: none; }
+        .map-anim-piece { pointer-events: none; }
+
+        /* === Bloco 6.5: Editor === */
+        .map-toolbar .mode-on { background: var(--cyan) !important; color: #052e16 !important; border-color: var(--cyan) !important; }
+        .map-node-g { cursor: pointer; }
+        .map-node-g.selected .map-node-rect { stroke: #facc15; stroke-width: 3; }
+        .map-node-g.connect-src .map-node-rect { stroke: var(--cyan); stroke-width: 3; stroke-dasharray: 4,2; }
+        .map-props { position: absolute; top: 72px; right: 14px; width: 240px; background: rgba(15,23,42,0.92); border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; padding: 12px; backdrop-filter: blur(8px); color: #e2e8f0; font-size: 12px; z-index: 5; display: none; }
+        .map-props.open { display: block; }
+        .map-props h4 { margin: 0 0 10px; color: var(--cyan); font-size: 13px; }
+        .map-props label { display: grid; grid-template-columns: 80px 1fr; gap: 6px; align-items: center; margin-bottom: 8px; font-size: 11px; }
+        .map-props input { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #fff; padding: 4px 6px; border-radius: 4px; font-size: 11px; }
+        .map-props .row-actions { display: flex; gap: 6px; margin-top: 10px; }
+        .map-props .row-actions button { flex: 1; padding: 5px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #e2e8f0; border-radius: 5px; font-size: 11px; cursor: pointer; font-weight: 600; }
+        .map-props .row-actions .danger { background: rgba(239,68,68,0.2); border-color: rgba(239,68,68,0.4); color: #fca5a5; }
+        .map-props .row-actions .danger:hover { background: rgba(239,68,68,0.4); color: #fff; }
+        .linear-warn { display: none; padding: 20px; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.4); border-radius: 12px; color: #fbbf24; text-align: center; font-size: 14px; margin: 20px; }
+        .linear-warn.show { display: block; }
+        .linear-warn b { color: #fde68a; }
+
         /* === Bloco 4: Cenários e Comparador === */
         .scenario-btn { background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.35); color: var(--orange); padding: 4px 8px; border-radius: 4px; font-size: 9px; font-weight: 700; cursor: pointer; transition: all 0.2s; text-transform: uppercase; white-space: nowrap; }
         .scenario-btn:hover { background: var(--orange); color: #1a1209; }
@@ -374,6 +419,7 @@
             </div>
             <button class="scenario-btn" onclick="openScenarios()">CENÁRIOS</button>
             <button class="scenario-btn" onclick="openCompare()" title="Comparar dois snapshots JSON">COMPARAR</button>
+            <button class="map-btn" onclick="openMap()" title="Vista em grafo da linha">🗺 MAPA</button>
         </div>
 
         <div class="center-configs">
@@ -385,7 +431,7 @@
             </div>
             <div class="cfg">
                 <span class="cfg-lbl">TRÂNSITO (s)</span>
-                <input id="transitTimeInput" class="cfg-input" type="number" min="0" max="99" value="0">
+                <input id="transitTimeInput" class="cfg-input" type="number" min="0" max="999" value="0">
             </div>
             <div class="cfg">
                 <span class="cfg-lbl">VELOCIDADE</span>
@@ -860,6 +906,42 @@
     </div>
 </div>
 
+<div id="mapView" class="map-view">
+    <div class="map-toolbar">
+        <button onclick="autoFitMap()" title="Centrar e ajustar zoom para todos os nós">⛶ Auto-fit</button>
+        <button onclick="zoomMap(1.25)" title="Zoom in">+</button>
+        <button onclick="zoomMap(0.8)" title="Zoom out">−</button>
+        <span style="opacity:0.4; align-self:center;">│</span>
+        <button onclick="addStationNode()" title="Inserir uma nova estação">+ Estação</button>
+        <button onclick="addBufferNode()" title="Inserir um novo buffer">+ Buffer</button>
+        <button id="btnMode-connect" onclick="setEditorMode('connecting')" title="Clica num nó origem, depois num destino">🔗 Conectar</button>
+        <button id="btnMode-delete" onclick="setEditorMode('deleting')" title="Clica em edges ou nós BUFFER para apagar">🗑 Apagar</button>
+        <button onclick="setEditorMode('idle')" title="Voltar ao modo de seleção">↩ Selecionar</button>
+        <span style="opacity:0.4; align-self:center;">│</span>
+        <button class="close" onclick="closeMap()">✕ Fechar</button>
+    </div>
+    <div class="map-info" id="mapInfo">—</div>
+    <svg id="mapSvg" class="map-svg" viewBox="0 0 1600 800" preserveAspectRatio="xMidYMid meet">
+        <defs>
+            <marker id="arrowMap" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M0,0 L10,5 L0,10 z" fill="rgba(148,163,184,0.6)"/>
+            </marker>
+        </defs>
+        <g id="mapEdges"></g>
+        <g id="mapNodes"></g>
+        <g id="mapAnim"></g>
+    </svg>
+    <svg class="minimap" id="minimap" viewBox="0 0 220 140" preserveAspectRatio="xMidYMid meet" onclick="minimapClick(event)"></svg>
+    <div class="map-legend">
+        <span class="leg-item"><span class="leg-swatch" style="background:#94a3b8;"></span>Estoque</span>
+        <span class="leg-item"><span class="leg-swatch" style="background:#3b82f6;"></span>Estação</span>
+        <span class="leg-item"><span class="leg-swatch" style="background:#06b6d4;"></span>Buffer (cura)</span>
+        <span class="leg-item"><span class="leg-swatch" style="background:#22c55e;"></span>Saída</span>
+        <span class="leg-item"><span class="leg-swatch" style="background:#d946ef;"></span>Gargalo</span>
+    </div>
+    <div class="map-props" id="mapProps"></div>
+</div>
+
 <div id="toast" class="toast"></div>
 
 <script>
@@ -961,6 +1043,53 @@ let stats = { good: 0, scrap: 0, scrapByStation: [] };
 const transfers = [];
 let S = [];
 let bottleneckId = 0;
+
+// === Bloco 1 (Grafo): camada de topologia interna ===
+// nodes[]/edges[]/nodeById espelham a cadeia linear atual.
+// Nesta fase a engine continua a usar índices; o grafo só reflete o estado.
+// Próximos blocos vão consultar o grafo em vez de S[i±1] / buffers.wips[i].
+let nodes = [];          // [{ id, type: 'SOURCE'|'STATION'|'BUFFER'|'SINK', x, y, name, ref }]
+let edges = [];          // [{ id, from, to, transit }]
+let nodeById = new Map();
+
+function rebuildNodeIndex() {
+    nodeById.clear();
+    for (const n of nodes) nodeById.set(n.id, n);
+}
+function upstreamOf(nodeId)   { return edges.filter(e => e.to === nodeId); }
+function downstreamOf(nodeId) { return edges.filter(e => e.from === nodeId); }
+
+/**
+ * Reconstrói nodes[]/edges[] como uma cadeia linear equivalente ao estado
+ * (buffers.raw, S[], buffers.wips[]). Idempotente — não modifica os refs;
+ * apenas (re)cria o índice de nós/arestas a partir deles.
+ *
+ * Layout topológico:
+ *   SRC ─e0→ STN0 ─e1→ BUF0 ─e2→ STN1 ─e3→ BUF1 ─e4→ ... ─→ STN(n-1) ─→ SINK
+ */
+function rebuildLinearGraph() {
+    nodes = [];
+    edges = [];
+    const src = { id: 'src', type: 'SOURCE', x: 0, y: 0, name: 'ESTOQUE', ref: buffers.raw };
+    nodes.push(src);
+    let prevId = 'src';
+    for (let i = 0; i < S.length; i++) {
+        const stnId = `stn${i}`;
+        nodes.push({ id: stnId, type: 'STATION', x: 180 * (i + 1), y: 0, name: S[i].name, ref: S[i] });
+        edges.push({ id: `e_${prevId}_${stnId}`, from: prevId, to: stnId, transit: 0 });
+        prevId = stnId;
+        if (i < S.length - 1) {
+            const bufId = `buf${i}`;
+            nodes.push({ id: bufId, type: 'BUFFER', x: 180 * (i + 1) + 90, y: 0, name: `WIP ${i+1}`, ref: buffers.wips[i] });
+            edges.push({ id: `e_${stnId}_${bufId}`, from: stnId, to: bufId, transit: TRANSIT_TIME });
+            prevId = bufId;
+        }
+    }
+    const sink = { id: 'sink', type: 'SINK', x: 180 * (S.length + 1), y: 0, name: 'FINAL', ref: null };
+    nodes.push(sink);
+    edges.push({ id: `e_${prevId}_sink`, from: prevId, to: 'sink', transit: 0 });
+    rebuildNodeIndex();
+}
 
 function openHelp() { document.getElementById('helpModal').style.display = "block"; }
 function closeHelp() { document.getElementById('helpModal').style.display = "none"; }
@@ -1278,14 +1407,16 @@ function renderHeatmap() {
     host.innerHTML = svg;
 }
 
-function makeWip() { return { ready: 0, reserved: 0, max: DEFAULT_WIP_MAX }; }
+// Bloco 6.3: buffer ganha dwell (segundos de quarentena obrigatória) e dwellQueue.
+// dwell=0 → comportamento antigo (peça fica disponível imediatamente após o transit).
+function makeWip() { return { ready: 0, reserved: 0, max: DEFAULT_WIP_MAX, dwell: 0, dwellQueue: [] }; }
 
 function stationTemplate(i) {
     return {
         id: i, enabled: true, name: `ESTAÇÃO ${i+1}`, ppmNom: 60, Aset: 1, Pset: 1, Qset: 1,
         setupConfig: 0, setupRem: 0, setupDone: false, setupStarted: false,
         state: 'idle', resumeState: 'idle', curIdealCT: 0, curProcTot: 0, remProc: 0, downRem: 0,
-        holding: false, holdDestIndex: null, runTime: 0, idealTime: 0, totalCount: 0, goodCount: 0,
+        holding: false, holdDestBuf: null, runTime: 0, idealTime: 0, totalCount: 0, goodCount: 0,
         tRun: 0, tDown: 0, tStarved: 0, tBlocked: 0, tIdle: 0, tSetup: 0,
         // Bloco 3: modelação realista
         batchSize: 0,            // peças por lote (0 = sem lotes)
@@ -1339,39 +1470,84 @@ function oeeCalcStation(st) {
     return st.totalCount === 0 ? { A, P: 1, Q: 1, OEE: A } : { A, P, Q, OEE: A * P * Q };
 }
 
-function wipTotal(w) { return w.ready + w.reserved; }
+function wipTotal(w) { return w.ready + w.reserved + (w.dwellQueue ? w.dwellQueue.length : 0); }
 function wipCanReceive(w) { return wipTotal(w) < w.max; }
 
-function sendToWip(i, dur) { 
+// Deposita uma peça num buffer: vai para a fila de cura se dwell>0, senão direto a ready.
+function depositToBuffer(buf) {
+    if (buf.dwell > EPSILON) buf.dwellQueue.push({ remDwell: buf.dwell });
+    else buf.ready++;
+}
+
+// Tick por buffer: decrementa dwell de cada peça em cura; ao expirar move para ready.
+function bufferTick(buf, dt) {
+    if (!buf.dwellQueue || buf.dwellQueue.length === 0) return;
+    for (let k = buf.dwellQueue.length - 1; k >= 0; k--) {
+        buf.dwellQueue[k].remDwell -= dt;
+        if (buf.dwellQueue[k].remDwell <= EPSILON) {
+            buf.dwellQueue.splice(k, 1);
+            buf.ready++;
+        }
+    }
+}
+
+// === Bloco 6.2: helpers de topologia (engine consulta grafo) ===
+function stationNodeId(i) { return `stn${i}`; }
+function nodeForStationIdx(i) { return nodeById.get(stationNodeId(i)); }
+
+// Escolhe o melhor destino downstream: maior espaço livre (shortest-queue),
+// tie-break determinístico por id ascendente.
+function pickDownstream(nodeId) {
+    const outs = downstreamOf(nodeId);
+    if (outs.length === 0) return null;
+    if (outs.length === 1) return nodeById.get(outs[0].to);
+    let best = null, bestFree = -Infinity;
+    for (const e of outs) {
+        const n = nodeById.get(e.to); if (!n) continue;
+        const free = (n.type === 'BUFFER') ? (n.ref.max - wipTotal(n.ref)) : Infinity;
+        if (free > bestFree || (free === bestFree && best && n.id < best.id)) {
+            best = n; bestFree = free;
+        }
+    }
+    return best;
+}
+
+function sendToWip(i, dur) {
+    const target = pickDownstream(stationNodeId(i));
+    if (!target || target.type !== 'BUFFER') return; // SINK é tratado em finishProcessing
+    const buf = target.ref;
     if (dur > EPSILON) {
-        buffers.wips[i].reserved++; 
-        transfers.push({ destIndex: i, rem: dur }); 
+        buf.reserved++;
+        transfers.push({ destBuf: buf, rem: dur });
     } else {
-        buffers.wips[i].ready++;
+        depositToBuffer(buf);
     }
 }
 
 function transfersTick(dt) {
     for (let i = transfers.length - 1; i >= 0; i--) {
         transfers[i].rem -= dt;
-        if (transfers[i].rem <= EPSILON) { 
-            buffers.wips[transfers[i].destIndex].reserved--; 
-            buffers.wips[transfers[i].destIndex].ready++; 
-            transfers.splice(i, 1); 
+        if (transfers[i].rem <= EPSILON) {
+            const buf = transfers[i].destBuf;
+            buf.reserved--;
+            depositToBuffer(buf);
+            transfers.splice(i, 1);
         }
     }
 }
 
 function takeFromInput(i) {
-    if (i === 0) { 
-        if (buffers.raw.count <= 0) return false; 
-        buffers.raw.count--; 
-        return true; 
+    const ups = upstreamOf(stationNodeId(i));
+    for (const e of ups) {
+        const src = nodeById.get(e.from);
+        if (!src) continue;
+        if (src.type === 'SOURCE') {
+            if (src.ref.count > 0) { src.ref.count--; return true; }
+        } else if (src.type === 'BUFFER') {
+            if (src.ref.ready > 0) { src.ref.ready--; return true; }
+        }
     }
-    const w = buffers.wips[i - 1]; 
-    if (w.ready <= 0) return false; 
-    w.ready--; 
-    return true;
+    return false;
 }
 
 function getInitialWipSum() { 
@@ -1397,18 +1573,27 @@ function getTotalProcessed() {
     return stats.good + stats.scrap;
 }
 
+// BFS reverso pelo grafo: a estação i está "starved" se não há nenhuma peça
+// disponível ou em processamento em qualquer nó upstream alcançável.
 function isUpstreamDry(i) {
-    if (i === 0) return buffers.raw.count <= 0;
-    for (let k = 0; k < i; k++) {
-        const s = S[k];
-        if (!s.enabled) continue; 
-        if (s.state === 'processing' || s.state === 'blocked') return false;
-        if (s.state === 'down' && s.remProc > EPSILON) return false; 
-    }
-    for (let k = 0; k < i; k++) {
-        if (k < buffers.wips.length) {
-            const w = buffers.wips[k];
-            if (w.ready > 0 || w.reserved > 0) return false;
+    const startId = i < S.length ? stationNodeId(i) : 'sink';
+    const visited = new Set([startId]);
+    const queue = [startId];
+    while (queue.length) {
+        const nodeId = queue.shift();
+        for (const e of upstreamOf(nodeId)) {
+            const src = nodeById.get(e.from); if (!src) continue;
+            if (visited.has(src.id)) continue;
+            visited.add(src.id);
+            if (src.type === 'SOURCE') {
+                if (src.ref.count > 0) return false;
+            } else if (src.type === 'BUFFER') {
+                if (src.ref.ready > 0 || src.ref.reserved > 0) return false;
+            } else if (src.type === 'STATION' && src.ref.enabled) {
+                if (src.ref.state === 'processing' || src.ref.state === 'blocked') return false;
+                if (src.ref.state === 'down' && src.ref.remProc > EPSILON) return false;
+            }
+            queue.push(src.id);
         }
     }
     return true;
@@ -1457,6 +1642,11 @@ function startNewPiece(i) {
         spawnAnimBox(to, to, 'normal', 300); // animação curta de rework
     } else if (i === 0) spawnAnimBox(document.getElementById('stockNode'), to, 'normal', 1000);
     else spawnAnimBox(document.getElementById(`thermoTrack_${i-1}`), to, 'wip_to_station', 600);
+    // Bloco 6.4: animação na vista MAPA (paralela à vista linear)
+    if (mapOpen && !isRework) {
+        const ups = upstreamOf(stationNodeId(i));
+        if (ups.length > 0) spawnAnimEdge(ups[0].from, stationNodeId(i), 'normal', i === 0 ? 1000 : 600);
+    }
 
     st.curIdealCT = idealCT_nom(st);
     const P = clamp(effectivePset(st), 0.0001, 1);
@@ -1500,18 +1690,22 @@ function finishProcessing(i) {
         // Bloco 3: contador de lote (apenas peças boas avançam o lote)
         if (st.batchSize > 0) st.piecesInBatch++;
 
-        if (i === S.length - 1) {
+        // Bloco 6.2: resolve destino via grafo (não assume última estação por índice)
+        const target = pickDownstream(stationNodeId(i));
+        if (!target || target.type === 'SINK') {
             stats.good++;
             spawnAnimBox(fromEl, document.getElementById('endNode'), 'finish', 1000);
+            if (mapOpen && target) spawnAnimEdge(stationNodeId(i), target.id, 'finish', 1000);
         }
         else {
-            const w = buffers.wips[i];
-            if (wipCanReceive(w)) {
+            const buf = target.ref;
+            if (wipCanReceive(buf)) {
                 sendToWip(i, TRANSIT_TIME);
                 spawnAnimBox(fromEl, document.getElementById(`thermoTrack_${i}`), 'station_to_wip', TRANSIT_TIME * 1000);
+                if (mapOpen) spawnAnimEdge(stationNodeId(i), target.id, 'station_to_wip', (TRANSIT_TIME || 0.6) * 1000);
             }
             else {
-                st.holding = true; st.holdDestIndex = i; st.state = 'blocked';
+                st.holding = true; st.holdDestBuf = buf; st.state = 'blocked';
             }
         }
     }
@@ -1524,15 +1718,17 @@ function finishProcessing(i) {
 }
 
 function tryReleaseBlocked(i) {
-    const st = S[i]; 
+    const st = S[i];
     if (st.state !== 'blocked') return;
-    const w = buffers.wips[st.holdDestIndex]; 
-    if (wipCanReceive(w)) { 
-        sendToWip(st.holdDestIndex, TRANSIT_TIME); 
-        spawnAnimBox(document.getElementById(`stationVisual_${i}`), document.getElementById(`thermoTrack_${st.holdDestIndex}`), 'station_to_wip', TRANSIT_TIME * 1000); 
-        st.holding = false; st.holdDestIndex = null; 
-        if (st.downRem > EPSILON && st.enabled) st.state = 'down'; 
-        else { st.state = 'idle'; st.downRem = 0; } 
+    const buf = st.holdDestBuf;
+    if (!buf) { st.state = 'idle'; return; }
+    if (wipCanReceive(buf)) {
+        if (TRANSIT_TIME > EPSILON) { buf.reserved++; transfers.push({ destBuf: buf, rem: TRANSIT_TIME }); }
+        else { depositToBuffer(buf); }
+        spawnAnimBox(document.getElementById(`stationVisual_${i}`), document.getElementById(`thermoTrack_${i}`), 'station_to_wip', TRANSIT_TIME * 1000);
+        st.holding = false; st.holdDestBuf = null;
+        if (st.downRem > EPSILON && st.enabled) st.state = 'down';
+        else { st.state = 'idle'; st.downRem = 0; }
     }
 }
 
@@ -1812,7 +2008,7 @@ function buildDOM() {
         <div class="label">ESTOQUE (MP)</div>
         <div class="lot-input-group">
             <label>DISPONÍVEL</label>
-            <input id="stockInput" type="number" value="${buffers.raw.stock}" onchange="updateStockFromCard(this.value)">
+            <input id="stockInput" type="number" min="1" max="999999" value="${buffers.raw.stock}" onchange="updateStockFromCard(this.value)">
         </div>
         <div class="stock-available-label" style="margin-top:15px">RESTANTE</div>
         <div id="badgeLot">0</div>
@@ -1823,13 +2019,13 @@ function buildDOM() {
         const isLast = i === STATION_COUNT - 1, st = S[i];
         const stEl = document.createElement('div'); 
         stEl.className = 'station'; stEl.id = `st${i}`;
-        stEl.innerHTML = `<div class="stationHead"><div class="stationTitle"><span class="dot"></span><input class="station-name-input" type="text" value="${st.name}" onchange="S[${i}].name=this.value"></div><div class="bottleneck-badge">GARGALO</div><div class="toggle on" id="toggle_${i}"></div></div><div class="visual" id="stationVisual_${i}"><div class="machineIcon" id="icon_${i}">${SVG_GEAR}</div><div class="statusPill gray" id="status_${i}">PRONTA</div></div><div class="kpiRow"><div class="kbox"><div class="klabel">OEE</div><div class="kval" id="oee_${i}">0%</div></div><div class="kbox"><div class="klabel">A%</div><div class="kval small" id="A_${i}">100</div></div><div class="kbox"><div class="klabel">P%</div><div class="kval small" id="P_${i}">100</div></div><div class="kbox"><div class="klabel">Q%</div><div class="kval small" id="Q_${i}">100</div></div></div><div class="info-header"><div>PPM NOM: <b id="ppmNomShow_${i}">${st.ppmNom}</b></div><div>PPM REAL: <b id="ppmRealShow_${i}" class="blue">${Math.round(ppmReal(st))}</b></div></div><div class="info-cards"><div class="card-stat green"><span>BONS</span><b id="good_${i}">0</b></div><div class="card-stat red"><span>REFUGO</span><b id="refugo_${i}">0</b></div></div><div class="sliders"><div class="srow nom"><div class="name">PPM</div><input id="ppmR_${i}" type="range" min="1" max="300" value="${st.ppmNom}"><input id="ppmN_${i}" type="number" min="1" max="300" value="${st.ppmNom}"></div><div class="srow a"><div class="name">DISP</div><input id="aR_${i}" type="range" min="0" max="100" value="${st.Aset*100}"><input id="aN_${i}" type="number" min="0" max="100" value="${st.Aset*100}"></div><div class="srow p"><div class="name">PERF</div><input id="pR_${i}" type="range" min="0" max="100" value="${st.Pset*100}"><input id="pN_${i}" type="number" min="0" max="100" value="${st.Pset*100}"></div><div class="srow q"><div class="name">QUAL</div><input id="qR_${i}" type="range" min="0" max="100" value="${st.Qset*100}"><input id="qN_${i}" type="number" min="0" max="100" value="${st.Qset*100}"></div><div class="srow setup-row"><div class="name">SETUP</div><input id="setupInp_${i}" type="number" step="0.1" min="0" value="${st.setupConfig}"><span style="font-size:9px;font-weight:800;color:#64748b;">min</span></div></div><div class="times"><div class="trow"><span class="tname op">OPERANDO</span><span id="tRun_${i}">00:00.0</span></div><div class="trow"><span class="tname setup">SETUP</span><span id="tSetup_${i}">00:00.0</span></div><div class="trow"><span class="tname down">PARADA</span><span id="tDown_${i}">00:00.0</span></div><div class="trow" style="${i===0?'display:none':''}"><span class="tname wait">AGUARDANDO</span><span id="tWait_${i}">00:00.0</span></div><div class="trow" style="${isLast?'display:none':''}"><span class="tname block">TRAVADA</span><span id="tBlock_${i}">00:00.0</span></div><div class="trow"><span class="tname idle">OCIOSIDADE</span><span id="tIdle_${i}">00:00.0</span></div></div><div class="adv-toggle" onclick="document.getElementById('adv_${i}').classList.toggle('open')">⚙ Avançado ▾</div><div class="adv-panel" id="adv_${i}"><div class="adv-row"><span class="nm">Lote</span><input id="batchInp_${i}" type="number" min="0" max="9999" value="${st.batchSize}"><span class="un">pç</span></div><div class="adv-row"><span class="nm">MTBF</span><input id="mtbfInp_${i}" type="number" min="0" max="9999" step="0.5" value="${st.mtbfMin}"><span class="un">min</span></div><div class="adv-row"><span class="nm">MTTR</span><input id="mttrInp_${i}" type="number" min="0" max="9999" step="0.5" value="${st.mttrMin}"><span class="un">min</span></div><div class="adv-row"><span class="nm">Aprendiz.</span><input id="learnInp_${i}" type="number" min="0" max="9999" value="${st.learningPieces}"><span class="un">pç</span></div><div class="adv-row"><span class="nm">P inicial</span><input id="learnStartInp_${i}" type="number" min="0" max="100" step="5" value="${Math.round(st.learningStart*100)}"><span class="un">%</span></div><div class="adv-row chk"><span class="nm">Rework loop</span><input id="reworkChk_${i}" type="checkbox" ${st.reworkEnabled?'checked':''}></div><div class="adv-counters"><span>Falhas: <b id="advFails_${i}">0</b></span><span>Setups: <b id="advSetups_${i}">0</b></span><span>Rework: <b id="advRework_${i}">0</b></span></div></div>`;
+        stEl.innerHTML = `<div class="stationHead"><div class="stationTitle"><span class="dot"></span><input class="station-name-input" type="text" value="${st.name}" onchange="S[${i}].name=this.value"></div><div class="bottleneck-badge">GARGALO</div><div class="toggle on" id="toggle_${i}"></div></div><div class="visual" id="stationVisual_${i}"><div class="machineIcon" id="icon_${i}">${SVG_GEAR}</div><div class="statusPill gray" id="status_${i}">PRONTA</div></div><div class="kpiRow"><div class="kbox"><div class="klabel">OEE</div><div class="kval" id="oee_${i}">0%</div></div><div class="kbox"><div class="klabel">A%</div><div class="kval small" id="A_${i}">100</div></div><div class="kbox"><div class="klabel">P%</div><div class="kval small" id="P_${i}">100</div></div><div class="kbox"><div class="klabel">Q%</div><div class="kval small" id="Q_${i}">100</div></div></div><div class="info-header"><div>PPM NOM: <b id="ppmNomShow_${i}">${st.ppmNom}</b></div><div>PPM REAL: <b id="ppmRealShow_${i}" class="blue">${Math.round(ppmReal(st))}</b></div></div><div class="info-cards"><div class="card-stat green"><span>BONS</span><b id="good_${i}">0</b></div><div class="card-stat red"><span>REFUGO</span><b id="refugo_${i}">0</b></div></div><div class="sliders"><div class="srow nom"><div class="name">PPM</div><input id="ppmR_${i}" type="range" min="1" max="9999" value="${st.ppmNom}"><input id="ppmN_${i}" type="number" min="1" max="9999" value="${st.ppmNom}"></div><div class="srow a"><div class="name">DISP</div><input id="aR_${i}" type="range" min="0" max="100" value="${st.Aset*100}"><input id="aN_${i}" type="number" min="0" max="100" value="${st.Aset*100}"></div><div class="srow p"><div class="name">PERF</div><input id="pR_${i}" type="range" min="0" max="100" value="${st.Pset*100}"><input id="pN_${i}" type="number" min="0" max="100" value="${st.Pset*100}"></div><div class="srow q"><div class="name">QUAL</div><input id="qR_${i}" type="range" min="0" max="100" value="${st.Qset*100}"><input id="qN_${i}" type="number" min="0" max="100" value="${st.Qset*100}"></div><div class="srow setup-row"><div class="name">SETUP</div><input id="setupInp_${i}" type="number" step="0.1" min="0" value="${st.setupConfig}"><span style="font-size:9px;font-weight:800;color:#64748b;">min</span></div></div><div class="times"><div class="trow"><span class="tname op">OPERANDO</span><span id="tRun_${i}">00:00.0</span></div><div class="trow"><span class="tname setup">SETUP</span><span id="tSetup_${i}">00:00.0</span></div><div class="trow"><span class="tname down">PARADA</span><span id="tDown_${i}">00:00.0</span></div><div class="trow" style="${i===0?'display:none':''}"><span class="tname wait">AGUARDANDO</span><span id="tWait_${i}">00:00.0</span></div><div class="trow" style="${isLast?'display:none':''}"><span class="tname block">TRAVADA</span><span id="tBlock_${i}">00:00.0</span></div><div class="trow"><span class="tname idle">OCIOSIDADE</span><span id="tIdle_${i}">00:00.0</span></div></div><div class="adv-toggle" onclick="document.getElementById('adv_${i}').classList.toggle('open')">⚙ Avançado ▾</div><div class="adv-panel" id="adv_${i}"><div class="adv-row"><span class="nm">Lote</span><input id="batchInp_${i}" type="number" min="0" max="9999" value="${st.batchSize}"><span class="un">pç</span></div><div class="adv-row"><span class="nm">MTBF</span><input id="mtbfInp_${i}" type="number" min="0" max="9999" step="0.5" value="${st.mtbfMin}"><span class="un">min</span></div><div class="adv-row"><span class="nm">MTTR</span><input id="mttrInp_${i}" type="number" min="0" max="9999" step="0.5" value="${st.mttrMin}"><span class="un">min</span></div><div class="adv-row"><span class="nm">Aprendiz.</span><input id="learnInp_${i}" type="number" min="0" max="9999" value="${st.learningPieces}"><span class="un">pç</span></div><div class="adv-row"><span class="nm">P inicial</span><input id="learnStartInp_${i}" type="number" min="0" max="100" step="5" value="${Math.round(st.learningStart*100)}"><span class="un">%</span></div><div class="adv-row chk"><span class="nm">Rework loop</span><input id="reworkChk_${i}" type="checkbox" ${st.reworkEnabled?'checked':''}></div><div class="adv-counters"><span>Falhas: <b id="advFails_${i}">0</b></span><span>Setups: <b id="advSetups_${i}">0</b></span><span>Rework: <b id="advRework_${i}">0</b></span></div></div>`;
         board.appendChild(stEl); setupStationBinds(i);
         document.getElementById(`toggle_${i}`).classList.toggle('on', st.enabled);
         
         if (!isLast) {
             const wipEl = document.createElement('div'); wipEl.className = 'wipCol'; wipEl.id = `wipBox_${i}`;
-            wipEl.innerHTML = `<div class="wipCard" id="wipCard_${i}"><div class="wipHead"><span class="wipIcon">${SVG_BUFFER}</span><span class="wipTitle">WIP ${i+1}</span></div><div class="wipMid"><div class="thermoTrack" id="thermoTrack_${i}"><div class="thermoFill" id="wipFill_${i}"></div></div><div class="pctBig" id="wipPct_${i}">0<span>%</span></div><div class="wipBlocked" id="wipBlocked_${i}">TRAVADO</div></div><div class="wipFoot"><div class="wipMini"><span class="lbl">Disp.</span><span class="val" id="wipDisp_${i}">0</span></div><div class="wipMini"><span class="lbl">Trans.</span><span class="val" id="wipTrans_${i}">0</span></div><div class="wipMini"><span class="lbl">Início</span><div class="wipInputGroup"><input id="wipInitInput_${i}" type="number" min="0" value="${buffers.wips[i]?.ready||0}"></div></div><div class="wipMini"><span class="lbl">Nível</span><div class="wipInputGroup"><span id="wipCurLabel_${i}">0</span><span class="slash">/</span><input id="wipMaxInput_${i}" type="number" min="1" max="999" value="${buffers.wips[i]?.max||100}"></div></div></div></div>`;
+            wipEl.innerHTML = `<div class="wipCard" id="wipCard_${i}"><div class="wipHead"><span class="wipIcon">${SVG_BUFFER}</span><span class="wipTitle">WIP ${i+1}</span></div><div class="wipMid"><div class="thermoTrack" id="thermoTrack_${i}"><div class="thermoFill" id="wipFill_${i}"></div></div><div class="pctBig" id="wipPct_${i}">0<span>%</span></div><div class="wipBlocked" id="wipBlocked_${i}">TRAVADO</div></div><div class="wipFoot"><div class="wipMini"><span class="lbl">Disp.</span><span class="val" id="wipDisp_${i}">0</span></div><div class="wipMini"><span class="lbl">Trans.</span><span class="val" id="wipTrans_${i}">0</span></div><div class="wipMini" title="Peças em cura (dwell)"><span class="lbl">Cura</span><span class="val" id="wipCuring_${i}">0</span></div><div class="wipMini" title="Tempo de cura obrigatório por peça (s)"><span class="lbl">Dwell</span><div class="wipInputGroup"><input id="wipDwellInput_${i}" type="number" min="0" max="9999" step="1" value="${buffers.wips[i]?.dwell||0}" style="width:38px;"><span class="slash">s</span></div></div><div class="wipMini"><span class="lbl">Início</span><div class="wipInputGroup"><input id="wipInitInput_${i}" type="number" min="0" value="${buffers.wips[i]?.ready||0}"></div></div><div class="wipMini"><span class="lbl">Nível</span><div class="wipInputGroup"><span id="wipCurLabel_${i}">0</span><span class="slash">/</span><input id="wipMaxInput_${i}" type="number" min="1" max="9999" value="${buffers.wips[i]?.max||100}"></div></div></div></div>`;
             board.appendChild(wipEl); setupWipBinds(i);
         }
     }
@@ -1841,7 +2037,7 @@ function buildDOM() {
         <div class="label" id="endLabel" style="color:#15803d">CONCLUÍDO</div>
         <div class="lot-input-group">
             <label style="color:#15803d">META DE PROD.</label>
-            <input id="targetInput" type="number" value="${buffers.raw.target}" onchange="updateTargetFromCard(this.value)" style="border-color:#86efac; color:#14532d">
+            <input id="targetInput" type="number" min="1" max="999999" value="${buffers.raw.target}" onchange="updateTargetFromCard(this.value)" style="border-color:#86efac; color:#14532d">
         </div>
         <div class="checkbox-group">
             <div class="checkbox-lbl" style="color:#15803d">REPOR PERDAS</div>
@@ -1934,6 +2130,9 @@ function setupWipBinds(i) {
     if (initInp) initInp.oninput = e => { let v = Math.max(0, parseInt(e.target.value) || 0); if (v > w.max) { v = w.max; initInp.value = v; } if (!running) { w.ready = v; calculateInitialMeta(); render(); } };
     const maxInp = document.getElementById(`wipMaxInput_${i}`);
     if (maxInp) maxInp.oninput = e => { let v = Math.max(1, parseInt(e.target.value) || 100); w.max = v; if (initInp && parseInt(initInp.value) > w.max) { initInp.value = w.max; if (!running) w.ready = w.max; } render(); };
+    // Bloco 6.3: dwell-time do buffer
+    const dwellInp = document.getElementById(`wipDwellInput_${i}`);
+    if (dwellInp) dwellInp.oninput = e => { w.dwell = Math.max(0, parseFloat(e.target.value) || 0); };
 }
 
 function updateStationUI(i) {
@@ -1958,6 +2157,7 @@ function updateWipUI(i) {
     const pctEl = document.getElementById(`wipPct_${i}`); if (pctEl) pctEl.innerHTML = (clamp01(pctVal) * 100).toFixed(0) + '<span>%</span>';
     const setEl = (id, val) => { const e = document.getElementById(id); if (e) e.textContent = val; };
     setEl(`wipCurLabel_${i}`, total); setEl(`wipDisp_${i}`, w.ready); setEl(`wipTrans_${i}`, w.reserved);
+    setEl(`wipCuring_${i}`, w.dwellQueue ? w.dwellQueue.length : 0);
     const blockedEl = document.getElementById(`wipBlocked_${i}`); if (blockedEl) blockedEl.style.display = total >= w.max ? 'block' : 'none';
 }
 
@@ -2059,7 +2259,7 @@ function spawnAnimBox(fromEl, toEl, type, duration) {
 function reset() {
     const keep = document.getElementById('chkKeepParams').checked;
     let saved = null;
-    if (keep && S.length > 0) { let wI = [], wM = []; for (let i = 0; i < STATION_COUNT - 1; i++) { wI.push(parseInt(document.getElementById(`wipInitInput_${i}`)?.value) || 0); wM.push(parseInt(document.getElementById(`wipMaxInput_${i}`)?.value) || 100); } saved = { transit: TRANSIT_TIME, stock: buffers.raw.stock, target: buffers.raw.target, makeToGood, timeScale, flushLine, wI, wM, stations: S.map(s => ({ enabled: s.enabled, name: s.name, ppm: s.ppmNom, A: s.Aset, P: s.Pset, Q: s.Qset, setup: s.setupConfig, batchSize: s.batchSize, mtbfMin: s.mtbfMin, mttrMin: s.mttrMin, learningPieces: s.learningPieces, learningStart: s.learningStart, reworkEnabled: s.reworkEnabled })) }; }
+    if (keep && S.length > 0) { let wI = [], wM = [], wD = []; for (let i = 0; i < STATION_COUNT - 1; i++) { wI.push(parseInt(document.getElementById(`wipInitInput_${i}`)?.value) || 0); wM.push(parseInt(document.getElementById(`wipMaxInput_${i}`)?.value) || 100); wD.push(buffers.wips[i]?.dwell || 0); } saved = { transit: TRANSIT_TIME, stock: buffers.raw.stock, target: buffers.raw.target, makeToGood, timeScale, flushLine, wI, wM, wD, stations: S.map(s => ({ enabled: s.enabled, name: s.name, ppm: s.ppmNom, A: s.Aset, P: s.Pset, Q: s.Qset, setup: s.setupConfig, batchSize: s.batchSize, mtbfMin: s.mtbfMin, mttrMin: s.mttrMin, learningPieces: s.learningPieces, learningStart: s.learningStart, reworkEnabled: s.reworkEnabled })) }; }
     
     running = false; lineStarted = false; t = 0; finalTime = null; isFastForwarding = false; initialWipAtStart = 0; targetAtStart = 0; fixedInitialEstimate = null;
     lastChartUpdate = 0; // CORRIGIDO: Reset do timer do gráfico
@@ -2100,8 +2300,12 @@ function reset() {
         }
         S.push(st);
     }
-    for (let i = 0; i < STATION_COUNT - 1; i++) { let w = makeWip(); if (keep && saved) { w.max = saved.wM[i] || 100; w.ready = saved.wI[i] || 0; } buffers.wips.push(w); }
-    
+    for (let i = 0; i < STATION_COUNT - 1; i++) { let w = makeWip(); if (keep && saved) { w.max = saved.wM[i] || 100; w.ready = saved.wI[i] || 0; w.dwell = (saved.wD && saved.wD[i]) || 0; } buffers.wips.push(w); }
+
+    // Bloco 1 (Grafo): sincroniza espelho de topologia com o estado linear
+    rebuildLinearGraph();
+    if (typeof syncLinearView === 'function') syncLinearView();
+
     buildDOM();
     
     if (keep && saved) { for (let i = 0; i < STATION_COUNT - 1; i++) { const initEl = document.getElementById(`wipInitInput_${i}`), maxEl = document.getElementById(`wipMaxInput_${i}`); if (initEl) initEl.value = saved.wI[i]; if (maxEl) maxEl.value = saved.wM[i]; } }
@@ -2127,14 +2331,539 @@ function tick(dt, doRender) {
     
     t += finalTime !== null ? 0 : dt;
     transfersTick(dt);
+    // Bloco 6.3: tick dos nós BUFFER (decrementa dwell de cada peça em cura)
+    for (const n of nodes) { if (n.type === 'BUFFER' && n.ref) bufferTick(n.ref, dt); }
     for (let i = 0; i < STATION_COUNT; i++) stationTick(i, dt);
 
     recordStateSnapshot();
     if (t - lastChartUpdate > PREFS.chartUpdateInterval) {
         updateCharts(); lastChartUpdate = t;
         if (analyticsOpen) renderAnalytics();
+        if (mapOpen) renderMap();
     }
     if (doRender) render();
+}
+
+// === Bloco 6.4: Vista MAPA (somente leitura) ===
+let mapOpen = false;
+let mapViewBox = { x: 0, y: 0, w: 1600, h: 800 };
+let mapDrag = null; // { startX, startY, vbX, vbY }
+const NODE_W = 130, NODE_H = 72;
+const NODE_FILL = {
+    SOURCE: '#94a3b8',
+    STATION: '#3b82f6',
+    BUFFER: '#06b6d4',
+    SINK: '#22c55e'
+};
+
+function openMap() {
+    mapOpen = true;
+    const v = document.getElementById('mapView');
+    v.classList.add('open');
+    renderMap();
+    autoFitMap();
+}
+function closeMap() {
+    mapOpen = false;
+    document.getElementById('mapView').classList.remove('open');
+    document.getElementById('mapAnim').innerHTML = '';
+}
+
+function setMapViewBox() {
+    const svg = document.getElementById('mapSvg');
+    svg.setAttribute('viewBox', `${mapViewBox.x} ${mapViewBox.y} ${mapViewBox.w} ${mapViewBox.h}`);
+    renderMinimap();
+}
+
+function autoFitMap() {
+    if (nodes.length === 0) return;
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const n of nodes) {
+        minX = Math.min(minX, n.x);
+        minY = Math.min(minY, n.y);
+        maxX = Math.max(maxX, n.x + NODE_W);
+        maxY = Math.max(maxY, n.y + NODE_H);
+    }
+    const pad = 80;
+    mapViewBox.x = minX - pad;
+    mapViewBox.y = minY - pad - 40;
+    mapViewBox.w = Math.max(800, maxX - minX + pad * 2);
+    mapViewBox.h = Math.max(500, maxY - minY + pad * 2 + 80);
+    setMapViewBox();
+}
+
+function zoomMap(factor) {
+    const cx = mapViewBox.x + mapViewBox.w / 2;
+    const cy = mapViewBox.y + mapViewBox.h / 2;
+    mapViewBox.w /= factor;
+    mapViewBox.h /= factor;
+    mapViewBox.x = cx - mapViewBox.w / 2;
+    mapViewBox.y = cy - mapViewBox.h / 2;
+    setMapViewBox();
+}
+
+function svgPointFromEvent(ev) {
+    const svg = document.getElementById('mapSvg');
+    const pt = svg.createSVGPoint();
+    pt.x = ev.clientX; pt.y = ev.clientY;
+    const ctm = svg.getScreenCTM();
+    if (!ctm) return { x: ev.clientX, y: ev.clientY };
+    const inv = ctm.inverse();
+    return pt.matrixTransform(inv);
+}
+
+function initMapInteractions() {
+    const svg = document.getElementById('mapSvg');
+    svg.addEventListener('pointerdown', ev => {
+        const nodeG = ev.target.closest('.map-node-g');
+        if (nodeG) {
+            // Bloco 6.5: drag de nó (em modo idle) ou click-handler (outros modos)
+            const id = nodeG.dataset.id;
+            if (editorMode === 'idle') {
+                const n = nodeById.get(id);
+                if (!n) return;
+                const p = svgPointFromEvent(ev);
+                nodeDrag = { nodeId: id, startX: p.x, startY: p.y, origX: n.x, origY: n.y, moved: false };
+                svg.setPointerCapture(ev.pointerId);
+                ev.stopPropagation();
+            }
+            return;
+        }
+        const edgeP = ev.target.closest('.map-edge');
+        if (edgeP) {
+            const m = edgeP.id.match(/^path_(.+)$/);
+            if (m) handleEdgeClick(m[1]);
+            return;
+        }
+        mapDrag = { startX: ev.clientX, startY: ev.clientY, vbX: mapViewBox.x, vbY: mapViewBox.y };
+        svg.setPointerCapture(ev.pointerId);
+    });
+    svg.addEventListener('pointermove', ev => {
+        if (nodeDrag) {
+            const p = svgPointFromEvent(ev);
+            const n = nodeById.get(nodeDrag.nodeId); if (!n) return;
+            n.x = nodeDrag.origX + (p.x - nodeDrag.startX);
+            n.y = nodeDrag.origY + (p.y - nodeDrag.startY);
+            if (Math.abs(p.x - nodeDrag.startX) + Math.abs(p.y - nodeDrag.startY) > 3) nodeDrag.moved = true;
+            renderMap();
+            return;
+        }
+        if (!mapDrag) return;
+        const dx = (ev.clientX - mapDrag.startX) * (mapViewBox.w / svg.clientWidth);
+        const dy = (ev.clientY - mapDrag.startY) * (mapViewBox.h / svg.clientHeight);
+        mapViewBox.x = mapDrag.vbX - dx;
+        mapViewBox.y = mapDrag.vbY - dy;
+        setMapViewBox();
+    });
+    svg.addEventListener('pointerup', ev => {
+        if (nodeDrag) {
+            if (!nodeDrag.moved) handleNodeClick(nodeDrag.nodeId);
+            nodeDrag = null;
+            try { svg.releasePointerCapture(ev.pointerId); } catch(e){}
+            return;
+        }
+        mapDrag = null; try { svg.releasePointerCapture(ev.pointerId); } catch(e){}
+    });
+    svg.addEventListener('wheel', ev => {
+        ev.preventDefault();
+        const factor = ev.deltaY < 0 ? 1.15 : 0.87;
+        const p = svgPointFromEvent(ev);
+        const newW = mapViewBox.w / factor, newH = mapViewBox.h / factor;
+        mapViewBox.x = p.x - (p.x - mapViewBox.x) * (newW / mapViewBox.w);
+        mapViewBox.y = p.y - (p.y - mapViewBox.y) * (newH / mapViewBox.h);
+        mapViewBox.w = newW; mapViewBox.h = newH;
+        setMapViewBox();
+    }, { passive: false });
+}
+
+function minimapClick(ev) {
+    const mm = document.getElementById('minimap');
+    const rect = mm.getBoundingClientRect();
+    const fx = (ev.clientX - rect.left) / rect.width;
+    const fy = (ev.clientY - rect.top) / rect.height;
+    // Calcula bbox dos nós
+    const bb = nodesBoundingBox(); if (!bb) return;
+    const worldX = bb.x + fx * bb.w;
+    const worldY = bb.y + fy * bb.h;
+    mapViewBox.x = worldX - mapViewBox.w / 2;
+    mapViewBox.y = worldY - mapViewBox.h / 2;
+    setMapViewBox();
+}
+
+function nodesBoundingBox() {
+    if (nodes.length === 0) return null;
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const n of nodes) {
+        minX = Math.min(minX, n.x);
+        minY = Math.min(minY, n.y);
+        maxX = Math.max(maxX, n.x + NODE_W);
+        maxY = Math.max(maxY, n.y + NODE_H);
+    }
+    return { x: minX - 40, y: minY - 40, w: (maxX - minX) + 80, h: (maxY - minY) + 80 };
+}
+
+function edgePath(srcNode, dstNode) {
+    // Bezier horizontal: parte do meio-direito do src ao meio-esquerdo do dst
+    const x1 = srcNode.x + NODE_W;
+    const y1 = srcNode.y + NODE_H / 2;
+    const x2 = dstNode.x;
+    const y2 = dstNode.y + NODE_H / 2;
+    const dx = Math.max(40, (x2 - x1) * 0.5);
+    return `M${x1},${y1} C${x1 + dx},${y1} ${x2 - dx},${y2} ${x2},${y2}`;
+}
+
+function nodeLiveLabel(n) {
+    if (n.type === 'SOURCE') return { line1: n.ref.count, line2: `de ${n.ref.stock}` };
+    if (n.type === 'SINK')   return { line1: stats.good, line2: `meta ${buffers.raw.target}` };
+    if (n.type === 'STATION') {
+        const k = oeeCalcStation(n.ref);
+        return { line1: `OEE ${(k.OEE*100).toFixed(0)}%`, line2: `${Math.round(ppmReal(n.ref))} ppm` };
+    }
+    if (n.type === 'BUFFER') {
+        const t = wipTotal(n.ref);
+        const cura = n.ref.dwellQueue ? n.ref.dwellQueue.length : 0;
+        return { line1: `${t}/${n.ref.max}`, line2: cura > 0 ? `cura ${cura} (${n.ref.dwell}s)` : 'pull' };
+    }
+    return { line1: '', line2: '' };
+}
+
+function nodeFill(n) {
+    if (n.type === 'STATION') {
+        if (!n.ref.enabled) return '#475569';
+        const k = oeeCalcStation(n.ref);
+        if (k.OEE >= 0.85) return '#16a34a';
+        if (k.OEE >= 0.6) return '#3b82f6';
+        if (k.OEE >= 0.4) return '#f59e0b';
+        return '#ef4444';
+    }
+    return NODE_FILL[n.type] || '#64748b';
+}
+
+function renderMap() {
+    if (!mapOpen) return;
+    const gNodes = document.getElementById('mapNodes');
+    const gEdges = document.getElementById('mapEdges');
+    if (!gNodes || !gEdges) return;
+
+    // Edges
+    let svgE = '';
+    for (const e of edges) {
+        const src = nodeById.get(e.from), dst = nodeById.get(e.to);
+        if (!src || !dst) continue;
+        const d = edgePath(src, dst);
+        const isActive = src.type === 'STATION' && src.ref.state === 'processing';
+        svgE += `<path id="path_${e.id}" class="map-edge ${isActive ? 'active' : ''}" d="${d}" marker-end="url(#arrowMap)"/>`;
+    }
+    gEdges.innerHTML = svgE;
+
+    // Nodes
+    let svgN = '';
+    for (const n of nodes) {
+        const fill = nodeFill(n);
+        const lbl = nodeLiveLabel(n);
+        const isBn = n.type === 'STATION' && n.ref && S.indexOf(n.ref) === bottleneckId;
+        const stateCls = [
+            selectedNodeId === n.id ? 'selected' : '',
+            connectSrcId === n.id ? 'connect-src' : ''
+        ].filter(Boolean).join(' ');
+        svgN += `<g class="map-node-g ${stateCls}" data-id="${n.id}" transform="translate(${n.x},${n.y})">
+            <rect class="map-node-rect ${isBn ? 'bottleneck' : ''}" x="0" y="0" width="${NODE_W}" height="${NODE_H}" rx="8" fill="${fill}" stroke="rgba(255,255,255,0.18)" stroke-width="1.5"/>
+            <text class="map-node-label" x="${NODE_W/2}" y="20" text-anchor="middle" font-size="12">${(n.name || '').slice(0, 16)}</text>
+            <text class="map-node-sub" x="${NODE_W/2}" y="40" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">${lbl.line1}</text>
+            <text class="map-node-sub" x="${NODE_W/2}" y="58" text-anchor="middle" font-size="10" opacity="0.8">${lbl.line2}</text>
+            ${n.type === 'STATION' && !n.ref.enabled ? `<text x="${NODE_W/2}" y="${NODE_H/2}" text-anchor="middle" font-size="10" fill="#fca5a5" opacity="0.6">DESLIGADA</text>` : ''}
+        </g>`;
+    }
+    gNodes.innerHTML = svgN;
+
+    // Info bar
+    const info = document.getElementById('mapInfo');
+    if (info) {
+        const bn = bottleneckId >= 0 && S[bottleneckId] ? S[bottleneckId].name : '—';
+        info.innerHTML = `Gargalo: <b>${bn}</b> &nbsp;·&nbsp; Bons: <b>${stats.good}</b> &nbsp;·&nbsp; Refugo: <b>${stats.scrap}</b> &nbsp;·&nbsp; t = <b>${fmtMMSSd(t)}</b>`;
+    }
+
+    renderMinimap();
+}
+
+function renderMinimap() {
+    const mm = document.getElementById('minimap');
+    if (!mm) return;
+    const bb = nodesBoundingBox(); if (!bb) { mm.innerHTML = ''; return; }
+    mm.setAttribute('viewBox', `${bb.x} ${bb.y} ${bb.w} ${bb.h}`);
+    let s = '';
+    // Edges
+    for (const e of edges) {
+        const src = nodeById.get(e.from), dst = nodeById.get(e.to);
+        if (!src || !dst) continue;
+        s += `<line x1="${src.x + NODE_W}" y1="${src.y + NODE_H/2}" x2="${dst.x}" y2="${dst.y + NODE_H/2}" stroke="rgba(148,163,184,0.5)" stroke-width="1.5"/>`;
+    }
+    // Nodes mini
+    for (const n of nodes) {
+        const fill = nodeFill(n);
+        s += `<rect x="${n.x}" y="${n.y}" width="${NODE_W}" height="${NODE_H}" rx="4" fill="${fill}" opacity="0.85"/>`;
+    }
+    // Frame do viewBox principal
+    s += `<rect x="${mapViewBox.x}" y="${mapViewBox.y}" width="${mapViewBox.w}" height="${mapViewBox.h}" fill="none" stroke="#facc15" stroke-width="3" stroke-dasharray="6,4"/>`;
+    mm.innerHTML = s;
+}
+
+// === Bloco 6.5: Editor de topologia ===
+let editorMode = 'idle';      // 'idle' | 'connecting' | 'deleting'
+let selectedNodeId = null;
+let connectSrcId = null;
+let nodeDrag = null;          // { nodeId, startX, startY, origX, origY }
+let nextBufId = 100;          // contadores de id para nós/edges novos
+let nextEdgeId = 1000;
+
+function setEditorMode(mode) {
+    editorMode = mode;
+    if (mode !== 'connecting') connectSrcId = null;
+    if (mode !== 'idle') { selectedNodeId = null; updatePropsPanel(); }
+    for (const b of ['connect', 'delete']) {
+        const el = document.getElementById(`btnMode-${b}`);
+        if (el) el.classList.toggle('mode-on', mode === (b === 'connect' ? 'connecting' : 'deleting'));
+    }
+    renderMap();
+}
+
+function selectNode(nodeId) {
+    selectedNodeId = nodeId;
+    renderMap();
+    updatePropsPanel();
+}
+
+function updatePropsPanel() {
+    const panel = document.getElementById('mapProps');
+    if (!panel) return;
+    if (!selectedNodeId) { panel.classList.remove('open'); return; }
+    const n = nodeById.get(selectedNodeId);
+    if (!n) { panel.classList.remove('open'); return; }
+    let html = `<h4>${n.type} — ${n.name || n.id}</h4>`;
+    html += `<label>Nome <input id="prop_name" type="text" value="${n.name || ''}"></label>`;
+    if (n.type === 'BUFFER') {
+        html += `<label>Capacidade <input id="prop_max" type="number" min="1" max="9999" value="${n.ref.max}"></label>`;
+        html += `<label>Dwell (s) <input id="prop_dwell" type="number" min="0" max="9999" step="1" value="${n.ref.dwell}"></label>`;
+        html += `<label>Início (pç) <input id="prop_ready" type="number" min="0" value="${n.ref.ready}"></label>`;
+    } else if (n.type === 'SOURCE') {
+        html += `<label>Stock <input id="prop_stock" type="number" min="1" max="999999" value="${n.ref.stock}"></label>`;
+        html += `<label>Meta <input id="prop_target" type="number" min="1" max="999999" value="${n.ref.target}"></label>`;
+    } else if (n.type === 'STATION') {
+        html += `<label>PPM <input id="prop_ppm" type="number" min="1" max="9999" value="${n.ref.ppmNom}"></label>`;
+        html += `<small style="opacity:0.7;">Use o card da estação para parâmetros avançados.</small>`;
+    } else if (n.type === 'SINK') {
+        html += `<small style="opacity:0.7;">Nó terminal — coleciona peças boas.</small>`;
+    }
+    html += `<div class="row-actions">`;
+    if (n.type === 'BUFFER') html += `<button class="danger" onclick="deleteNode('${n.id}')">Apagar nó</button>`;
+    html += `<button onclick="selectNode(null)">Fechar</button></div>`;
+    panel.innerHTML = html;
+    panel.classList.add('open');
+    // bindings
+    const bind = (id, cb) => { const el = document.getElementById(id); if (el) el.oninput = e => { cb(e.target.value); renderMap(); }; };
+    bind('prop_name', v => { n.name = v; if (n.type === 'STATION') n.ref.name = v; render(); });
+    if (n.type === 'BUFFER') {
+        bind('prop_max', v => { n.ref.max = Math.max(1, parseInt(v) || 1); });
+        bind('prop_dwell', v => { n.ref.dwell = Math.max(0, parseFloat(v) || 0); });
+        bind('prop_ready', v => { if (!running) n.ref.ready = Math.max(0, parseInt(v) || 0); });
+    } else if (n.type === 'SOURCE') {
+        bind('prop_stock', v => { n.ref.stock = Math.max(1, parseInt(v) || 1); if (!running) n.ref.count = n.ref.stock; calculateInitialMeta(); render(); });
+        bind('prop_target', v => { n.ref.target = Math.max(1, parseInt(v) || 1); calculateInitialMeta(); render(); });
+    } else if (n.type === 'STATION') {
+        bind('prop_ppm', v => { n.ref.ppmNom = Math.max(1, parseInt(v) || 1); const inp = document.getElementById(`ppmN_${S.indexOf(n.ref)}`); if (inp) inp.value = n.ref.ppmNom; updateBottlenecks(); calculateInitialMeta(); render(); });
+    }
+}
+
+function addBufferNode() {
+    const id = `buf_${nextBufId++}`;
+    const buf = { ready: 0, reserved: 0, max: 50, dwell: 0, dwellQueue: [] };
+    // posiciona no centro do viewBox
+    const x = mapViewBox.x + mapViewBox.w / 2 - NODE_W / 2;
+    const y = mapViewBox.y + mapViewBox.h / 2 - NODE_H / 2;
+    nodes.push({ id, type: 'BUFFER', x, y, name: 'BUFFER NOVO', ref: buf });
+    rebuildNodeIndex();
+    selectNode(id);
+    syncLinearView();
+    showToast('Buffer adicionado — agora conecte-o com [🔗 Conectar]');
+}
+
+function addStationNode() {
+    if (S.length >= 16) return showToast('Limite atingido (16 estações)', true);
+    const idx = S.length;
+    const st = stationTemplate(idx);
+    S.push(st);
+    if (stats.scrapByStation) stats.scrapByStation.push(0);
+    STATION_COUNT = S.length;
+    const id = `stn${idx}`;
+    const x = mapViewBox.x + mapViewBox.w / 2 - NODE_W / 2;
+    const y = mapViewBox.y + mapViewBox.h / 2 - NODE_H / 2 + 100;
+    nodes.push({ id, type: 'STATION', x, y, name: st.name, ref: st });
+    rebuildNodeIndex();
+    selectNode(id);
+    syncLinearView();
+    updateBottlenecks(); calculateInitialMeta();
+    showToast('Estação adicionada — conecte-a com [🔗 Conectar]');
+}
+
+function deleteNode(nodeId) {
+    const n = nodeById.get(nodeId);
+    if (!n) return;
+    if (n.type !== 'BUFFER') { showToast('Apenas nós BUFFER podem ser apagados aqui.', true); return; }
+    nodes = nodes.filter(x => x.id !== nodeId);
+    edges = edges.filter(e => e.from !== nodeId && e.to !== nodeId);
+    rebuildNodeIndex();
+    if (selectedNodeId === nodeId) { selectedNodeId = null; updatePropsPanel(); }
+    syncLinearView();
+    renderMap();
+}
+
+function deleteEdge(edgeId) {
+    edges = edges.filter(e => e.id !== edgeId);
+    syncLinearView();
+    renderMap();
+}
+
+function createEdge(fromId, toId) {
+    if (fromId === toId) return showToast('Origem e destino iguais', true);
+    if (edges.some(e => e.from === fromId && e.to === toId)) return showToast('Edge já existe', true);
+    const src = nodeById.get(fromId), dst = nodeById.get(toId);
+    if (!src || !dst) return;
+    if (src.type === 'SINK') return showToast('SINK não tem saídas', true);
+    if (dst.type === 'SOURCE') return showToast('SOURCE não tem entradas', true);
+    edges.push({ id: `e_${nextEdgeId++}`, from: fromId, to: toId, transit: TRANSIT_TIME });
+    syncLinearView();
+    renderMap();
+    showToast(`Conectado: ${src.name} → ${dst.name}`);
+}
+
+// Detecta topologia linear (sem bifurcações). Quando não-linear, o board
+// horizontal não consegue representar fielmente — mostramos aviso.
+function isLinearTopology() {
+    for (const n of nodes) {
+        if (n.type !== 'SINK' && downstreamOf(n.id).length > 1) return false;
+        if (n.type !== 'SOURCE' && upstreamOf(n.id).length > 1) return false;
+    }
+    return true;
+}
+
+// Sincroniza vista linear vs aviso de topologia não-linear
+function syncLinearView() {
+    const board = document.getElementById('board');
+    let warn = document.getElementById('linearWarn');
+    if (!warn) {
+        warn = document.createElement('div');
+        warn.id = 'linearWarn';
+        warn.className = 'linear-warn';
+        warn.innerHTML = '⚠ <b>Topologia não-linear detectada</b> — a vista lado-a-lado não consegue mostrar bifurcações/junções. Use o <b>🗺 MAPA</b> para visualizar e editar a linha completa.';
+        document.querySelector('.main').appendChild(warn);
+    }
+    if (isLinearTopology()) {
+        board.style.display = '';
+        warn.classList.remove('show');
+    } else {
+        board.style.display = 'none';
+        warn.classList.add('show');
+    }
+}
+
+// Aplica uma topologia importada de JSON: substitui nodes/edges atuais,
+// preservando refs de STATIONs (via stationIdx) e materializando buffers
+// novos (não-cadeia) a partir do snapshot embutido.
+function applyTopology(topo) {
+    nodes = [];
+    edges = [];
+    // SOURCE (sempre 1)
+    const srcNode = topo.nodes.find(n => n.type === 'SOURCE');
+    const sinkNode = topo.nodes.find(n => n.type === 'SINK');
+    for (const tn of topo.nodes) {
+        let ref = null;
+        if (tn.type === 'SOURCE') ref = buffers.raw;
+        else if (tn.type === 'SINK') ref = null;
+        else if (tn.type === 'STATION') ref = S[tn.stationIdx];
+        else if (tn.type === 'BUFFER') {
+            ref = makeWip();
+            if (tn.buf) {
+                ref.max = tn.buf.max || 50;
+                ref.ready = tn.buf.ready || 0;
+                ref.dwell = tn.buf.dwell || 0;
+            }
+        }
+        if (tn.type === 'STATION' && !ref) continue; // STATION sem ref válida
+        nodes.push({ id: tn.id, type: tn.type, x: tn.x || 0, y: tn.y || 0, name: tn.name || tn.id, ref });
+    }
+    rebuildNodeIndex();
+    for (const te of topo.edges) {
+        if (!nodeById.has(te.from) || !nodeById.has(te.to)) continue;
+        edges.push({ id: te.id, from: te.from, to: te.to, transit: te.transit || 0 });
+    }
+    // Substitui buffers.wips pela ordem topológica de BUFFERs (para vista linear se aplicável)
+    buffers.wips = nodes.filter(n => n.type === 'BUFFER').map(n => n.ref);
+    // Atualiza próximos IDs auto
+    for (const n of nodes) {
+        const m = n.id.match(/^buf_(\d+)$/); if (m) nextBufId = Math.max(nextBufId, parseInt(m[1]) + 1);
+    }
+    for (const e of edges) {
+        const m = e.id.match(/^e_(\d+)$/); if (m) nextEdgeId = Math.max(nextEdgeId, parseInt(m[1]) + 1);
+    }
+}
+
+// Override do click handler em nós (extensão de initMapInteractions)
+function handleNodeClick(nodeId) {
+    if (editorMode === 'connecting') {
+        if (!connectSrcId) { connectSrcId = nodeId; renderMap(); }
+        else { createEdge(connectSrcId, nodeId); connectSrcId = null; }
+        return;
+    }
+    if (editorMode === 'deleting') { deleteNode(nodeId); return; }
+    selectNode(nodeId);
+}
+
+function handleEdgeClick(edgeId) {
+    if (editorMode === 'deleting') deleteEdge(edgeId);
+}
+
+// Anima uma peça ao longo do path SVG da edge (Bloco 6.4).
+// Chamada como hook adicional ao spawnAnimBox quando o mapa está aberto.
+function spawnAnimEdge(fromNodeId, toNodeId, type, duration) {
+    if (!mapOpen) return;
+    const layer = document.getElementById('mapAnim');
+    if (!layer) return;
+    // Encontra a aresta exata
+    const edge = edges.find(e => e.from === fromNodeId && e.to === toNodeId);
+    let pathD;
+    if (edge) {
+        const path = document.getElementById(`path_${edge.id}`);
+        if (path) pathD = path; // usar elemento real para getPointAtLength
+    }
+    if (!pathD) {
+        const src = nodeById.get(fromNodeId), dst = nodeById.get(toNodeId);
+        if (!src || !dst) return;
+        // path temporário
+        const tmp = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        tmp.setAttribute('d', edgePath(src, dst));
+        tmp.style.display = 'none';
+        layer.appendChild(tmp);
+        pathD = tmp;
+    }
+    const len = pathD.getTotalLength();
+    const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    dot.setAttribute('class', 'map-anim-piece');
+    dot.setAttribute('r', '5');
+    dot.setAttribute('fill', type === 'scrap' ? '#ef4444' : '#22c55e');
+    dot.setAttribute('stroke', '#fff');
+    dot.setAttribute('stroke-width', '1');
+    layer.appendChild(dot);
+    const dur = Math.max(120, (duration || 800) / timeScale);
+    const start = performance.now();
+    function step(now) {
+        const f = Math.min(1, (now - start) / dur);
+        const p = pathD.getPointAtLength(f * len);
+        dot.setAttribute('cx', p.x);
+        dot.setAttribute('cy', p.y);
+        if (f < 1) requestAnimationFrame(step);
+        else { dot.remove(); if (pathD.style && pathD.style.display === 'none') pathD.remove(); }
+    }
+    requestAnimationFrame(step);
 }
 
 // === Bloco 5: Preferências ===
@@ -2265,6 +2994,42 @@ const SCENARIOS = [
             ],
             wipInit: [10, 10], wipMax: [50, 50]
         }
+    },
+    {
+        id: 'parallel-branch',
+        title: 'Linha com Paralelo (Bifurcação)',
+        objective: 'Demonstrar topologia em grafo: 1 → 2 paralelas → 1',
+        desc: 'A estação E1 (60 PPM) alimenta um buffer que distribui para 2 estações paralelas E2/E3 (30 PPM cada) via shortest-queue. As peças convergem num buffer comum antes da saída. Abra o MAPA para visualizar. Desabilite uma das paralelas via toggle da estação para ver o throughput cair.',
+        tags: ['Topologia', 'Paralelo', 'Avançado'],
+        config: {
+            stationCount: 3, stock: 300, target: 120, transit: 0, timeScale: 4,
+            stations: [
+                { ppmNom: 60, Aset: 0.95, Pset: 1, Qset: 1, setupConfig: 0 },
+                { ppmNom: 30, Aset: 0.95, Pset: 1, Qset: 1, setupConfig: 0 },
+                { ppmNom: 30, Aset: 0.95, Pset: 1, Qset: 1, setupConfig: 0 },
+            ],
+            wipInit: [], wipMax: [], wipDwell: [],
+            topology: {
+                nodes: [
+                    { id: 'src',  type: 'SOURCE',  x:   0, y: 250, name: 'ESTOQUE' },
+                    { id: 'stn0', type: 'STATION', x: 200, y: 250, name: 'E1', stationIdx: 0 },
+                    { id: 'bufA', type: 'BUFFER',  x: 400, y: 250, name: 'WIP A', buf: { ready: 5, max: 50, dwell: 0 } },
+                    { id: 'stn1', type: 'STATION', x: 600, y: 130, name: 'E2 ║', stationIdx: 1 },
+                    { id: 'stn2', type: 'STATION', x: 600, y: 370, name: 'E3 ║', stationIdx: 2 },
+                    { id: 'bufB', type: 'BUFFER',  x: 800, y: 250, name: 'WIP B', buf: { ready: 0, max: 50, dwell: 0 } },
+                    { id: 'sink', type: 'SINK',    x: 1000, y: 250, name: 'FINAL' }
+                ],
+                edges: [
+                    { id: 'e_src_stn0',  from: 'src',  to: 'stn0' },
+                    { id: 'e_stn0_bufA', from: 'stn0', to: 'bufA' },
+                    { id: 'e_bufA_stn1', from: 'bufA', to: 'stn1' },
+                    { id: 'e_bufA_stn2', from: 'bufA', to: 'stn2' },
+                    { id: 'e_stn1_bufB', from: 'stn1', to: 'bufB' },
+                    { id: 'e_stn2_bufB', from: 'stn2', to: 'bufB' },
+                    { id: 'e_bufB_sink', from: 'bufB', to: 'sink' }
+                ]
+            }
+        }
     }
 ];
 
@@ -2294,10 +3059,12 @@ function loadScenario(id) {
         learningPieces: 0, learningStart: 0.6, reworkEnabled: false,
         ...s
     }));
-    cfg.version = 1;
+    cfg.version = cfg.topology ? 2 : 1;
     applyConfig(cfg);
     closeScenarios();
     showToast(`Cenário carregado: ${sc.title}`);
+    // Bloco 6.6: se o cenário traz topologia, abre o MAPA para o utilizador ver
+    if (cfg.topology) setTimeout(openMap, 100);
 }
 
 // --- Comparador ---
@@ -2460,6 +3227,17 @@ function collectConfig() {
         prefs: { ...PREFS },
         wipInit: wI,
         wipMax: wM,
+        wipDwell: buffers.wips.map(w => w.dwell || 0),
+        // Bloco 6.5: topologia em grafo (apenas se diferir do auto-gerado linear)
+        topology: isLinearTopology() ? null : {
+            nodes: nodes.map(n => ({
+                id: n.id, type: n.type, x: n.x, y: n.y, name: n.name,
+                // Para nós BUFFER novos (não-cadeia), guardar refs explícitas
+                buf: n.type === 'BUFFER' ? { ready: n.ref.ready, max: n.ref.max, dwell: n.ref.dwell } : undefined,
+                stationIdx: n.type === 'STATION' ? S.indexOf(n.ref) : undefined
+            })),
+            edges: edges.map(e => ({ id: e.id, from: e.from, to: e.to, transit: e.transit || 0 }))
+        },
         stations: S.map(s => ({
             enabled: s.enabled, name: s.name, ppmNom: s.ppmNom,
             Aset: s.Aset, Pset: s.Pset, Qset: s.Qset, setupConfig: s.setupConfig,
@@ -2518,6 +3296,7 @@ function applyConfig(cfg) {
         const w = makeWip();
         w.max = (cfg.wipMax && cfg.wipMax[i]) || 100;
         w.ready = (cfg.wipInit && cfg.wipInit[i]) || 0;
+        w.dwell = Math.max(0, parseFloat(cfg.wipDwell && cfg.wipDwell[i]) || 0);
         buffers.wips.push(w);
     }
 
@@ -2531,7 +3310,15 @@ function applyConfig(cfg) {
     document.getElementById('chartOEE').innerHTML = '';
     document.getElementById('chartPPM').innerHTML = '';
 
+    // Bloco 1 (Grafo): sincroniza espelho de topologia
+    rebuildLinearGraph();
+    // Bloco 6.5: restaura topologia em grafo se o config a tiver
+    if (cfg.topology && Array.isArray(cfg.topology.nodes) && Array.isArray(cfg.topology.edges)) {
+        applyTopology(cfg.topology);
+    }
+
     buildDOM();
+    if (typeof syncLinearView === 'function') syncLinearView();
     calculateInitialMeta();
     render();
     document.getElementById('btnStart').innerHTML = '<span>▶</span> INICIAR';
@@ -2763,6 +3550,7 @@ window.onload = function() {
         if (menu && menu.classList.contains('open') && !e.target.closest('.data-menu-wrap')) menu.classList.remove('open');
     });
     document.getElementById('chkTheme').onchange = e => { document.body.classList.toggle('light-mode', e.target.checked); };
+    initMapInteractions(); // Bloco 6.4: pan/zoom do MAPA
     reset();
     let last = performance.now();
     function loop(now) { 
