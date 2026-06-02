@@ -1332,7 +1332,7 @@ function stationTemplate(i) {
         id: i, enabled: true, name: `ESTAÇÃO ${i+1}`, ppmNom: 60, Aset: 1, Pset: 1, Qset: 1,
         setupConfig: 0, setupRem: 0, setupDone: false, setupStarted: false,
         state: 'idle', resumeState: 'idle', curIdealCT: 0, curProcTot: 0, remProc: 0, downRem: 0,
-        holding: false, holdDestIndex: null, runTime: 0, idealTime: 0, totalCount: 0, goodCount: 0,
+        holding: false, holdDestBuf: null, runTime: 0, idealTime: 0, totalCount: 0, goodCount: 0,
         tRun: 0, tDown: 0, tStarved: 0, tBlocked: 0, tIdle: 0, tSetup: 0,
         // Bloco 3: modelação realista
         batchSize: 0,            // peças por lote (0 = sem lotes)
@@ -1389,36 +1389,63 @@ function oeeCalcStation(st) {
 function wipTotal(w) { return w.ready + w.reserved; }
 function wipCanReceive(w) { return wipTotal(w) < w.max; }
 
-function sendToWip(i, dur) { 
+// === Bloco 6.2: helpers de topologia (engine consulta grafo) ===
+function stationNodeId(i) { return `stn${i}`; }
+function nodeForStationIdx(i) { return nodeById.get(stationNodeId(i)); }
+
+// Escolhe o melhor destino downstream: maior espaço livre (shortest-queue),
+// tie-break determinístico por id ascendente.
+function pickDownstream(nodeId) {
+    const outs = downstreamOf(nodeId);
+    if (outs.length === 0) return null;
+    if (outs.length === 1) return nodeById.get(outs[0].to);
+    let best = null, bestFree = -Infinity;
+    for (const e of outs) {
+        const n = nodeById.get(e.to); if (!n) continue;
+        const free = (n.type === 'BUFFER') ? (n.ref.max - wipTotal(n.ref)) : Infinity;
+        if (free > bestFree || (free === bestFree && best && n.id < best.id)) {
+            best = n; bestFree = free;
+        }
+    }
+    return best;
+}
+
+function sendToWip(i, dur) {
+    const target = pickDownstream(stationNodeId(i));
+    if (!target || target.type !== 'BUFFER') return; // SINK é tratado em finishProcessing
+    const buf = target.ref;
     if (dur > EPSILON) {
-        buffers.wips[i].reserved++; 
-        transfers.push({ destIndex: i, rem: dur }); 
+        buf.reserved++;
+        transfers.push({ destBuf: buf, rem: dur });
     } else {
-        buffers.wips[i].ready++;
+        buf.ready++;
     }
 }
 
 function transfersTick(dt) {
     for (let i = transfers.length - 1; i >= 0; i--) {
         transfers[i].rem -= dt;
-        if (transfers[i].rem <= EPSILON) { 
-            buffers.wips[transfers[i].destIndex].reserved--; 
-            buffers.wips[transfers[i].destIndex].ready++; 
-            transfers.splice(i, 1); 
+        if (transfers[i].rem <= EPSILON) {
+            const buf = transfers[i].destBuf;
+            buf.reserved--;
+            buf.ready++;
+            transfers.splice(i, 1);
         }
     }
 }
 
 function takeFromInput(i) {
-    if (i === 0) { 
-        if (buffers.raw.count <= 0) return false; 
-        buffers.raw.count--; 
-        return true; 
+    const ups = upstreamOf(stationNodeId(i));
+    for (const e of ups) {
+        const src = nodeById.get(e.from);
+        if (!src) continue;
+        if (src.type === 'SOURCE') {
+            if (src.ref.count > 0) { src.ref.count--; return true; }
+        } else if (src.type === 'BUFFER') {
+            if (src.ref.ready > 0) { src.ref.ready--; return true; }
+        }
     }
-    const w = buffers.wips[i - 1]; 
-    if (w.ready <= 0) return false; 
-    w.ready--; 
-    return true;
+    return false;
 }
 
 function getInitialWipSum() { 
@@ -1444,18 +1471,27 @@ function getTotalProcessed() {
     return stats.good + stats.scrap;
 }
 
+// BFS reverso pelo grafo: a estação i está "starved" se não há nenhuma peça
+// disponível ou em processamento em qualquer nó upstream alcançável.
 function isUpstreamDry(i) {
-    if (i === 0) return buffers.raw.count <= 0;
-    for (let k = 0; k < i; k++) {
-        const s = S[k];
-        if (!s.enabled) continue; 
-        if (s.state === 'processing' || s.state === 'blocked') return false;
-        if (s.state === 'down' && s.remProc > EPSILON) return false; 
-    }
-    for (let k = 0; k < i; k++) {
-        if (k < buffers.wips.length) {
-            const w = buffers.wips[k];
-            if (w.ready > 0 || w.reserved > 0) return false;
+    const startId = i < S.length ? stationNodeId(i) : 'sink';
+    const visited = new Set([startId]);
+    const queue = [startId];
+    while (queue.length) {
+        const nodeId = queue.shift();
+        for (const e of upstreamOf(nodeId)) {
+            const src = nodeById.get(e.from); if (!src) continue;
+            if (visited.has(src.id)) continue;
+            visited.add(src.id);
+            if (src.type === 'SOURCE') {
+                if (src.ref.count > 0) return false;
+            } else if (src.type === 'BUFFER') {
+                if (src.ref.ready > 0 || src.ref.reserved > 0) return false;
+            } else if (src.type === 'STATION' && src.ref.enabled) {
+                if (src.ref.state === 'processing' || src.ref.state === 'blocked') return false;
+                if (src.ref.state === 'down' && src.ref.remProc > EPSILON) return false;
+            }
+            queue.push(src.id);
         }
     }
     return true;
@@ -1547,18 +1583,20 @@ function finishProcessing(i) {
         // Bloco 3: contador de lote (apenas peças boas avançam o lote)
         if (st.batchSize > 0) st.piecesInBatch++;
 
-        if (i === S.length - 1) {
+        // Bloco 6.2: resolve destino via grafo (não assume última estação por índice)
+        const target = pickDownstream(stationNodeId(i));
+        if (!target || target.type === 'SINK') {
             stats.good++;
             spawnAnimBox(fromEl, document.getElementById('endNode'), 'finish', 1000);
         }
         else {
-            const w = buffers.wips[i];
-            if (wipCanReceive(w)) {
+            const buf = target.ref;
+            if (wipCanReceive(buf)) {
                 sendToWip(i, TRANSIT_TIME);
                 spawnAnimBox(fromEl, document.getElementById(`thermoTrack_${i}`), 'station_to_wip', TRANSIT_TIME * 1000);
             }
             else {
-                st.holding = true; st.holdDestIndex = i; st.state = 'blocked';
+                st.holding = true; st.holdDestBuf = buf; st.state = 'blocked';
             }
         }
     }
@@ -1571,15 +1609,17 @@ function finishProcessing(i) {
 }
 
 function tryReleaseBlocked(i) {
-    const st = S[i]; 
+    const st = S[i];
     if (st.state !== 'blocked') return;
-    const w = buffers.wips[st.holdDestIndex]; 
-    if (wipCanReceive(w)) { 
-        sendToWip(st.holdDestIndex, TRANSIT_TIME); 
-        spawnAnimBox(document.getElementById(`stationVisual_${i}`), document.getElementById(`thermoTrack_${st.holdDestIndex}`), 'station_to_wip', TRANSIT_TIME * 1000); 
-        st.holding = false; st.holdDestIndex = null; 
-        if (st.downRem > EPSILON && st.enabled) st.state = 'down'; 
-        else { st.state = 'idle'; st.downRem = 0; } 
+    const buf = st.holdDestBuf;
+    if (!buf) { st.state = 'idle'; return; }
+    if (wipCanReceive(buf)) {
+        if (TRANSIT_TIME > EPSILON) { buf.reserved++; transfers.push({ destBuf: buf, rem: TRANSIT_TIME }); }
+        else { buf.ready++; }
+        spawnAnimBox(document.getElementById(`stationVisual_${i}`), document.getElementById(`thermoTrack_${i}`), 'station_to_wip', TRANSIT_TIME * 1000);
+        st.holding = false; st.holdDestBuf = null;
+        if (st.downRem > EPSILON && st.enabled) st.state = 'down';
+        else { st.state = 'idle'; st.downRem = 0; }
     }
 }
 
