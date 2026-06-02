@@ -385,7 +385,7 @@
             </div>
             <div class="cfg">
                 <span class="cfg-lbl">TRÂNSITO (s)</span>
-                <input id="transitTimeInput" class="cfg-input" type="number" min="0" max="99" value="0">
+                <input id="transitTimeInput" class="cfg-input" type="number" min="0" max="999" value="0">
             </div>
             <div class="cfg">
                 <span class="cfg-lbl">VELOCIDADE</span>
@@ -961,6 +961,53 @@ let stats = { good: 0, scrap: 0, scrapByStation: [] };
 const transfers = [];
 let S = [];
 let bottleneckId = 0;
+
+// === Bloco 1 (Grafo): camada de topologia interna ===
+// nodes[]/edges[]/nodeById espelham a cadeia linear atual.
+// Nesta fase a engine continua a usar índices; o grafo só reflete o estado.
+// Próximos blocos vão consultar o grafo em vez de S[i±1] / buffers.wips[i].
+let nodes = [];          // [{ id, type: 'SOURCE'|'STATION'|'BUFFER'|'SINK', x, y, name, ref }]
+let edges = [];          // [{ id, from, to, transit }]
+let nodeById = new Map();
+
+function rebuildNodeIndex() {
+    nodeById.clear();
+    for (const n of nodes) nodeById.set(n.id, n);
+}
+function upstreamOf(nodeId)   { return edges.filter(e => e.to === nodeId); }
+function downstreamOf(nodeId) { return edges.filter(e => e.from === nodeId); }
+
+/**
+ * Reconstrói nodes[]/edges[] como uma cadeia linear equivalente ao estado
+ * (buffers.raw, S[], buffers.wips[]). Idempotente — não modifica os refs;
+ * apenas (re)cria o índice de nós/arestas a partir deles.
+ *
+ * Layout topológico:
+ *   SRC ─e0→ STN0 ─e1→ BUF0 ─e2→ STN1 ─e3→ BUF1 ─e4→ ... ─→ STN(n-1) ─→ SINK
+ */
+function rebuildLinearGraph() {
+    nodes = [];
+    edges = [];
+    const src = { id: 'src', type: 'SOURCE', x: 0, y: 0, name: 'ESTOQUE', ref: buffers.raw };
+    nodes.push(src);
+    let prevId = 'src';
+    for (let i = 0; i < S.length; i++) {
+        const stnId = `stn${i}`;
+        nodes.push({ id: stnId, type: 'STATION', x: 180 * (i + 1), y: 0, name: S[i].name, ref: S[i] });
+        edges.push({ id: `e_${prevId}_${stnId}`, from: prevId, to: stnId, transit: 0 });
+        prevId = stnId;
+        if (i < S.length - 1) {
+            const bufId = `buf${i}`;
+            nodes.push({ id: bufId, type: 'BUFFER', x: 180 * (i + 1) + 90, y: 0, name: `WIP ${i+1}`, ref: buffers.wips[i] });
+            edges.push({ id: `e_${stnId}_${bufId}`, from: stnId, to: bufId, transit: TRANSIT_TIME });
+            prevId = bufId;
+        }
+    }
+    const sink = { id: 'sink', type: 'SINK', x: 180 * (S.length + 1), y: 0, name: 'FINAL', ref: null };
+    nodes.push(sink);
+    edges.push({ id: `e_${prevId}_sink`, from: prevId, to: 'sink', transit: 0 });
+    rebuildNodeIndex();
+}
 
 function openHelp() { document.getElementById('helpModal').style.display = "block"; }
 function closeHelp() { document.getElementById('helpModal').style.display = "none"; }
@@ -1812,7 +1859,7 @@ function buildDOM() {
         <div class="label">ESTOQUE (MP)</div>
         <div class="lot-input-group">
             <label>DISPONÍVEL</label>
-            <input id="stockInput" type="number" value="${buffers.raw.stock}" onchange="updateStockFromCard(this.value)">
+            <input id="stockInput" type="number" min="1" max="999999" value="${buffers.raw.stock}" onchange="updateStockFromCard(this.value)">
         </div>
         <div class="stock-available-label" style="margin-top:15px">RESTANTE</div>
         <div id="badgeLot">0</div>
@@ -1823,13 +1870,13 @@ function buildDOM() {
         const isLast = i === STATION_COUNT - 1, st = S[i];
         const stEl = document.createElement('div'); 
         stEl.className = 'station'; stEl.id = `st${i}`;
-        stEl.innerHTML = `<div class="stationHead"><div class="stationTitle"><span class="dot"></span><input class="station-name-input" type="text" value="${st.name}" onchange="S[${i}].name=this.value"></div><div class="bottleneck-badge">GARGALO</div><div class="toggle on" id="toggle_${i}"></div></div><div class="visual" id="stationVisual_${i}"><div class="machineIcon" id="icon_${i}">${SVG_GEAR}</div><div class="statusPill gray" id="status_${i}">PRONTA</div></div><div class="kpiRow"><div class="kbox"><div class="klabel">OEE</div><div class="kval" id="oee_${i}">0%</div></div><div class="kbox"><div class="klabel">A%</div><div class="kval small" id="A_${i}">100</div></div><div class="kbox"><div class="klabel">P%</div><div class="kval small" id="P_${i}">100</div></div><div class="kbox"><div class="klabel">Q%</div><div class="kval small" id="Q_${i}">100</div></div></div><div class="info-header"><div>PPM NOM: <b id="ppmNomShow_${i}">${st.ppmNom}</b></div><div>PPM REAL: <b id="ppmRealShow_${i}" class="blue">${Math.round(ppmReal(st))}</b></div></div><div class="info-cards"><div class="card-stat green"><span>BONS</span><b id="good_${i}">0</b></div><div class="card-stat red"><span>REFUGO</span><b id="refugo_${i}">0</b></div></div><div class="sliders"><div class="srow nom"><div class="name">PPM</div><input id="ppmR_${i}" type="range" min="1" max="300" value="${st.ppmNom}"><input id="ppmN_${i}" type="number" min="1" max="300" value="${st.ppmNom}"></div><div class="srow a"><div class="name">DISP</div><input id="aR_${i}" type="range" min="0" max="100" value="${st.Aset*100}"><input id="aN_${i}" type="number" min="0" max="100" value="${st.Aset*100}"></div><div class="srow p"><div class="name">PERF</div><input id="pR_${i}" type="range" min="0" max="100" value="${st.Pset*100}"><input id="pN_${i}" type="number" min="0" max="100" value="${st.Pset*100}"></div><div class="srow q"><div class="name">QUAL</div><input id="qR_${i}" type="range" min="0" max="100" value="${st.Qset*100}"><input id="qN_${i}" type="number" min="0" max="100" value="${st.Qset*100}"></div><div class="srow setup-row"><div class="name">SETUP</div><input id="setupInp_${i}" type="number" step="0.1" min="0" value="${st.setupConfig}"><span style="font-size:9px;font-weight:800;color:#64748b;">min</span></div></div><div class="times"><div class="trow"><span class="tname op">OPERANDO</span><span id="tRun_${i}">00:00.0</span></div><div class="trow"><span class="tname setup">SETUP</span><span id="tSetup_${i}">00:00.0</span></div><div class="trow"><span class="tname down">PARADA</span><span id="tDown_${i}">00:00.0</span></div><div class="trow" style="${i===0?'display:none':''}"><span class="tname wait">AGUARDANDO</span><span id="tWait_${i}">00:00.0</span></div><div class="trow" style="${isLast?'display:none':''}"><span class="tname block">TRAVADA</span><span id="tBlock_${i}">00:00.0</span></div><div class="trow"><span class="tname idle">OCIOSIDADE</span><span id="tIdle_${i}">00:00.0</span></div></div><div class="adv-toggle" onclick="document.getElementById('adv_${i}').classList.toggle('open')">⚙ Avançado ▾</div><div class="adv-panel" id="adv_${i}"><div class="adv-row"><span class="nm">Lote</span><input id="batchInp_${i}" type="number" min="0" max="9999" value="${st.batchSize}"><span class="un">pç</span></div><div class="adv-row"><span class="nm">MTBF</span><input id="mtbfInp_${i}" type="number" min="0" max="9999" step="0.5" value="${st.mtbfMin}"><span class="un">min</span></div><div class="adv-row"><span class="nm">MTTR</span><input id="mttrInp_${i}" type="number" min="0" max="9999" step="0.5" value="${st.mttrMin}"><span class="un">min</span></div><div class="adv-row"><span class="nm">Aprendiz.</span><input id="learnInp_${i}" type="number" min="0" max="9999" value="${st.learningPieces}"><span class="un">pç</span></div><div class="adv-row"><span class="nm">P inicial</span><input id="learnStartInp_${i}" type="number" min="0" max="100" step="5" value="${Math.round(st.learningStart*100)}"><span class="un">%</span></div><div class="adv-row chk"><span class="nm">Rework loop</span><input id="reworkChk_${i}" type="checkbox" ${st.reworkEnabled?'checked':''}></div><div class="adv-counters"><span>Falhas: <b id="advFails_${i}">0</b></span><span>Setups: <b id="advSetups_${i}">0</b></span><span>Rework: <b id="advRework_${i}">0</b></span></div></div>`;
+        stEl.innerHTML = `<div class="stationHead"><div class="stationTitle"><span class="dot"></span><input class="station-name-input" type="text" value="${st.name}" onchange="S[${i}].name=this.value"></div><div class="bottleneck-badge">GARGALO</div><div class="toggle on" id="toggle_${i}"></div></div><div class="visual" id="stationVisual_${i}"><div class="machineIcon" id="icon_${i}">${SVG_GEAR}</div><div class="statusPill gray" id="status_${i}">PRONTA</div></div><div class="kpiRow"><div class="kbox"><div class="klabel">OEE</div><div class="kval" id="oee_${i}">0%</div></div><div class="kbox"><div class="klabel">A%</div><div class="kval small" id="A_${i}">100</div></div><div class="kbox"><div class="klabel">P%</div><div class="kval small" id="P_${i}">100</div></div><div class="kbox"><div class="klabel">Q%</div><div class="kval small" id="Q_${i}">100</div></div></div><div class="info-header"><div>PPM NOM: <b id="ppmNomShow_${i}">${st.ppmNom}</b></div><div>PPM REAL: <b id="ppmRealShow_${i}" class="blue">${Math.round(ppmReal(st))}</b></div></div><div class="info-cards"><div class="card-stat green"><span>BONS</span><b id="good_${i}">0</b></div><div class="card-stat red"><span>REFUGO</span><b id="refugo_${i}">0</b></div></div><div class="sliders"><div class="srow nom"><div class="name">PPM</div><input id="ppmR_${i}" type="range" min="1" max="9999" value="${st.ppmNom}"><input id="ppmN_${i}" type="number" min="1" max="9999" value="${st.ppmNom}"></div><div class="srow a"><div class="name">DISP</div><input id="aR_${i}" type="range" min="0" max="100" value="${st.Aset*100}"><input id="aN_${i}" type="number" min="0" max="100" value="${st.Aset*100}"></div><div class="srow p"><div class="name">PERF</div><input id="pR_${i}" type="range" min="0" max="100" value="${st.Pset*100}"><input id="pN_${i}" type="number" min="0" max="100" value="${st.Pset*100}"></div><div class="srow q"><div class="name">QUAL</div><input id="qR_${i}" type="range" min="0" max="100" value="${st.Qset*100}"><input id="qN_${i}" type="number" min="0" max="100" value="${st.Qset*100}"></div><div class="srow setup-row"><div class="name">SETUP</div><input id="setupInp_${i}" type="number" step="0.1" min="0" value="${st.setupConfig}"><span style="font-size:9px;font-weight:800;color:#64748b;">min</span></div></div><div class="times"><div class="trow"><span class="tname op">OPERANDO</span><span id="tRun_${i}">00:00.0</span></div><div class="trow"><span class="tname setup">SETUP</span><span id="tSetup_${i}">00:00.0</span></div><div class="trow"><span class="tname down">PARADA</span><span id="tDown_${i}">00:00.0</span></div><div class="trow" style="${i===0?'display:none':''}"><span class="tname wait">AGUARDANDO</span><span id="tWait_${i}">00:00.0</span></div><div class="trow" style="${isLast?'display:none':''}"><span class="tname block">TRAVADA</span><span id="tBlock_${i}">00:00.0</span></div><div class="trow"><span class="tname idle">OCIOSIDADE</span><span id="tIdle_${i}">00:00.0</span></div></div><div class="adv-toggle" onclick="document.getElementById('adv_${i}').classList.toggle('open')">⚙ Avançado ▾</div><div class="adv-panel" id="adv_${i}"><div class="adv-row"><span class="nm">Lote</span><input id="batchInp_${i}" type="number" min="0" max="9999" value="${st.batchSize}"><span class="un">pç</span></div><div class="adv-row"><span class="nm">MTBF</span><input id="mtbfInp_${i}" type="number" min="0" max="9999" step="0.5" value="${st.mtbfMin}"><span class="un">min</span></div><div class="adv-row"><span class="nm">MTTR</span><input id="mttrInp_${i}" type="number" min="0" max="9999" step="0.5" value="${st.mttrMin}"><span class="un">min</span></div><div class="adv-row"><span class="nm">Aprendiz.</span><input id="learnInp_${i}" type="number" min="0" max="9999" value="${st.learningPieces}"><span class="un">pç</span></div><div class="adv-row"><span class="nm">P inicial</span><input id="learnStartInp_${i}" type="number" min="0" max="100" step="5" value="${Math.round(st.learningStart*100)}"><span class="un">%</span></div><div class="adv-row chk"><span class="nm">Rework loop</span><input id="reworkChk_${i}" type="checkbox" ${st.reworkEnabled?'checked':''}></div><div class="adv-counters"><span>Falhas: <b id="advFails_${i}">0</b></span><span>Setups: <b id="advSetups_${i}">0</b></span><span>Rework: <b id="advRework_${i}">0</b></span></div></div>`;
         board.appendChild(stEl); setupStationBinds(i);
         document.getElementById(`toggle_${i}`).classList.toggle('on', st.enabled);
         
         if (!isLast) {
             const wipEl = document.createElement('div'); wipEl.className = 'wipCol'; wipEl.id = `wipBox_${i}`;
-            wipEl.innerHTML = `<div class="wipCard" id="wipCard_${i}"><div class="wipHead"><span class="wipIcon">${SVG_BUFFER}</span><span class="wipTitle">WIP ${i+1}</span></div><div class="wipMid"><div class="thermoTrack" id="thermoTrack_${i}"><div class="thermoFill" id="wipFill_${i}"></div></div><div class="pctBig" id="wipPct_${i}">0<span>%</span></div><div class="wipBlocked" id="wipBlocked_${i}">TRAVADO</div></div><div class="wipFoot"><div class="wipMini"><span class="lbl">Disp.</span><span class="val" id="wipDisp_${i}">0</span></div><div class="wipMini"><span class="lbl">Trans.</span><span class="val" id="wipTrans_${i}">0</span></div><div class="wipMini"><span class="lbl">Início</span><div class="wipInputGroup"><input id="wipInitInput_${i}" type="number" min="0" value="${buffers.wips[i]?.ready||0}"></div></div><div class="wipMini"><span class="lbl">Nível</span><div class="wipInputGroup"><span id="wipCurLabel_${i}">0</span><span class="slash">/</span><input id="wipMaxInput_${i}" type="number" min="1" max="999" value="${buffers.wips[i]?.max||100}"></div></div></div></div>`;
+            wipEl.innerHTML = `<div class="wipCard" id="wipCard_${i}"><div class="wipHead"><span class="wipIcon">${SVG_BUFFER}</span><span class="wipTitle">WIP ${i+1}</span></div><div class="wipMid"><div class="thermoTrack" id="thermoTrack_${i}"><div class="thermoFill" id="wipFill_${i}"></div></div><div class="pctBig" id="wipPct_${i}">0<span>%</span></div><div class="wipBlocked" id="wipBlocked_${i}">TRAVADO</div></div><div class="wipFoot"><div class="wipMini"><span class="lbl">Disp.</span><span class="val" id="wipDisp_${i}">0</span></div><div class="wipMini"><span class="lbl">Trans.</span><span class="val" id="wipTrans_${i}">0</span></div><div class="wipMini"><span class="lbl">Início</span><div class="wipInputGroup"><input id="wipInitInput_${i}" type="number" min="0" value="${buffers.wips[i]?.ready||0}"></div></div><div class="wipMini"><span class="lbl">Nível</span><div class="wipInputGroup"><span id="wipCurLabel_${i}">0</span><span class="slash">/</span><input id="wipMaxInput_${i}" type="number" min="1" max="9999" value="${buffers.wips[i]?.max||100}"></div></div></div></div>`;
             board.appendChild(wipEl); setupWipBinds(i);
         }
     }
@@ -1841,7 +1888,7 @@ function buildDOM() {
         <div class="label" id="endLabel" style="color:#15803d">CONCLUÍDO</div>
         <div class="lot-input-group">
             <label style="color:#15803d">META DE PROD.</label>
-            <input id="targetInput" type="number" value="${buffers.raw.target}" onchange="updateTargetFromCard(this.value)" style="border-color:#86efac; color:#14532d">
+            <input id="targetInput" type="number" min="1" max="999999" value="${buffers.raw.target}" onchange="updateTargetFromCard(this.value)" style="border-color:#86efac; color:#14532d">
         </div>
         <div class="checkbox-group">
             <div class="checkbox-lbl" style="color:#15803d">REPOR PERDAS</div>
@@ -2101,7 +2148,10 @@ function reset() {
         S.push(st);
     }
     for (let i = 0; i < STATION_COUNT - 1; i++) { let w = makeWip(); if (keep && saved) { w.max = saved.wM[i] || 100; w.ready = saved.wI[i] || 0; } buffers.wips.push(w); }
-    
+
+    // Bloco 1 (Grafo): sincroniza espelho de topologia com o estado linear
+    rebuildLinearGraph();
+
     buildDOM();
     
     if (keep && saved) { for (let i = 0; i < STATION_COUNT - 1; i++) { const initEl = document.getElementById(`wipInitInput_${i}`), maxEl = document.getElementById(`wipMaxInput_${i}`); if (initEl) initEl.value = saved.wI[i]; if (maxEl) maxEl.value = saved.wM[i]; } }
@@ -2530,6 +2580,9 @@ function applyConfig(cfg) {
 
     document.getElementById('chartOEE').innerHTML = '';
     document.getElementById('chartPPM').innerHTML = '';
+
+    // Bloco 1 (Grafo): sincroniza espelho de topologia
+    rebuildLinearGraph();
 
     buildDOM();
     calculateInitialMeta();
