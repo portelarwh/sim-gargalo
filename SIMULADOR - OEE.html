@@ -347,7 +347,9 @@
         .map-node-g { cursor: pointer; }
         .map-node-g.selected .map-node-rect { stroke: #facc15; stroke-width: 3; }
         .map-node-g.connect-src .map-node-rect { stroke: var(--cyan); stroke-width: 3; stroke-dasharray: 4,2; }
-        .map-props { position: absolute; top: 72px; right: 14px; width: 240px; background: rgba(15,23,42,0.92); border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; padding: 12px; backdrop-filter: blur(8px); color: #e2e8f0; font-size: 12px; z-index: 5; display: none; }
+        .map-props { position: absolute; top: 72px; right: 14px; width: 320px; max-height: calc(100vh - 100px); overflow-y: auto; background: rgba(15,23,42,0.92); border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; padding: 12px; backdrop-filter: blur(8px); color: #e2e8f0; font-size: 12px; z-index: 5; display: none; }
+        .map-props .station.station-in-panel { width: 100%; min-height: auto; margin-bottom: 0; transform-origin: top left; }
+        .map-props #mapStationSlot { max-width: 100%; }
         .map-props.open { display: block; }
         .map-props h4 { margin: 0 0 10px; color: var(--cyan); font-size: 13px; }
         .map-props label { display: grid; grid-template-columns: 80px 1fr; gap: 6px; align-items: center; margin-bottom: 8px; font-size: 11px; }
@@ -928,6 +930,7 @@
 
 <div id="mapView" class="map-view">
     <div class="map-toolbar">
+        <button onclick="autoLayoutMap()" title="Reorganiza os nós em colunas topológicas">⛓ Auto-layout</button>
         <button onclick="autoFitMap()" title="Centrar e ajustar zoom para todos os nós">⛶ Auto-fit</button>
         <button onclick="zoomMap(1.25)" title="Zoom in">+</button>
         <button onclick="zoomMap(0.8)" title="Zoom out">−</button>
@@ -2369,6 +2372,7 @@ function reset() {
     rebuildLinearGraph();
     if (typeof syncLinearView === 'function') syncLinearView();
 
+    if (typeof unparkStationCard === 'function') unparkStationCard();
     buildDOM();
     refreshStockTargetUI(); // Bloco 7.1: aplica estado ∞ se persistente
 
@@ -2429,6 +2433,8 @@ function openMap() {
 }
 function closeMap() {
     mapOpen = false;
+    unparkStationCard();
+    selectedNodeId = null;
     document.getElementById('mapView').classList.remove('open');
     document.getElementById('mapAnim').innerHTML = '';
 }
@@ -2437,6 +2443,45 @@ function setMapViewBox() {
     const svg = document.getElementById('mapSvg');
     svg.setAttribute('viewBox', `${mapViewBox.x} ${mapViewBox.y} ${mapViewBox.w} ${mapViewBox.h}`);
     renderMinimap();
+}
+
+// Bloco 7.4: auto-layout topológico (colunas via BFS, empilhamento vertical em paralelas)
+function autoLayoutMap() {
+    if (nodes.length === 0) return;
+    // 1. Calcula rank topológico de cada nó
+    const rank = new Map();
+    // Iteração até estabilizar (suporta grafos com múltiplos SOURCEs)
+    for (const n of nodes) rank.set(n.id, 0);
+    let changed = true, iter = 0;
+    while (changed && iter < 200) {
+        changed = false; iter++;
+        for (const e of edges) {
+            const r = (rank.get(e.from) ?? 0) + 1;
+            if (r > (rank.get(e.to) ?? 0)) { rank.set(e.to, r); changed = true; }
+        }
+    }
+    // 2. Agrupa nós por rank
+    const byRank = new Map();
+    for (const n of nodes) {
+        const r = rank.get(n.id) ?? 0;
+        if (!byRank.has(r)) byRank.set(r, []);
+        byRank.get(r).push(n);
+    }
+    // 3. Distribuição: x = rank * colSpacing, y = espaçado verticalmente; em paralelas, altura proporcional
+    const colSpacing = 200;
+    const rowSpacing = NODE_H + 30;
+    const cy = 250;
+    for (const [r, group] of byRank) {
+        const n_g = group.length;
+        const total = n_g * NODE_H + (n_g - 1) * 30;
+        const yStart = cy - total / 2;
+        group.sort((a, b) => a.id.localeCompare(b.id));
+        for (let k = 0; k < n_g; k++) {
+            group[k].x = r * colSpacing;
+            group[k].y = yStart + k * rowSpacing;
+        }
+    }
+    autoFitMap();
 }
 
 function autoFitMap() {
@@ -2593,11 +2638,19 @@ function edgePath(srcNode, dstNode, style) {
 }
 
 function nodeLiveLabel(n) {
-    if (n.type === 'SOURCE') return { line1: n.ref.count, line2: `de ${n.ref.stock}` };
-    if (n.type === 'SINK')   return { line1: stats.good, line2: `meta ${buffers.raw.target}` };
+    if (n.type === 'SOURCE') {
+        const cnt = Number.isFinite(n.ref.count) ? n.ref.count : '∞';
+        const stk = n.ref.stockInf ? '∞' : n.ref.stock;
+        return { line1: cnt, line2: `de ${stk}` };
+    }
+    if (n.type === 'SINK')   {
+        const tgt = Number.isFinite(buffers.raw.target) ? buffers.raw.target : '∞';
+        return { line1: stats.good, line2: `meta ${tgt}` };
+    }
     if (n.type === 'STATION') {
         const k = oeeCalcStation(n.ref);
-        return { line1: `OEE ${(k.OEE*100).toFixed(0)}%`, line2: `${Math.round(ppmReal(n.ref))} ppm` };
+        const pph = Math.round(ppmReal(n.ref) * 60);
+        return { line1: `OEE ${(k.OEE*100).toFixed(0)}%`, line2: `${pph} pph` };
     }
     if (n.type === 'BUFFER') {
         const t = wipTotal(n.ref);
@@ -2715,50 +2768,96 @@ function selectNode(nodeId) {
     updatePropsPanel();
 }
 
+// Bloco 7.4: painel direito do MAPA = card linear real (movido por DOM)
+// quando uma estação é selecionada. Para BUFFER/SOURCE/SINK mostra inputs simples.
+let _stationParkedFor = null; // id do nó cujo card linear está atualmente no painel
+
+function parkStationCardInPanel(stationIdx, panel) {
+    const stEl = document.getElementById(`st${stationIdx}`);
+    if (stEl && stEl.parentElement !== panel) {
+        stEl._origParent = stEl.parentElement;
+        stEl._origNext = stEl.nextSibling;
+        panel.appendChild(stEl);
+        stEl.classList.add('station-in-panel');
+    }
+}
+function unparkStationCard() {
+    if (!_stationParkedFor) return;
+    const idx = parseInt(_stationParkedFor.replace('stn',''), 10);
+    const stEl = document.getElementById(`st${idx}`);
+    if (stEl && stEl._origParent) {
+        stEl.classList.remove('station-in-panel');
+        if (stEl._origNext && stEl._origNext.parentElement === stEl._origParent) {
+            stEl._origParent.insertBefore(stEl, stEl._origNext);
+        } else {
+            stEl._origParent.appendChild(stEl);
+        }
+        stEl._origParent = null; stEl._origNext = null;
+    }
+    _stationParkedFor = null;
+}
+
 function updatePropsPanel() {
     const panel = document.getElementById('mapProps');
     if (!panel) return;
-    if (!selectedNodeId) { panel.classList.remove('open'); return; }
+    if (!selectedNodeId) { unparkStationCard(); panel.classList.remove('open'); panel.innerHTML = ''; return; }
     const n = nodeById.get(selectedNodeId);
-    if (!n) { panel.classList.remove('open'); return; }
+    if (!n) { unparkStationCard(); panel.classList.remove('open'); panel.innerHTML = ''; return; }
+
+    // Se mudou de seleção, devolve o card anterior
+    if (_stationParkedFor && _stationParkedFor !== n.id) unparkStationCard();
+
+    // Cabeçalho + ações comuns
+    const actionsHtml = (() => {
+        let h = `<div class="row-actions" style="flex-wrap:wrap;">`;
+        h += `<button onclick="startConnectFromNode('${n.id}')" title="Cria edge para outro nó">🔗 Conectar a…</button>`;
+        if (n.type === 'STATION') h += `<button onclick="splitStation('${n.id}')" title="Cria estação paralela com mesmos parâmetros">🪓 Dividir</button>`;
+        const canDelete = (n.type !== 'SOURCE' || nodes.filter(x => x.type === 'SOURCE').length > 1) &&
+                          (n.type !== 'SINK'   || nodes.filter(x => x.type === 'SINK').length > 1);
+        if (canDelete) h += `<button class="danger" onclick="deleteNode('${n.id}')">🗑 Apagar</button>`;
+        h += `<button onclick="selectNode(null)">Fechar</button></div>`;
+        return h;
+    })();
+
+    if (n.type === 'STATION') {
+        // Move o card linear real para dentro do painel — mantém todos os bindings já ligados
+        panel.innerHTML = `<h4>ESTAÇÃO — ${n.name}</h4><div id="mapStationSlot"></div>${actionsHtml}`;
+        panel.classList.add('open');
+        const slot = document.getElementById('mapStationSlot');
+        const idx = S.indexOf(n.ref);
+        parkStationCardInPanel(idx, slot);
+        _stationParkedFor = n.id;
+        return;
+    }
+
+    // BUFFER/SOURCE/SINK: inputs próprios
     let html = `<h4>${n.type} — ${n.name || n.id}</h4>`;
     html += `<label>Nome <input id="prop_name" type="text" value="${n.name || ''}"></label>`;
     if (n.type === 'BUFFER') {
         html += `<label>Capacidade <input id="prop_max" type="number" min="1" max="9999" value="${n.ref.max}"></label>`;
         html += `<label>Dwell (s) <input id="prop_dwell" type="number" min="0" max="9999" step="1" value="${n.ref.dwell}"></label>`;
         html += `<label>Início (pç) <input id="prop_ready" type="number" min="0" value="${n.ref.ready}"></label>`;
+        html += `<small style="opacity:0.7;">Dwell = tempo de cura/quarentena obrigatório antes da peça ficar disponível.</small>`;
     } else if (n.type === 'SOURCE') {
-        html += `<label>Stock <input id="prop_stock" type="number" min="1" max="999999" value="${n.ref.stock}"></label>`;
-        html += `<label>Meta <input id="prop_target" type="number" min="1" max="999999" value="${n.ref.target}"></label>`;
-    } else if (n.type === 'STATION') {
-        html += `<label>PPM <input id="prop_ppm" type="number" min="1" max="9999" value="${n.ref.ppmNom}"></label>`;
-        html += `<small style="opacity:0.7;">Use o card da estação para parâmetros avançados.</small>`;
+        const stkInf = !!n.ref.stockInf;
+        const tgtInf = !!n.ref.targetInf;
+        html += `<label>Stock <input id="prop_stock" type="number" min="1" max="999999" value="${n.ref.stock}" ${stkInf?'disabled':''}> <button onclick="toggleStockInf(); updatePropsPanel();" class="inf-btn ${stkInf?'on':''}">∞</button></label>`;
+        html += `<label>Meta <input id="prop_target" type="number" min="1" max="999999" value="${n.ref.target}" ${tgtInf?'disabled':''}> <button onclick="toggleTargetInf(); updatePropsPanel();" class="inf-btn ${tgtInf?'on':''}">∞</button></label>`;
     } else if (n.type === 'SINK') {
-        html += `<small style="opacity:0.7;">Nó terminal — coleciona peças boas.</small>`;
+        html += `<small style="opacity:0.7;">Nó terminal — recolhe peças boas. Bons coletados: <b>${stats.good}</b></small>`;
     }
-    html += `<div class="row-actions" style="flex-wrap:wrap;">`;
-    html += `<button onclick="startConnectFromNode('${n.id}')" title="Cria edge para outro nó">🔗 Conectar a…</button>`;
-    if (n.type === 'STATION') html += `<button onclick="splitStation('${n.id}')" title="Cria estação paralela com mesmos parâmetros">🪓 Dividir</button>`;
-    if (n.type !== 'SOURCE' || nodes.filter(x => x.type === 'SOURCE').length > 1) {
-        if (n.type !== 'SINK' || nodes.filter(x => x.type === 'SINK').length > 1) {
-            html += `<button class="danger" onclick="deleteNode('${n.id}')">🗑 Apagar</button>`;
-        }
-    }
-    html += `<button onclick="selectNode(null)">Fechar</button></div>`;
+    html += actionsHtml;
     panel.innerHTML = html;
     panel.classList.add('open');
-    // bindings
     const bind = (id, cb) => { const el = document.getElementById(id); if (el) el.oninput = e => { cb(e.target.value); renderMap(); }; };
-    bind('prop_name', v => { n.name = v; if (n.type === 'STATION') n.ref.name = v; render(); });
+    bind('prop_name', v => { n.name = v; if (n.ref) n.ref.name = v; render(); });
     if (n.type === 'BUFFER') {
         bind('prop_max', v => { n.ref.max = Math.max(1, parseInt(v) || 1); });
         bind('prop_dwell', v => { n.ref.dwell = Math.max(0, parseFloat(v) || 0); });
         bind('prop_ready', v => { if (!running) n.ref.ready = Math.max(0, parseInt(v) || 0); });
     } else if (n.type === 'SOURCE') {
-        bind('prop_stock', v => { n.ref.stock = Math.max(1, parseInt(v) || 1); if (!running) n.ref.count = n.ref.stock; calculateInitialMeta(); render(); });
-        bind('prop_target', v => { n.ref.target = Math.max(1, parseInt(v) || 1); calculateInitialMeta(); render(); });
-    } else if (n.type === 'STATION') {
-        bind('prop_ppm', v => { n.ref.ppmNom = Math.max(1, parseInt(v) || 1); const inp = document.getElementById(`ppmN_${S.indexOf(n.ref)}`); if (inp) inp.value = n.ref.ppmNom; updateBottlenecks(); calculateInitialMeta(); render(); });
+        bind('prop_stock', v => { if (!buffers.raw.stockInf) { n.ref.stock = Math.max(1, parseInt(v) || 1); if (!running) n.ref.count = n.ref.stock; calculateInitialMeta(); render(); refreshStockTargetUI(); } });
+        bind('prop_target', v => { if (!buffers.raw.targetInf) { n.ref.target = Math.max(1, parseInt(v) || 1); calculateInitialMeta(); render(); refreshStockTargetUI(); } });
     }
 }
 
@@ -3294,8 +3393,8 @@ function loadScenario(id) {
     applyConfig(cfg);
     closeScenarios();
     showToast(`Cenário carregado: ${sc.title}`);
-    // Bloco 6.6: se o cenário traz topologia, abre o MAPA para o utilizador ver
-    if (cfg.topology) setTimeout(openMap, 100);
+    // Bloco 6.6 / 7.4: se o cenário traz topologia, abre o MAPA e auto-layout
+    if (cfg.topology) setTimeout(() => { openMap(); autoLayoutMap(); }, 100);
 }
 
 // --- Comparador ---
@@ -3553,6 +3652,7 @@ function applyConfig(cfg) {
         applyTopology(cfg.topology);
     }
 
+    if (typeof unparkStationCard === 'function') unparkStationCard();
     buildDOM();
     if (typeof syncLinearView === 'function') syncLinearView();
     refreshStockTargetUI();
