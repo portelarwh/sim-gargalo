@@ -367,6 +367,17 @@
         .inf-btn.on { background: var(--blue); border-color: var(--blue); color: #fff; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25); }
         .lot-input-group input:disabled { background: rgba(59, 130, 246, 0.08); color: var(--blue); font-weight: 900; text-align: center; }
 
+        /* === Bloco 7.2: popover de edge + cursor === */
+        .map-edge-hit { cursor: pointer; }
+        .map-edge { pointer-events: none; transition: stroke 0.15s; }
+        .map-edge-hit:hover + .map-edge { stroke: var(--cyan); stroke-width: 3; }
+        .edge-popover { position: fixed; z-index: 200; background: #0f172a; border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; padding: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); transform: translate(-50%, -100%); display: flex; flex-direction: column; gap: 4px; min-width: 160px; }
+        .edge-popover-title { font-size: 10px; color: var(--gray); padding: 2px 4px 4px; border-bottom: 1px solid rgba(255,255,255,0.08); margin-bottom: 2px; }
+        .edge-popover button { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #e2e8f0; padding: 5px 10px; border-radius: 5px; font-size: 11px; font-weight: 600; cursor: pointer; text-align: left; }
+        .edge-popover button:hover { background: rgba(6,182,212,0.2); border-color: var(--cyan); }
+        .edge-popover button.danger { background: rgba(239,68,68,0.15); border-color: rgba(239,68,68,0.3); color: #fca5a5; }
+        .edge-popover button.danger:hover { background: rgba(239,68,68,0.4); color: #fff; }
+
         /* === Bloco 4: Cenários e Comparador === */
         .scenario-btn { background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.35); color: var(--orange); padding: 4px 8px; border-radius: 4px; font-size: 9px; font-weight: 700; cursor: pointer; transition: all 0.2s; text-transform: uppercase; white-space: nowrap; }
         .scenario-btn:hover { background: var(--orange); color: #1a1209; }
@@ -2468,24 +2479,36 @@ function initMapInteractions() {
     svg.addEventListener('pointerdown', ev => {
         const nodeG = ev.target.closest('.map-node-g');
         if (nodeG) {
-            // Bloco 6.5: drag de nó (em modo idle) ou click-handler (outros modos)
             const id = nodeG.dataset.id;
-            if (editorMode === 'idle') {
-                const n = nodeById.get(id);
-                if (!n) return;
-                const p = svgPointFromEvent(ev);
-                nodeDrag = { nodeId: id, startX: p.x, startY: p.y, origX: n.x, origY: n.y, moved: false };
-                svg.setPointerCapture(ev.pointerId);
+            // Bloco 7.2: em modos não-idle, dispara handler imediato; em idle inicia drag
+            if (editorMode !== 'idle') {
+                handleNodeClick(id);
                 ev.stopPropagation();
+                return;
             }
+            const n = nodeById.get(id);
+            if (!n) return;
+            const p = svgPointFromEvent(ev);
+            nodeDrag = { nodeId: id, startX: p.x, startY: p.y, origX: n.x, origY: n.y, moved: false };
+            svg.setPointerCapture(ev.pointerId);
+            ev.stopPropagation();
+            return;
+        }
+        const edgeHit = ev.target.closest('.map-edge-hit');
+        if (edgeHit) {
+            handleEdgeClick(edgeHit.dataset.edgeId, ev);
+            ev.stopPropagation();
             return;
         }
         const edgeP = ev.target.closest('.map-edge');
         if (edgeP) {
             const m = edgeP.id.match(/^path_(.+)$/);
-            if (m) handleEdgeClick(m[1]);
+            if (m) handleEdgeClick(m[1], ev);
+            ev.stopPropagation();
             return;
         }
+        // fora de nó/edge → pan ou fecha selecção
+        if (selectedNodeId) { selectNode(null); }
         mapDrag = { startX: ev.clientX, startY: ev.clientY, vbX: mapViewBox.x, vbY: mapViewBox.y };
         svg.setPointerCapture(ev.pointerId);
     });
@@ -2553,12 +2576,16 @@ function nodesBoundingBox() {
     return { x: minX - 40, y: minY - 40, w: (maxX - minX) + 80, h: (maxY - minY) + 80 };
 }
 
-function edgePath(srcNode, dstNode) {
-    // Bezier horizontal: parte do meio-direito do src ao meio-esquerdo do dst
+function edgePath(srcNode, dstNode, style) {
+    // Bloco 7.6: suporte a estilo 'L' (ortogonal) além do Bezier default
     const x1 = srcNode.x + NODE_W;
     const y1 = srcNode.y + NODE_H / 2;
     const x2 = dstNode.x;
     const y2 = dstNode.y + NODE_H / 2;
+    if (style === 'L') {
+        const midX = (x1 + x2) / 2;
+        return `M${x1},${y1} L${midX},${y1} L${midX},${y2} L${x2},${y2}`;
+    }
     const dx = Math.max(40, (x2 - x1) * 0.5);
     return `M${x1},${y1} C${x1 + dx},${y1} ${x2 - dx},${y2} ${x2},${y2}`;
 }
@@ -2601,8 +2628,10 @@ function renderMap() {
     for (const e of edges) {
         const src = nodeById.get(e.from), dst = nodeById.get(e.to);
         if (!src || !dst) continue;
-        const d = edgePath(src, dst);
+        const d = edgePath(src, dst, e.style);
         const isActive = src.type === 'STATION' && src.ref.state === 'processing';
+        // hitbox transparente largo para facilitar clique
+        svgE += `<path class="map-edge-hit" d="${d}" data-edge-id="${e.id}" fill="none" stroke="transparent" stroke-width="14" pointer-events="stroke"/>`;
         svgE += `<path id="path_${e.id}" class="map-edge ${isActive ? 'active' : ''}" d="${d}" marker-end="url(#arrowMap)"/>`;
     }
     gEdges.innerHTML = svgE;
@@ -2705,8 +2734,14 @@ function updatePropsPanel() {
     } else if (n.type === 'SINK') {
         html += `<small style="opacity:0.7;">Nó terminal — coleciona peças boas.</small>`;
     }
-    html += `<div class="row-actions">`;
-    if (n.type === 'BUFFER') html += `<button class="danger" onclick="deleteNode('${n.id}')">Apagar nó</button>`;
+    html += `<div class="row-actions" style="flex-wrap:wrap;">`;
+    html += `<button onclick="startConnectFromNode('${n.id}')" title="Cria edge para outro nó">🔗 Conectar a…</button>`;
+    if (n.type === 'STATION') html += `<button onclick="splitStation('${n.id}')" title="Cria estação paralela com mesmos parâmetros">🪓 Dividir</button>`;
+    if (n.type !== 'SOURCE' || nodes.filter(x => x.type === 'SOURCE').length > 1) {
+        if (n.type !== 'SINK' || nodes.filter(x => x.type === 'SINK').length > 1) {
+            html += `<button class="danger" onclick="deleteNode('${n.id}')">🗑 Apagar</button>`;
+        }
+    }
     html += `<button onclick="selectNode(null)">Fechar</button></div>`;
     panel.innerHTML = html;
     panel.classList.add('open');
@@ -2759,18 +2794,117 @@ function addStationNode() {
 function deleteNode(nodeId) {
     const n = nodeById.get(nodeId);
     if (!n) return;
-    if (n.type !== 'BUFFER') { showToast('Apenas nós BUFFER podem ser apagados aqui.', true); return; }
+    // Validações
+    if (n.type === 'SOURCE') {
+        const sources = nodes.filter(x => x.type === 'SOURCE');
+        if (sources.length <= 1) return showToast('A linha precisa de pelo menos 1 SOURCE.', true);
+    }
+    if (n.type === 'SINK') {
+        const sinks = nodes.filter(x => x.type === 'SINK');
+        if (sinks.length <= 1) return showToast('A linha precisa de pelo menos 1 SINK.', true);
+    }
+    if (n.type === 'STATION') {
+        if (running) return showToast('Pause a simulação para apagar uma estação.', true);
+        if (!confirm(`Apagar a estação "${n.name}" e todas as suas conexões?`)) return;
+        // Remove da lista S[] preservando a ordem
+        const idx = S.indexOf(n.ref);
+        if (idx >= 0) {
+            S.splice(idx, 1);
+            STATION_COUNT = S.length;
+            if (stats.scrapByStation) stats.scrapByStation.splice(idx, 1);
+            // Reindexa IDs dos nós STATION restantes (mantém invariante stn{i} ↔ S[i])
+            reindexStationNodes();
+        }
+    }
     nodes = nodes.filter(x => x.id !== nodeId);
     edges = edges.filter(e => e.from !== nodeId && e.to !== nodeId);
     rebuildNodeIndex();
     if (selectedNodeId === nodeId) { selectedNodeId = null; updatePropsPanel(); }
     syncLinearView();
+    updateBottlenecks(); calculateInitialMeta();
     renderMap();
+    if (n.type === 'STATION') buildDOM(); // reconstruir cards lineares
+    showToast(`${n.type === 'STATION' ? 'Estação' : n.type === 'BUFFER' ? 'Buffer' : n.type} apagado(a)`);
+}
+
+// Bloco 7.2: re-mapeia IDs dos nós STATION para acompanhar nova ordem em S[]
+function reindexStationNodes() {
+    const idMap = new Map(); // antigoId → novoId
+    let counter = 0;
+    for (const n of nodes) {
+        if (n.type === 'STATION') {
+            const newId = `stn${counter++}`;
+            if (newId !== n.id) idMap.set(n.id, newId);
+            n.id = newId;
+        }
+    }
+    // Atualiza edges
+    for (const e of edges) {
+        if (idMap.has(e.from)) e.from = idMap.get(e.from);
+        if (idMap.has(e.to)) e.to = idMap.get(e.to);
+    }
+    if (idMap.has(selectedNodeId)) selectedNodeId = idMap.get(selectedNodeId);
+    rebuildNodeIndex();
+}
+
+// Bloco 7.2: "Dividir" — clona a estação atual numa paralela e re-roteia upstream/downstream
+// para que ambas processem em paralelo com shortest-queue.
+function splitStation(nodeId) {
+    const n = nodeById.get(nodeId);
+    if (!n || n.type !== 'STATION') return;
+    if (S.length >= 99) return showToast('Limite atingido (99 estações)', true);
+    if (running) return showToast('Pause a simulação para dividir uma estação.', true);
+
+    const origIdx = S.indexOf(n.ref);
+    const clone = stationTemplate(S.length);
+    // copia parâmetros do original
+    Object.assign(clone, {
+        name: n.ref.name + ' (cópia)',
+        ppmNom: n.ref.ppmNom, Aset: n.ref.Aset, Pset: n.ref.Pset, Qset: n.ref.Qset,
+        setupConfig: n.ref.setupConfig, batchSize: n.ref.batchSize,
+        mtbfMin: n.ref.mtbfMin, mttrMin: n.ref.mttrMin,
+        learningPieces: n.ref.learningPieces, learningStart: n.ref.learningStart,
+        reworkEnabled: n.ref.reworkEnabled
+    });
+    S.push(clone);
+    if (stats.scrapByStation) stats.scrapByStation.push(0);
+    STATION_COUNT = S.length;
+    const newId = `stn${S.length - 1}`;
+    nodes.push({
+        id: newId, type: 'STATION',
+        x: n.x, y: n.y + NODE_H + 30, // posiciona logo abaixo
+        name: clone.name, ref: clone
+    });
+    rebuildNodeIndex();
+    // Replica edges de entrada/saída do nó original para o clone
+    const ups = upstreamOf(nodeId);
+    const downs = downstreamOf(nodeId);
+    for (const e of ups) {
+        edges.push({ id: `e_${nextEdgeId++}`, from: e.from, to: newId, transit: e.transit || 0 });
+    }
+    for (const e of downs) {
+        edges.push({ id: `e_${nextEdgeId++}`, from: newId, to: e.to, transit: e.transit || 0 });
+    }
+    syncLinearView();
+    buildDOM();
+    updateBottlenecks(); calculateInitialMeta(); renderMap();
+    showToast(`Estação dividida — agora há 2 paralelas (${clone.name})`);
 }
 
 function deleteEdge(edgeId) {
     edges = edges.filter(e => e.id !== edgeId);
     syncLinearView();
+    renderMap();
+}
+
+function startConnectFromNode(nodeId) {
+    connectSrcId = nodeId;
+    editorMode = 'connecting';
+    for (const b of ['connect', 'delete']) {
+        const el = document.getElementById(`btnMode-${b}`);
+        if (el) el.classList.toggle('mode-on', b === 'connect');
+    }
+    showToast('Agora clique no nó de destino (ESC cancela)');
     renderMap();
 }
 
@@ -2783,6 +2917,7 @@ function createEdge(fromId, toId) {
     if (dst.type === 'SOURCE') return showToast('SOURCE não tem entradas', true);
     edges.push({ id: `e_${nextEdgeId++}`, from: fromId, to: toId, transit: TRANSIT_TIME });
     syncLinearView();
+    setEditorMode('idle'); // volta a idle após criar
     renderMap();
     showToast(`Conectado: ${src.name} → ${dst.name}`);
 }
@@ -2869,8 +3004,43 @@ function handleNodeClick(nodeId) {
     selectNode(nodeId);
 }
 
-function handleEdgeClick(edgeId) {
-    if (editorMode === 'deleting') deleteEdge(edgeId);
+function handleEdgeClick(edgeId, ev) {
+    if (editorMode === 'deleting') { deleteEdge(edgeId); return; }
+    // Bloco 7.2: em qualquer modo, mostra popover na posição com botão apagar
+    showEdgePopover(edgeId, ev);
+}
+
+function showEdgePopover(edgeId, ev) {
+    const e = edges.find(x => x.id === edgeId); if (!e) return;
+    const src = nodeById.get(e.from), dst = nodeById.get(e.to);
+    if (!src || !dst) return;
+    // Remove popover anterior
+    document.querySelectorAll('.edge-popover').forEach(el => el.remove());
+    const pop = document.createElement('div');
+    pop.className = 'edge-popover';
+    const styleNext = (e.style === 'L') ? 'Bezier' : 'L';
+    pop.innerHTML = `
+        <div class="edge-popover-title">${src.name} → ${dst.name}</div>
+        <button onclick="toggleEdgeStyle('${edgeId}')" title="Alterna entre Bezier curvo e L ortogonal">⤳ ${styleNext}</button>
+        <button class="danger" onclick="deleteEdge('${edgeId}'); document.querySelectorAll('.edge-popover').forEach(el=>el.remove());">🗑 Apagar</button>
+    `;
+    const left = ev ? ev.clientX : (window.innerWidth / 2);
+    const top = ev ? ev.clientY : (window.innerHeight / 2);
+    pop.style.left = `${left}px`;
+    pop.style.top = `${top}px`;
+    document.body.appendChild(pop);
+    // Fecha ao clicar fora
+    setTimeout(() => {
+        const close = e2 => { if (!e2.target.closest('.edge-popover')) { pop.remove(); document.removeEventListener('pointerdown', close); } };
+        document.addEventListener('pointerdown', close);
+    }, 50);
+}
+
+function toggleEdgeStyle(edgeId) {
+    const e = edges.find(x => x.id === edgeId); if (!e) return;
+    e.style = (e.style === 'L') ? 'Bezier' : 'L';
+    document.querySelectorAll('.edge-popover').forEach(el => el.remove());
+    renderMap();
 }
 
 // Anima uma peça ao longo do path SVG da edge (Bloco 6.4).
@@ -3608,6 +3778,12 @@ window.onload = function() {
     });
     document.getElementById('chkTheme').onchange = e => { document.body.classList.toggle('light-mode', e.target.checked); };
     initMapInteractions(); // Bloco 6.4: pan/zoom do MAPA
+    // Bloco 7.2: ESC sai de modos do MAPA
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && mapOpen && editorMode !== 'idle') {
+            setEditorMode('idle'); showToast('Modo cancelado');
+        }
+    });
     reset();
     let last = performance.now();
     function loop(now) { 
