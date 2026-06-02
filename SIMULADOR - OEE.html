@@ -315,6 +315,33 @@
         .adv-counters { display: flex; gap: 5px; font-size: 8px; color: var(--muted-main); padding-top: 4px; border-top: 1px dashed rgba(15,23,42,0.1); justify-content: space-between; }
         .adv-counters b { color: var(--purple); }
 
+        /* === Bloco 6.4: Vista MAPA === */
+        .map-btn { background: rgba(6, 182, 212, 0.15); border: 1px solid rgba(6, 182, 212, 0.35); color: var(--cyan); padding: 4px 8px; border-radius: 4px; font-size: 9px; font-weight: 700; cursor: pointer; transition: all 0.2s; text-transform: uppercase; white-space: nowrap; }
+        .map-btn:hover { background: var(--cyan); color: #052e16; }
+        .map-view { display: none; position: fixed; inset: 0; z-index: 90; background: radial-gradient(1400px 800px at 50% -10%, #1d2f55 0%, #0b1220 60%, #050810 100%); }
+        .map-view.open { display: block; }
+        .map-svg { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; }
+        .map-svg:active { cursor: grabbing; }
+        .map-toolbar { position: absolute; top: 14px; left: 14px; display: flex; gap: 6px; z-index: 5; background: rgba(15,23,42,0.75); padding: 8px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.08); backdrop-filter: blur(8px); }
+        .map-toolbar button { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #e2e8f0; padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer; }
+        .map-toolbar button:hover { background: rgba(6,182,212,0.25); border-color: var(--cyan); color: #fff; }
+        .map-toolbar button.close { background: rgba(239,68,68,0.2); border-color: rgba(239,68,68,0.4); color: #fca5a5; }
+        .map-toolbar button.close:hover { background: rgba(239,68,68,0.4); color: #fff; }
+        .map-info { position: absolute; top: 14px; right: 14px; z-index: 5; background: rgba(15,23,42,0.75); padding: 8px 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.08); color: #e2e8f0; font-size: 11px; font-weight: 600; backdrop-filter: blur(8px); }
+        .map-info b { color: var(--cyan); }
+        .minimap { position: absolute; bottom: 14px; right: 14px; width: 220px; height: 140px; background: rgba(15,23,42,0.85); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.4); cursor: pointer; }
+        .map-legend { position: absolute; bottom: 14px; left: 14px; z-index: 5; background: rgba(15,23,42,0.75); padding: 8px 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.08); display: flex; gap: 14px; font-size: 10px; color: #cbd5e1; backdrop-filter: blur(8px); }
+        .map-legend .leg-item { display: flex; align-items: center; gap: 5px; }
+        .map-legend .leg-swatch { width: 14px; height: 14px; border-radius: 3px; border: 1px solid rgba(255,255,255,0.2); }
+        .map-node-rect { rx: 8; cursor: default; transition: filter 0.2s; }
+        .map-node-rect:hover { filter: brightness(1.15); }
+        .map-node-rect.bottleneck { stroke: var(--purple); stroke-width: 3; filter: drop-shadow(0 0 12px var(--purple-glow)); }
+        .map-edge { fill: none; stroke: rgba(148,163,184,0.4); stroke-width: 2; }
+        .map-edge.active { stroke: rgba(34,197,94,0.7); stroke-width: 2.5; }
+        .map-node-label { font-family: 'Inter', sans-serif; font-weight: 700; fill: #f1f5f9; pointer-events: none; }
+        .map-node-sub { font-family: 'Roboto Mono', monospace; fill: #cbd5e1; pointer-events: none; }
+        .map-anim-piece { pointer-events: none; }
+
         /* === Bloco 4: Cenários e Comparador === */
         .scenario-btn { background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.35); color: var(--orange); padding: 4px 8px; border-radius: 4px; font-size: 9px; font-weight: 700; cursor: pointer; transition: all 0.2s; text-transform: uppercase; white-space: nowrap; }
         .scenario-btn:hover { background: var(--orange); color: #1a1209; }
@@ -374,6 +401,7 @@
             </div>
             <button class="scenario-btn" onclick="openScenarios()">CENÁRIOS</button>
             <button class="scenario-btn" onclick="openCompare()" title="Comparar dois snapshots JSON">COMPARAR</button>
+            <button class="map-btn" onclick="openMap()" title="Vista em grafo da linha">🗺 MAPA</button>
         </div>
 
         <div class="center-configs">
@@ -857,6 +885,34 @@
             <button class="file-pick-btn" onclick="resetPrefs()">Repor padrões</button>
             <button class="file-pick-btn" style="background: var(--blue); color: #fff; border-color: var(--blue);" onclick="closePrefs()">Concluído</button>
         </div>
+    </div>
+</div>
+
+<div id="mapView" class="map-view">
+    <div class="map-toolbar">
+        <button onclick="autoFitMap()" title="Centrar e ajustar zoom para todos os nós">⛶ Auto-fit</button>
+        <button onclick="zoomMap(1.25)" title="Zoom in">+</button>
+        <button onclick="zoomMap(0.8)" title="Zoom out">−</button>
+        <button class="close" onclick="closeMap()">✕ Fechar</button>
+    </div>
+    <div class="map-info" id="mapInfo">—</div>
+    <svg id="mapSvg" class="map-svg" viewBox="0 0 1600 800" preserveAspectRatio="xMidYMid meet">
+        <defs>
+            <marker id="arrowMap" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M0,0 L10,5 L0,10 z" fill="rgba(148,163,184,0.6)"/>
+            </marker>
+        </defs>
+        <g id="mapEdges"></g>
+        <g id="mapNodes"></g>
+        <g id="mapAnim"></g>
+    </svg>
+    <svg class="minimap" id="minimap" viewBox="0 0 220 140" preserveAspectRatio="xMidYMid meet" onclick="minimapClick(event)"></svg>
+    <div class="map-legend">
+        <span class="leg-item"><span class="leg-swatch" style="background:#94a3b8;"></span>Estoque</span>
+        <span class="leg-item"><span class="leg-swatch" style="background:#3b82f6;"></span>Estação</span>
+        <span class="leg-item"><span class="leg-swatch" style="background:#06b6d4;"></span>Buffer (cura)</span>
+        <span class="leg-item"><span class="leg-swatch" style="background:#22c55e;"></span>Saída</span>
+        <span class="leg-item"><span class="leg-swatch" style="background:#d946ef;"></span>Gargalo</span>
     </div>
 </div>
 
@@ -1560,6 +1616,11 @@ function startNewPiece(i) {
         spawnAnimBox(to, to, 'normal', 300); // animação curta de rework
     } else if (i === 0) spawnAnimBox(document.getElementById('stockNode'), to, 'normal', 1000);
     else spawnAnimBox(document.getElementById(`thermoTrack_${i-1}`), to, 'wip_to_station', 600);
+    // Bloco 6.4: animação na vista MAPA (paralela à vista linear)
+    if (mapOpen && !isRework) {
+        const ups = upstreamOf(stationNodeId(i));
+        if (ups.length > 0) spawnAnimEdge(ups[0].from, stationNodeId(i), 'normal', i === 0 ? 1000 : 600);
+    }
 
     st.curIdealCT = idealCT_nom(st);
     const P = clamp(effectivePset(st), 0.0001, 1);
@@ -1608,12 +1669,14 @@ function finishProcessing(i) {
         if (!target || target.type === 'SINK') {
             stats.good++;
             spawnAnimBox(fromEl, document.getElementById('endNode'), 'finish', 1000);
+            if (mapOpen && target) spawnAnimEdge(stationNodeId(i), target.id, 'finish', 1000);
         }
         else {
             const buf = target.ref;
             if (wipCanReceive(buf)) {
                 sendToWip(i, TRANSIT_TIME);
                 spawnAnimBox(fromEl, document.getElementById(`thermoTrack_${i}`), 'station_to_wip', TRANSIT_TIME * 1000);
+                if (mapOpen) spawnAnimEdge(stationNodeId(i), target.id, 'station_to_wip', (TRANSIT_TIME || 0.6) * 1000);
             }
             else {
                 st.holding = true; st.holdDestBuf = buf; st.state = 'blocked';
@@ -2249,8 +2312,277 @@ function tick(dt, doRender) {
     if (t - lastChartUpdate > PREFS.chartUpdateInterval) {
         updateCharts(); lastChartUpdate = t;
         if (analyticsOpen) renderAnalytics();
+        if (mapOpen) renderMap();
     }
     if (doRender) render();
+}
+
+// === Bloco 6.4: Vista MAPA (somente leitura) ===
+let mapOpen = false;
+let mapViewBox = { x: 0, y: 0, w: 1600, h: 800 };
+let mapDrag = null; // { startX, startY, vbX, vbY }
+const NODE_W = 130, NODE_H = 72;
+const NODE_FILL = {
+    SOURCE: '#94a3b8',
+    STATION: '#3b82f6',
+    BUFFER: '#06b6d4',
+    SINK: '#22c55e'
+};
+
+function openMap() {
+    mapOpen = true;
+    const v = document.getElementById('mapView');
+    v.classList.add('open');
+    renderMap();
+    autoFitMap();
+}
+function closeMap() {
+    mapOpen = false;
+    document.getElementById('mapView').classList.remove('open');
+    document.getElementById('mapAnim').innerHTML = '';
+}
+
+function setMapViewBox() {
+    const svg = document.getElementById('mapSvg');
+    svg.setAttribute('viewBox', `${mapViewBox.x} ${mapViewBox.y} ${mapViewBox.w} ${mapViewBox.h}`);
+    renderMinimap();
+}
+
+function autoFitMap() {
+    if (nodes.length === 0) return;
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const n of nodes) {
+        minX = Math.min(minX, n.x);
+        minY = Math.min(minY, n.y);
+        maxX = Math.max(maxX, n.x + NODE_W);
+        maxY = Math.max(maxY, n.y + NODE_H);
+    }
+    const pad = 80;
+    mapViewBox.x = minX - pad;
+    mapViewBox.y = minY - pad - 40;
+    mapViewBox.w = Math.max(800, maxX - minX + pad * 2);
+    mapViewBox.h = Math.max(500, maxY - minY + pad * 2 + 80);
+    setMapViewBox();
+}
+
+function zoomMap(factor) {
+    const cx = mapViewBox.x + mapViewBox.w / 2;
+    const cy = mapViewBox.y + mapViewBox.h / 2;
+    mapViewBox.w /= factor;
+    mapViewBox.h /= factor;
+    mapViewBox.x = cx - mapViewBox.w / 2;
+    mapViewBox.y = cy - mapViewBox.h / 2;
+    setMapViewBox();
+}
+
+function svgPointFromEvent(ev) {
+    const svg = document.getElementById('mapSvg');
+    const pt = svg.createSVGPoint();
+    pt.x = ev.clientX; pt.y = ev.clientY;
+    const ctm = svg.getScreenCTM();
+    if (!ctm) return { x: ev.clientX, y: ev.clientY };
+    const inv = ctm.inverse();
+    return pt.matrixTransform(inv);
+}
+
+function initMapInteractions() {
+    const svg = document.getElementById('mapSvg');
+    svg.addEventListener('pointerdown', ev => {
+        if (ev.target.closest('.map-node-g')) return; // futuro: drag de nó (Bloco 6.5)
+        mapDrag = { startX: ev.clientX, startY: ev.clientY, vbX: mapViewBox.x, vbY: mapViewBox.y };
+        svg.setPointerCapture(ev.pointerId);
+    });
+    svg.addEventListener('pointermove', ev => {
+        if (!mapDrag) return;
+        const dx = (ev.clientX - mapDrag.startX) * (mapViewBox.w / svg.clientWidth);
+        const dy = (ev.clientY - mapDrag.startY) * (mapViewBox.h / svg.clientHeight);
+        mapViewBox.x = mapDrag.vbX - dx;
+        mapViewBox.y = mapDrag.vbY - dy;
+        setMapViewBox();
+    });
+    svg.addEventListener('pointerup', ev => { mapDrag = null; try { svg.releasePointerCapture(ev.pointerId); } catch(e){} });
+    svg.addEventListener('wheel', ev => {
+        ev.preventDefault();
+        const factor = ev.deltaY < 0 ? 1.15 : 0.87;
+        const p = svgPointFromEvent(ev);
+        const newW = mapViewBox.w / factor, newH = mapViewBox.h / factor;
+        mapViewBox.x = p.x - (p.x - mapViewBox.x) * (newW / mapViewBox.w);
+        mapViewBox.y = p.y - (p.y - mapViewBox.y) * (newH / mapViewBox.h);
+        mapViewBox.w = newW; mapViewBox.h = newH;
+        setMapViewBox();
+    }, { passive: false });
+}
+
+function minimapClick(ev) {
+    const mm = document.getElementById('minimap');
+    const rect = mm.getBoundingClientRect();
+    const fx = (ev.clientX - rect.left) / rect.width;
+    const fy = (ev.clientY - rect.top) / rect.height;
+    // Calcula bbox dos nós
+    const bb = nodesBoundingBox(); if (!bb) return;
+    const worldX = bb.x + fx * bb.w;
+    const worldY = bb.y + fy * bb.h;
+    mapViewBox.x = worldX - mapViewBox.w / 2;
+    mapViewBox.y = worldY - mapViewBox.h / 2;
+    setMapViewBox();
+}
+
+function nodesBoundingBox() {
+    if (nodes.length === 0) return null;
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const n of nodes) {
+        minX = Math.min(minX, n.x);
+        minY = Math.min(minY, n.y);
+        maxX = Math.max(maxX, n.x + NODE_W);
+        maxY = Math.max(maxY, n.y + NODE_H);
+    }
+    return { x: minX - 40, y: minY - 40, w: (maxX - minX) + 80, h: (maxY - minY) + 80 };
+}
+
+function edgePath(srcNode, dstNode) {
+    // Bezier horizontal: parte do meio-direito do src ao meio-esquerdo do dst
+    const x1 = srcNode.x + NODE_W;
+    const y1 = srcNode.y + NODE_H / 2;
+    const x2 = dstNode.x;
+    const y2 = dstNode.y + NODE_H / 2;
+    const dx = Math.max(40, (x2 - x1) * 0.5);
+    return `M${x1},${y1} C${x1 + dx},${y1} ${x2 - dx},${y2} ${x2},${y2}`;
+}
+
+function nodeLiveLabel(n) {
+    if (n.type === 'SOURCE') return { line1: n.ref.count, line2: `de ${n.ref.stock}` };
+    if (n.type === 'SINK')   return { line1: stats.good, line2: `meta ${buffers.raw.target}` };
+    if (n.type === 'STATION') {
+        const k = oeeCalcStation(n.ref);
+        return { line1: `OEE ${(k.OEE*100).toFixed(0)}%`, line2: `${Math.round(ppmReal(n.ref))} ppm` };
+    }
+    if (n.type === 'BUFFER') {
+        const t = wipTotal(n.ref);
+        const cura = n.ref.dwellQueue ? n.ref.dwellQueue.length : 0;
+        return { line1: `${t}/${n.ref.max}`, line2: cura > 0 ? `cura ${cura} (${n.ref.dwell}s)` : 'pull' };
+    }
+    return { line1: '', line2: '' };
+}
+
+function nodeFill(n) {
+    if (n.type === 'STATION') {
+        if (!n.ref.enabled) return '#475569';
+        const k = oeeCalcStation(n.ref);
+        if (k.OEE >= 0.85) return '#16a34a';
+        if (k.OEE >= 0.6) return '#3b82f6';
+        if (k.OEE >= 0.4) return '#f59e0b';
+        return '#ef4444';
+    }
+    return NODE_FILL[n.type] || '#64748b';
+}
+
+function renderMap() {
+    if (!mapOpen) return;
+    const gNodes = document.getElementById('mapNodes');
+    const gEdges = document.getElementById('mapEdges');
+    if (!gNodes || !gEdges) return;
+
+    // Edges
+    let svgE = '';
+    for (const e of edges) {
+        const src = nodeById.get(e.from), dst = nodeById.get(e.to);
+        if (!src || !dst) continue;
+        const d = edgePath(src, dst);
+        const isActive = src.type === 'STATION' && src.ref.state === 'processing';
+        svgE += `<path id="path_${e.id}" class="map-edge ${isActive ? 'active' : ''}" d="${d}" marker-end="url(#arrowMap)"/>`;
+    }
+    gEdges.innerHTML = svgE;
+
+    // Nodes
+    let svgN = '';
+    for (const n of nodes) {
+        const fill = nodeFill(n);
+        const lbl = nodeLiveLabel(n);
+        const isBn = n.type === 'STATION' && n.ref && S.indexOf(n.ref) === bottleneckId;
+        svgN += `<g class="map-node-g" data-id="${n.id}" transform="translate(${n.x},${n.y})">
+            <rect class="map-node-rect ${isBn ? 'bottleneck' : ''}" x="0" y="0" width="${NODE_W}" height="${NODE_H}" rx="8" fill="${fill}" stroke="rgba(255,255,255,0.18)" stroke-width="1.5"/>
+            <text class="map-node-label" x="${NODE_W/2}" y="20" text-anchor="middle" font-size="12">${(n.name || '').slice(0, 16)}</text>
+            <text class="map-node-sub" x="${NODE_W/2}" y="40" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">${lbl.line1}</text>
+            <text class="map-node-sub" x="${NODE_W/2}" y="58" text-anchor="middle" font-size="10" opacity="0.8">${lbl.line2}</text>
+            ${n.type === 'STATION' && !n.ref.enabled ? `<text x="${NODE_W/2}" y="${NODE_H/2}" text-anchor="middle" font-size="10" fill="#fca5a5" opacity="0.6">DESLIGADA</text>` : ''}
+        </g>`;
+    }
+    gNodes.innerHTML = svgN;
+
+    // Info bar
+    const info = document.getElementById('mapInfo');
+    if (info) {
+        const bn = bottleneckId >= 0 && S[bottleneckId] ? S[bottleneckId].name : '—';
+        info.innerHTML = `Gargalo: <b>${bn}</b> &nbsp;·&nbsp; Bons: <b>${stats.good}</b> &nbsp;·&nbsp; Refugo: <b>${stats.scrap}</b> &nbsp;·&nbsp; t = <b>${fmtMMSSd(t)}</b>`;
+    }
+
+    renderMinimap();
+}
+
+function renderMinimap() {
+    const mm = document.getElementById('minimap');
+    if (!mm) return;
+    const bb = nodesBoundingBox(); if (!bb) { mm.innerHTML = ''; return; }
+    mm.setAttribute('viewBox', `${bb.x} ${bb.y} ${bb.w} ${bb.h}`);
+    let s = '';
+    // Edges
+    for (const e of edges) {
+        const src = nodeById.get(e.from), dst = nodeById.get(e.to);
+        if (!src || !dst) continue;
+        s += `<line x1="${src.x + NODE_W}" y1="${src.y + NODE_H/2}" x2="${dst.x}" y2="${dst.y + NODE_H/2}" stroke="rgba(148,163,184,0.5)" stroke-width="1.5"/>`;
+    }
+    // Nodes mini
+    for (const n of nodes) {
+        const fill = nodeFill(n);
+        s += `<rect x="${n.x}" y="${n.y}" width="${NODE_W}" height="${NODE_H}" rx="4" fill="${fill}" opacity="0.85"/>`;
+    }
+    // Frame do viewBox principal
+    s += `<rect x="${mapViewBox.x}" y="${mapViewBox.y}" width="${mapViewBox.w}" height="${mapViewBox.h}" fill="none" stroke="#facc15" stroke-width="3" stroke-dasharray="6,4"/>`;
+    mm.innerHTML = s;
+}
+
+// Anima uma peça ao longo do path SVG da edge (Bloco 6.4).
+// Chamada como hook adicional ao spawnAnimBox quando o mapa está aberto.
+function spawnAnimEdge(fromNodeId, toNodeId, type, duration) {
+    if (!mapOpen) return;
+    const layer = document.getElementById('mapAnim');
+    if (!layer) return;
+    // Encontra a aresta exata
+    const edge = edges.find(e => e.from === fromNodeId && e.to === toNodeId);
+    let pathD;
+    if (edge) {
+        const path = document.getElementById(`path_${edge.id}`);
+        if (path) pathD = path; // usar elemento real para getPointAtLength
+    }
+    if (!pathD) {
+        const src = nodeById.get(fromNodeId), dst = nodeById.get(toNodeId);
+        if (!src || !dst) return;
+        // path temporário
+        const tmp = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        tmp.setAttribute('d', edgePath(src, dst));
+        tmp.style.display = 'none';
+        layer.appendChild(tmp);
+        pathD = tmp;
+    }
+    const len = pathD.getTotalLength();
+    const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    dot.setAttribute('class', 'map-anim-piece');
+    dot.setAttribute('r', '5');
+    dot.setAttribute('fill', type === 'scrap' ? '#ef4444' : '#22c55e');
+    dot.setAttribute('stroke', '#fff');
+    dot.setAttribute('stroke-width', '1');
+    layer.appendChild(dot);
+    const dur = Math.max(120, (duration || 800) / timeScale);
+    const start = performance.now();
+    function step(now) {
+        const f = Math.min(1, (now - start) / dur);
+        const p = pathD.getPointAtLength(f * len);
+        dot.setAttribute('cx', p.x);
+        dot.setAttribute('cy', p.y);
+        if (f < 1) requestAnimationFrame(step);
+        else { dot.remove(); if (pathD.style && pathD.style.display === 'none') pathD.remove(); }
+    }
+    requestAnimationFrame(step);
 }
 
 // === Bloco 5: Preferências ===
@@ -2884,6 +3216,7 @@ window.onload = function() {
         if (menu && menu.classList.contains('open') && !e.target.closest('.data-menu-wrap')) menu.classList.remove('open');
     });
     document.getElementById('chkTheme').onchange = e => { document.body.classList.toggle('light-mode', e.target.checked); };
+    initMapInteractions(); // Bloco 6.4: pan/zoom do MAPA
     reset();
     let last = performance.now();
     function loop(now) { 
