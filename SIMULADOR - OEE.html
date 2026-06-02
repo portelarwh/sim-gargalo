@@ -1325,7 +1325,9 @@ function renderHeatmap() {
     host.innerHTML = svg;
 }
 
-function makeWip() { return { ready: 0, reserved: 0, max: DEFAULT_WIP_MAX }; }
+// Bloco 6.3: buffer ganha dwell (segundos de quarentena obrigatória) e dwellQueue.
+// dwell=0 → comportamento antigo (peça fica disponível imediatamente após o transit).
+function makeWip() { return { ready: 0, reserved: 0, max: DEFAULT_WIP_MAX, dwell: 0, dwellQueue: [] }; }
 
 function stationTemplate(i) {
     return {
@@ -1386,8 +1388,26 @@ function oeeCalcStation(st) {
     return st.totalCount === 0 ? { A, P: 1, Q: 1, OEE: A } : { A, P, Q, OEE: A * P * Q };
 }
 
-function wipTotal(w) { return w.ready + w.reserved; }
+function wipTotal(w) { return w.ready + w.reserved + (w.dwellQueue ? w.dwellQueue.length : 0); }
 function wipCanReceive(w) { return wipTotal(w) < w.max; }
+
+// Deposita uma peça num buffer: vai para a fila de cura se dwell>0, senão direto a ready.
+function depositToBuffer(buf) {
+    if (buf.dwell > EPSILON) buf.dwellQueue.push({ remDwell: buf.dwell });
+    else buf.ready++;
+}
+
+// Tick por buffer: decrementa dwell de cada peça em cura; ao expirar move para ready.
+function bufferTick(buf, dt) {
+    if (!buf.dwellQueue || buf.dwellQueue.length === 0) return;
+    for (let k = buf.dwellQueue.length - 1; k >= 0; k--) {
+        buf.dwellQueue[k].remDwell -= dt;
+        if (buf.dwellQueue[k].remDwell <= EPSILON) {
+            buf.dwellQueue.splice(k, 1);
+            buf.ready++;
+        }
+    }
+}
 
 // === Bloco 6.2: helpers de topologia (engine consulta grafo) ===
 function stationNodeId(i) { return `stn${i}`; }
@@ -1418,7 +1438,7 @@ function sendToWip(i, dur) {
         buf.reserved++;
         transfers.push({ destBuf: buf, rem: dur });
     } else {
-        buf.ready++;
+        depositToBuffer(buf);
     }
 }
 
@@ -1428,7 +1448,7 @@ function transfersTick(dt) {
         if (transfers[i].rem <= EPSILON) {
             const buf = transfers[i].destBuf;
             buf.reserved--;
-            buf.ready++;
+            depositToBuffer(buf);
             transfers.splice(i, 1);
         }
     }
@@ -1615,7 +1635,7 @@ function tryReleaseBlocked(i) {
     if (!buf) { st.state = 'idle'; return; }
     if (wipCanReceive(buf)) {
         if (TRANSIT_TIME > EPSILON) { buf.reserved++; transfers.push({ destBuf: buf, rem: TRANSIT_TIME }); }
-        else { buf.ready++; }
+        else { depositToBuffer(buf); }
         spawnAnimBox(document.getElementById(`stationVisual_${i}`), document.getElementById(`thermoTrack_${i}`), 'station_to_wip', TRANSIT_TIME * 1000);
         st.holding = false; st.holdDestBuf = null;
         if (st.downRem > EPSILON && st.enabled) st.state = 'down';
@@ -1916,7 +1936,7 @@ function buildDOM() {
         
         if (!isLast) {
             const wipEl = document.createElement('div'); wipEl.className = 'wipCol'; wipEl.id = `wipBox_${i}`;
-            wipEl.innerHTML = `<div class="wipCard" id="wipCard_${i}"><div class="wipHead"><span class="wipIcon">${SVG_BUFFER}</span><span class="wipTitle">WIP ${i+1}</span></div><div class="wipMid"><div class="thermoTrack" id="thermoTrack_${i}"><div class="thermoFill" id="wipFill_${i}"></div></div><div class="pctBig" id="wipPct_${i}">0<span>%</span></div><div class="wipBlocked" id="wipBlocked_${i}">TRAVADO</div></div><div class="wipFoot"><div class="wipMini"><span class="lbl">Disp.</span><span class="val" id="wipDisp_${i}">0</span></div><div class="wipMini"><span class="lbl">Trans.</span><span class="val" id="wipTrans_${i}">0</span></div><div class="wipMini"><span class="lbl">Início</span><div class="wipInputGroup"><input id="wipInitInput_${i}" type="number" min="0" value="${buffers.wips[i]?.ready||0}"></div></div><div class="wipMini"><span class="lbl">Nível</span><div class="wipInputGroup"><span id="wipCurLabel_${i}">0</span><span class="slash">/</span><input id="wipMaxInput_${i}" type="number" min="1" max="9999" value="${buffers.wips[i]?.max||100}"></div></div></div></div>`;
+            wipEl.innerHTML = `<div class="wipCard" id="wipCard_${i}"><div class="wipHead"><span class="wipIcon">${SVG_BUFFER}</span><span class="wipTitle">WIP ${i+1}</span></div><div class="wipMid"><div class="thermoTrack" id="thermoTrack_${i}"><div class="thermoFill" id="wipFill_${i}"></div></div><div class="pctBig" id="wipPct_${i}">0<span>%</span></div><div class="wipBlocked" id="wipBlocked_${i}">TRAVADO</div></div><div class="wipFoot"><div class="wipMini"><span class="lbl">Disp.</span><span class="val" id="wipDisp_${i}">0</span></div><div class="wipMini"><span class="lbl">Trans.</span><span class="val" id="wipTrans_${i}">0</span></div><div class="wipMini" title="Peças em cura (dwell)"><span class="lbl">Cura</span><span class="val" id="wipCuring_${i}">0</span></div><div class="wipMini" title="Tempo de cura obrigatório por peça (s)"><span class="lbl">Dwell</span><div class="wipInputGroup"><input id="wipDwellInput_${i}" type="number" min="0" max="9999" step="1" value="${buffers.wips[i]?.dwell||0}" style="width:38px;"><span class="slash">s</span></div></div><div class="wipMini"><span class="lbl">Início</span><div class="wipInputGroup"><input id="wipInitInput_${i}" type="number" min="0" value="${buffers.wips[i]?.ready||0}"></div></div><div class="wipMini"><span class="lbl">Nível</span><div class="wipInputGroup"><span id="wipCurLabel_${i}">0</span><span class="slash">/</span><input id="wipMaxInput_${i}" type="number" min="1" max="9999" value="${buffers.wips[i]?.max||100}"></div></div></div></div>`;
             board.appendChild(wipEl); setupWipBinds(i);
         }
     }
@@ -2021,6 +2041,9 @@ function setupWipBinds(i) {
     if (initInp) initInp.oninput = e => { let v = Math.max(0, parseInt(e.target.value) || 0); if (v > w.max) { v = w.max; initInp.value = v; } if (!running) { w.ready = v; calculateInitialMeta(); render(); } };
     const maxInp = document.getElementById(`wipMaxInput_${i}`);
     if (maxInp) maxInp.oninput = e => { let v = Math.max(1, parseInt(e.target.value) || 100); w.max = v; if (initInp && parseInt(initInp.value) > w.max) { initInp.value = w.max; if (!running) w.ready = w.max; } render(); };
+    // Bloco 6.3: dwell-time do buffer
+    const dwellInp = document.getElementById(`wipDwellInput_${i}`);
+    if (dwellInp) dwellInp.oninput = e => { w.dwell = Math.max(0, parseFloat(e.target.value) || 0); };
 }
 
 function updateStationUI(i) {
@@ -2045,6 +2068,7 @@ function updateWipUI(i) {
     const pctEl = document.getElementById(`wipPct_${i}`); if (pctEl) pctEl.innerHTML = (clamp01(pctVal) * 100).toFixed(0) + '<span>%</span>';
     const setEl = (id, val) => { const e = document.getElementById(id); if (e) e.textContent = val; };
     setEl(`wipCurLabel_${i}`, total); setEl(`wipDisp_${i}`, w.ready); setEl(`wipTrans_${i}`, w.reserved);
+    setEl(`wipCuring_${i}`, w.dwellQueue ? w.dwellQueue.length : 0);
     const blockedEl = document.getElementById(`wipBlocked_${i}`); if (blockedEl) blockedEl.style.display = total >= w.max ? 'block' : 'none';
 }
 
@@ -2146,7 +2170,7 @@ function spawnAnimBox(fromEl, toEl, type, duration) {
 function reset() {
     const keep = document.getElementById('chkKeepParams').checked;
     let saved = null;
-    if (keep && S.length > 0) { let wI = [], wM = []; for (let i = 0; i < STATION_COUNT - 1; i++) { wI.push(parseInt(document.getElementById(`wipInitInput_${i}`)?.value) || 0); wM.push(parseInt(document.getElementById(`wipMaxInput_${i}`)?.value) || 100); } saved = { transit: TRANSIT_TIME, stock: buffers.raw.stock, target: buffers.raw.target, makeToGood, timeScale, flushLine, wI, wM, stations: S.map(s => ({ enabled: s.enabled, name: s.name, ppm: s.ppmNom, A: s.Aset, P: s.Pset, Q: s.Qset, setup: s.setupConfig, batchSize: s.batchSize, mtbfMin: s.mtbfMin, mttrMin: s.mttrMin, learningPieces: s.learningPieces, learningStart: s.learningStart, reworkEnabled: s.reworkEnabled })) }; }
+    if (keep && S.length > 0) { let wI = [], wM = [], wD = []; for (let i = 0; i < STATION_COUNT - 1; i++) { wI.push(parseInt(document.getElementById(`wipInitInput_${i}`)?.value) || 0); wM.push(parseInt(document.getElementById(`wipMaxInput_${i}`)?.value) || 100); wD.push(buffers.wips[i]?.dwell || 0); } saved = { transit: TRANSIT_TIME, stock: buffers.raw.stock, target: buffers.raw.target, makeToGood, timeScale, flushLine, wI, wM, wD, stations: S.map(s => ({ enabled: s.enabled, name: s.name, ppm: s.ppmNom, A: s.Aset, P: s.Pset, Q: s.Qset, setup: s.setupConfig, batchSize: s.batchSize, mtbfMin: s.mtbfMin, mttrMin: s.mttrMin, learningPieces: s.learningPieces, learningStart: s.learningStart, reworkEnabled: s.reworkEnabled })) }; }
     
     running = false; lineStarted = false; t = 0; finalTime = null; isFastForwarding = false; initialWipAtStart = 0; targetAtStart = 0; fixedInitialEstimate = null;
     lastChartUpdate = 0; // CORRIGIDO: Reset do timer do gráfico
@@ -2187,7 +2211,7 @@ function reset() {
         }
         S.push(st);
     }
-    for (let i = 0; i < STATION_COUNT - 1; i++) { let w = makeWip(); if (keep && saved) { w.max = saved.wM[i] || 100; w.ready = saved.wI[i] || 0; } buffers.wips.push(w); }
+    for (let i = 0; i < STATION_COUNT - 1; i++) { let w = makeWip(); if (keep && saved) { w.max = saved.wM[i] || 100; w.ready = saved.wI[i] || 0; w.dwell = (saved.wD && saved.wD[i]) || 0; } buffers.wips.push(w); }
 
     // Bloco 1 (Grafo): sincroniza espelho de topologia com o estado linear
     rebuildLinearGraph();
@@ -2217,6 +2241,8 @@ function tick(dt, doRender) {
     
     t += finalTime !== null ? 0 : dt;
     transfersTick(dt);
+    // Bloco 6.3: tick dos nós BUFFER (decrementa dwell de cada peça em cura)
+    for (const n of nodes) { if (n.type === 'BUFFER' && n.ref) bufferTick(n.ref, dt); }
     for (let i = 0; i < STATION_COUNT; i++) stationTick(i, dt);
 
     recordStateSnapshot();
@@ -2550,6 +2576,7 @@ function collectConfig() {
         prefs: { ...PREFS },
         wipInit: wI,
         wipMax: wM,
+        wipDwell: buffers.wips.map(w => w.dwell || 0),
         stations: S.map(s => ({
             enabled: s.enabled, name: s.name, ppmNom: s.ppmNom,
             Aset: s.Aset, Pset: s.Pset, Qset: s.Qset, setupConfig: s.setupConfig,
@@ -2608,6 +2635,7 @@ function applyConfig(cfg) {
         const w = makeWip();
         w.max = (cfg.wipMax && cfg.wipMax[i]) || 100;
         w.ready = (cfg.wipInit && cfg.wipInit[i]) || 0;
+        w.dwell = Math.max(0, parseFloat(cfg.wipDwell && cfg.wipDwell[i]) || 0);
         buffers.wips.push(w);
     }
 
