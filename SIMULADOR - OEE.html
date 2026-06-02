@@ -360,6 +360,13 @@
         .linear-warn.show { display: block; }
         .linear-warn b { color: #fde68a; }
 
+        /* === Bloco 7.1: botão ∞ para estoque/meta === */
+        .inf-wrap { display: flex; align-items: center; gap: 4px; justify-content: center; }
+        .inf-btn { background: #f1f5f9; border: 1px solid #cbd5e1; color: #64748b; width: 24px; height: 24px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 900; padding: 0; display: grid; place-items: center; transition: all 0.15s; }
+        .inf-btn:hover { background: #e2e8f0; color: #334155; }
+        .inf-btn.on { background: var(--blue); border-color: var(--blue); color: #fff; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25); }
+        .lot-input-group input:disabled { background: rgba(59, 130, 246, 0.08); color: var(--blue); font-weight: 900; text-align: center; }
+
         /* === Bloco 4: Cenários e Comparador === */
         .scenario-btn { background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.35); color: var(--orange); padding: 4px 8px; border-radius: 4px; font-size: 9px; font-weight: 700; cursor: pointer; transition: all 0.2s; text-transform: uppercase; white-space: nowrap; }
         .scenario-btn:hover { background: var(--orange); color: #1a1209; }
@@ -991,7 +998,8 @@ function seedRng(seedRaw) {
 }
 
 function fmtTime(sec) {
-    if (!Number.isFinite(sec) || sec < 0) return "00:00.0";
+    if (!Number.isFinite(sec)) return "∞";
+    if (sec < 0) return "00:00.0";
     let total = Math.round(sec * 10) / 10;
     let h = Math.floor(total / 3600);
     let m = Math.floor((total % 3600) / 60);
@@ -1038,7 +1046,7 @@ let PREFS = { ...PREFS_DEFAULTS };
 let initialWipAtStart = 0;
 let targetAtStart = 0;
 
-let buffers = { raw: { count: 0, stock: 100, target: 60 }, wips: [] };
+let buffers = { raw: { count: 0, stock: 100, target: 60, stockInf: false, targetInf: false }, wips: [] };
 let stats = { good: 0, scrap: 0, scrapByStation: [] };
 const transfers = [];
 let S = [];
@@ -1542,6 +1550,8 @@ function takeFromInput(i) {
         const src = nodeById.get(e.from);
         if (!src) continue;
         if (src.type === 'SOURCE') {
+            // Bloco 7.1: stock ilimitado nunca decrementa
+            if (src.ref.stockInf) return true;
             if (src.ref.count > 0) { src.ref.count--; return true; }
         } else if (src.type === 'BUFFER') {
             if (src.ref.ready > 0) { src.ref.ready--; return true; }
@@ -1612,21 +1622,23 @@ function startNewPiece(i) {
 
     if (i === 0 && !isRework) {
         const target = targetAtStart;
-        const hasStock = buffers.raw.count > 0;
+        const targetInf = !Number.isFinite(target);
+        const hasStock = !!buffers.raw.stockInf || buffers.raw.count > 0;
+        const metReached = !targetInf && stats.good >= target;
 
         if (flushLine && makeToGood) {
-            if (stats.good >= target && !hasStock) return false;
+            if (metReached && !hasStock) return false;
             if (!hasStock) return false;
         }
         else if (flushLine && !makeToGood) {
             if (!hasStock) return false;
         }
         else if (!flushLine && makeToGood) {
-            if (stats.good >= target) return false;
+            if (metReached) return false;
             if (!hasStock) return false;
         }
         else {
-            const maxFromStock = target - initialWipAtStart;
+            const maxFromStock = targetInf ? Infinity : (target - initialWipAtStart);
             if (st.totalCount >= maxFromStock) return false;
             if (!hasStock) return false;
         }
@@ -1741,27 +1753,33 @@ function shouldStartSetup(st, i) {
 
 function checkLineFinished() {
     const target = targetAtStart;
-    
-    if (flushLine && makeToGood) { 
-        if (stats.good >= target) return true; 
-        if (buffers.raw.count <= 0 && isLineClear()) return true; 
-        return false; 
+    const stockInf = !!buffers.raw.stockInf;
+    const targetInf = !Number.isFinite(target);
+    const stockEmpty = !stockInf && buffers.raw.count <= 0;
+    const metReached = !targetInf && stats.good >= target;
+
+    if (flushLine && makeToGood) {
+        if (metReached) return true;
+        if (stockEmpty && isLineClear()) return true;
+        return false;
     }
-    
-    if (flushLine && !makeToGood) { 
-        if (buffers.raw.count > 0) return false; 
+
+    if (flushLine && !makeToGood) {
+        if (!stockEmpty) return false;
         if (isLineClear()) return true;
-        return false; 
+        return false;
     }
-    
-    if (!flushLine && makeToGood) { 
-        if (stats.good >= target) return true;
-        if (buffers.raw.count <= 0 && isLineClear()) return true;
-        return false; 
+
+    if (!flushLine && makeToGood) {
+        if (metReached) return true;
+        if (stockEmpty && isLineClear()) return true;
+        return false;
     }
-    
-    const maxFromStock = target - initialWipAtStart;
-    const station1Done = S[0].totalCount >= maxFromStock || buffers.raw.count <= 0;
+
+    // !flushLine && !makeToGood
+    if (targetInf && stockInf) return false; // nunca termina por si próprio
+    const maxFromStock = targetInf ? Infinity : (target - initialWipAtStart);
+    const station1Done = (S[0] && S[0].totalCount >= maxFromStock) || stockEmpty;
     if (!station1Done) return false;
     if (isLineClear()) return true;
     return false;
@@ -1957,6 +1975,7 @@ function calculateCurrentEstimate() {
         count++;
     }
     if (count > 1) latency += (count - 1) * TRANSIT_TIME;
+    if (!Number.isFinite(buffers.raw.target)) return Infinity;
     return latency + Math.max(0, buffers.raw.target - 1) * maxCT + totalSetup;
 }
 
@@ -2008,7 +2027,10 @@ function buildDOM() {
         <div class="label">ESTOQUE (MP)</div>
         <div class="lot-input-group">
             <label>DISPONÍVEL</label>
-            <input id="stockInput" type="number" min="1" max="999999" value="${buffers.raw.stock}" onchange="updateStockFromCard(this.value)">
+            <div class="inf-wrap">
+                <input id="stockInput" type="number" min="1" max="999999" value="${buffers.raw.stock}" onchange="updateStockFromCard(this.value)">
+                <button id="stockInfBtn" type="button" class="inf-btn" onclick="toggleStockInf()" title="Estoque ilimitado">∞</button>
+            </div>
         </div>
         <div class="stock-available-label" style="margin-top:15px">RESTANTE</div>
         <div id="badgeLot">0</div>
@@ -2037,7 +2059,10 @@ function buildDOM() {
         <div class="label" id="endLabel" style="color:#15803d">CONCLUÍDO</div>
         <div class="lot-input-group">
             <label style="color:#15803d">META DE PROD.</label>
-            <input id="targetInput" type="number" min="1" max="999999" value="${buffers.raw.target}" onchange="updateTargetFromCard(this.value)" style="border-color:#86efac; color:#14532d">
+            <div class="inf-wrap">
+                <input id="targetInput" type="number" min="1" max="999999" value="${buffers.raw.target}" onchange="updateTargetFromCard(this.value)" style="border-color:#86efac; color:#14532d">
+                <button id="targetInfBtn" type="button" class="inf-btn" onclick="toggleTargetInf()" title="Sem meta — corre indefinidamente">∞</button>
+            </div>
         </div>
         <div class="checkbox-group">
             <div class="checkbox-lbl" style="color:#15803d">REPOR PERDAS</div>
@@ -2064,13 +2089,37 @@ function buildDOM() {
     updateBottlenecks();
 }
 
-function updateStockFromCard(val) { 
-    const v = Math.max(1, parseInt(val) || 1); buffers.raw.stock = v; 
+function toggleStockInf() {
+    buffers.raw.stockInf = !buffers.raw.stockInf;
+    if (buffers.raw.stockInf) { buffers.raw.count = Infinity; }
+    else if (!running) { buffers.raw.count = buffers.raw.stock; }
+    refreshStockTargetUI();
+    calculateInitialMeta(); render();
+}
+function toggleTargetInf() {
+    buffers.raw.targetInf = !buffers.raw.targetInf;
+    refreshStockTargetUI();
+    calculateInitialMeta(); render();
+}
+function refreshStockTargetUI() {
+    const sInp = document.getElementById('stockInput');
+    const tInp = document.getElementById('targetInput');
+    const sBtn = document.getElementById('stockInfBtn');
+    const tBtn = document.getElementById('targetInfBtn');
+    if (sInp) { sInp.disabled = !!buffers.raw.stockInf; sInp.value = buffers.raw.stockInf ? '∞' : buffers.raw.stock; sInp.type = buffers.raw.stockInf ? 'text' : 'number'; }
+    if (tInp) { tInp.disabled = !!buffers.raw.targetInf; tInp.value = buffers.raw.targetInf ? '∞' : buffers.raw.target; tInp.type = buffers.raw.targetInf ? 'text' : 'number'; }
+    if (sBtn) sBtn.classList.toggle('on', !!buffers.raw.stockInf);
+    if (tBtn) tBtn.classList.toggle('on', !!buffers.raw.targetInf);
+}
+function updateStockFromCard(val) {
+    if (buffers.raw.stockInf) return;
+    const v = Math.max(1, parseInt(val) || 1); buffers.raw.stock = v;
     if (!running) buffers.raw.count = v; calculateInitialMeta(); render(); 
 }
 
-function updateTargetFromCard(val) { 
-    const v = Math.max(1, parseInt(val) || 1); buffers.raw.target = v; calculateInitialMeta(); render(); 
+function updateTargetFromCard(val) {
+    if (buffers.raw.targetInf) return;
+    const v = Math.max(1, parseInt(val) || 1); buffers.raw.target = v; calculateInitialMeta(); render();
 }
 
 function bindDual(rId, nId, cb) {
@@ -2191,7 +2240,7 @@ function render() {
     document.getElementById('t_elap').textContent = fmtTime(curTime);
     const restante = Math.max(0, previsaoAtual - curTime);
     document.getElementById('t_rem').textContent = fmtTime(restante);
-    document.getElementById('badgeLot').textContent = buffers.raw.count;
+    document.getElementById('badgeLot').textContent = Number.isFinite(buffers.raw.count) ? buffers.raw.count : '∞';
     const finalGood = stats.good;
     document.getElementById('finalGoodCount').textContent = finalGood;
     
@@ -2278,7 +2327,8 @@ function reset() {
     else { TRANSIT_TIME = parseInt(document.getElementById('transitTimeInput')?.value) || 0; timeScale = parseInt(document.getElementById('speedSelect')?.value) || 1; makeToGood = false; flushLine = false; }
     
     document.getElementById('transitTimeInput').value = TRANSIT_TIME; document.getElementById('speedSelect').value = timeScale; document.getElementById('chkFlushLine').checked = flushLine;
-    buffers.raw.stock = stockVal; buffers.raw.target = targetVal; buffers.raw.count = stockVal;
+    buffers.raw.stock = stockVal; buffers.raw.target = buffers.raw.targetInf ? Infinity : targetVal;
+    buffers.raw.count = buffers.raw.stockInf ? Infinity : stockVal;
     
     stats = { good: 0, scrap: 0, scrapByStation: Array(STATION_COUNT).fill(0) }; transfers.length = 0;
     S = []; buffers.wips = [];
@@ -2307,9 +2357,10 @@ function reset() {
     if (typeof syncLinearView === 'function') syncLinearView();
 
     buildDOM();
-    
+    refreshStockTargetUI(); // Bloco 7.1: aplica estado ∞ se persistente
+
     if (keep && saved) { for (let i = 0; i < STATION_COUNT - 1; i++) { const initEl = document.getElementById(`wipInitInput_${i}`), maxEl = document.getElementById(`wipMaxInput_${i}`); if (initEl) initEl.value = saved.wI[i]; if (maxEl) maxEl.value = saved.wM[i]; } }
-    
+
     document.getElementById('chkFlushLine').onchange = e => { flushLine = e.target.checked; };
     calculateInitialMeta(); render();
     document.getElementById('btnStart').innerHTML = '<span>▶</span> INICIAR';
@@ -3220,6 +3271,8 @@ function collectConfig() {
         transit: TRANSIT_TIME,
         stock: buffers.raw.stock,
         target: buffers.raw.target,
+        stockInf: !!buffers.raw.stockInf,
+        targetInf: !!buffers.raw.targetInf,
         timeScale,
         flushLine,
         makeToGood,
@@ -3268,7 +3321,10 @@ function applyConfig(cfg) {
 
     buffers.raw.stock = parseInt(cfg.stock) || 100;
     buffers.raw.target = parseInt(cfg.target) || 60;
-    buffers.raw.count = buffers.raw.stock;
+    buffers.raw.stockInf = !!cfg.stockInf;
+    buffers.raw.targetInf = !!cfg.targetInf;
+    buffers.raw.count = buffers.raw.stockInf ? Infinity : buffers.raw.stock;
+    if (buffers.raw.targetInf) buffers.raw.target = Infinity;
 
     S = [];
     for (let i = 0; i < STATION_COUNT; i++) {
@@ -3319,6 +3375,7 @@ function applyConfig(cfg) {
 
     buildDOM();
     if (typeof syncLinearView === 'function') syncLinearView();
+    refreshStockTargetUI();
     calculateInitialMeta();
     render();
     document.getElementById('btnStart').innerHTML = '<span>▶</span> INICIAR';
