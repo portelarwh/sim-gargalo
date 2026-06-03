@@ -655,8 +655,39 @@ function isUpstreamDry(i) {
     return true;
 }
 
+// "Linha vazia" = nenhuma peça em fluxo (estações ativas, buffers, transit, cura).
+// NÃO considera o stock raw da SOURCE — esse é tratado pela política em
+// checkLineFinished (sistema puxado pela meta vs empurrado pelo estoque).
+// Sem isto, configs como "stock=100, meta=60, push" nunca terminavam porque
+// o BFS reverso encontrava a SOURCE com 40 peças restantes e bloqueava o fim.
 function isLineClear() {
-    return isUpstreamDry(STATION_COUNT);
+    const visited = new Set(['sink']);
+    const queue = ['sink'];
+    // Também considera múltiplos SINKs caso existam no futuro
+    for (const n of nodes) if (n.type === 'SINK' && !visited.has(n.id)) { visited.add(n.id); queue.push(n.id); }
+
+    // Qualquer peça em transit (entre nós) bloqueia o término
+    if (transfers.length > 0) return false;
+
+    while (queue.length) {
+        const nodeId = queue.shift();
+        for (const e of upstreamOf(nodeId)) {
+            const src = nodeById.get(e.from); if (!src) continue;
+            if (visited.has(src.id)) continue;
+            visited.add(src.id);
+            if (src.type === 'SOURCE') continue; // stock NÃO bloqueia término
+            if (src.type === 'BUFFER') {
+                if (src.ref.ready > 0 || src.ref.reserved > 0) return false;
+                if (src.ref.dwellQueue && src.ref.dwellQueue.length > 0) return false;
+            } else if (src.type === 'STATION' && src.ref.enabled) {
+                if (src.ref.state === 'processing' || src.ref.state === 'blocked') return false;
+                if (src.ref.state === 'setup') return false;
+                if (src.ref.state === 'down' && src.ref.remProc > EPSILON) return false;
+            }
+            queue.push(src.id);
+        }
+    }
+    return true;
 }
 
 function startNewPiece(i) {
