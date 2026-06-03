@@ -346,6 +346,12 @@
         .state-badge.pulse rect { animation: badgePulse 1.4s ease-in-out infinite; }
         @keyframes badgePulse { 0%,100% { opacity: 1; } 50% { opacity: 0.55; } }
 
+        /* === Bloco 7.6: planta baixa === */
+        .floorplan-ctrl { position: absolute; top: 72px; left: 14px; z-index: 5; background: rgba(15,23,42,0.85); padding: 6px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); color: #e2e8f0; font-size: 11px; display: flex; align-items: center; gap: 8px; backdrop-filter: blur(8px); }
+        .floorplan-ctrl input[type=range] { width: 90px; }
+        .floorplan-ctrl button { background: rgba(239,68,68,0.2); border: 1px solid rgba(239,68,68,0.4); color: #fca5a5; width: 24px; height: 24px; border-radius: 4px; cursor: pointer; padding: 0; }
+        .floorplan-ctrl button:hover { background: var(--red); color: #fff; }
+
         /* === Bloco 6.5: Editor === */
         .map-toolbar .mode-on { background: var(--cyan) !important; color: #052e16 !important; border-color: var(--cyan) !important; }
         .map-node-g { cursor: pointer; }
@@ -939,6 +945,10 @@
         <button onclick="zoomMap(1.25)" title="Zoom in">+</button>
         <button onclick="zoomMap(0.8)" title="Zoom out">−</button>
         <span style="opacity:0.4; align-self:center;">│</span>
+        <button onclick="document.getElementById('floorPlanInput').click()" title="Carregar imagem de planta baixa">🖼 Planta</button>
+        <button id="btnEdgeStyle" onclick="toggleAllEdgesStyle()" title="Alternar estilo de todas as setas">⤳ Setas: Bezier</button>
+        <input type="file" id="floorPlanInput" accept="image/*" style="display:none" onchange="loadFloorPlan(event)">
+        <span style="opacity:0.4; align-self:center;">│</span>
         <button onclick="addStationNode()" title="Inserir uma nova estação">+ Estação</button>
         <button onclick="addBufferNode()" title="Inserir um novo buffer">+ Buffer</button>
         <button id="btnMode-connect" onclick="setEditorMode('connecting')" title="Clica num nó origem, depois num destino">🔗 Conectar</button>
@@ -948,12 +958,17 @@
         <button class="close" onclick="closeMap()">✕ Fechar</button>
     </div>
     <div class="map-info" id="mapInfo">—</div>
+    <div class="floorplan-ctrl" id="floorplanCtrl" style="display:none;">
+        <label>🖼 Opacidade <input type="range" id="floorOpacity" min="0" max="100" value="50" oninput="setFloorPlanOpacity(this.value)"></label>
+        <button onclick="removeFloorPlan()" title="Remover planta">✕</button>
+    </div>
     <svg id="mapSvg" class="map-svg" viewBox="0 0 1600 800" preserveAspectRatio="xMidYMid meet">
         <defs>
             <marker id="arrowMap" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
                 <path d="M0,0 L10,5 L0,10 z" fill="rgba(148,163,184,0.6)"/>
             </marker>
         </defs>
+        <g id="mapFloor"></g>
         <g id="mapEdges"></g>
         <g id="mapNodes"></g>
         <g id="mapAnim"></g>
@@ -2707,14 +2722,25 @@ function renderMap() {
     if (!mapOpen) return;
     const gNodes = document.getElementById('mapNodes');
     const gEdges = document.getElementById('mapEdges');
+    const gFloor = document.getElementById('mapFloor');
     if (!gNodes || !gEdges) return;
+
+    // Bloco 7.6: planta baixa como fundo (preenche o viewBox atual)
+    if (gFloor) {
+        if (floorPlanData) {
+            const bb = nodesBoundingBox() || { x: 0, y: 0, w: 1600, h: 800 };
+            gFloor.innerHTML = `<image href="${floorPlanData}" x="${bb.x - 200}" y="${bb.y - 200}" width="${bb.w + 400}" height="${bb.h + 400}" opacity="${floorPlanOpacity}" preserveAspectRatio="xMidYMid meet"/>`;
+        } else {
+            gFloor.innerHTML = '';
+        }
+    }
 
     // Edges
     let svgE = '';
     for (const e of edges) {
         const src = nodeById.get(e.from), dst = nodeById.get(e.to);
         if (!src || !dst) continue;
-        const d = edgePath(src, dst, e.style);
+        const d = edgePath(src, dst, e.style || globalEdgeStyle);
         const isActive = src.type === 'STATION' && src.ref.state === 'processing';
         // hitbox transparente largo para facilitar clique
         svgE += `<path class="map-edge-hit" d="${d}" data-edge-id="${e.id}" fill="none" stroke="transparent" stroke-width="14" pointer-events="stroke"/>`;
@@ -2784,6 +2810,41 @@ function renderMinimap() {
     // Frame do viewBox principal
     s += `<rect x="${mapViewBox.x}" y="${mapViewBox.y}" width="${mapViewBox.w}" height="${mapViewBox.h}" fill="none" stroke="#facc15" stroke-width="3" stroke-dasharray="6,4"/>`;
     mm.innerHTML = s;
+}
+
+// === Bloco 7.6: estado da planta baixa + estilo global das setas ===
+let floorPlanData = null;     // dataURL da imagem (base64)
+let floorPlanOpacity = 0.5;
+let globalEdgeStyle = 'Bezier'; // 'Bezier' | 'L' (override individual ainda funciona via edge.style)
+
+function loadFloorPlan(ev) {
+    const file = ev.target.files && ev.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+        floorPlanData = e.target.result;
+        document.getElementById('floorplanCtrl').style.display = 'flex';
+        renderMap();
+        showToast('Planta baixa carregada');
+    };
+    reader.readAsDataURL(file);
+    ev.target.value = '';
+}
+function setFloorPlanOpacity(v) {
+    floorPlanOpacity = Math.max(0, Math.min(1, parseInt(v) / 100));
+    renderMap();
+}
+function removeFloorPlan() {
+    floorPlanData = null;
+    document.getElementById('floorplanCtrl').style.display = 'none';
+    renderMap();
+}
+function toggleAllEdgesStyle() {
+    globalEdgeStyle = (globalEdgeStyle === 'Bezier') ? 'L' : 'Bezier';
+    for (const e of edges) e.style = globalEdgeStyle;
+    const btn = document.getElementById('btnEdgeStyle');
+    if (btn) btn.textContent = `⤳ Setas: ${globalEdgeStyle}`;
+    renderMap();
 }
 
 // === Bloco 6.5: Editor de topologia ===
@@ -3132,7 +3193,18 @@ function applyTopology(topo) {
     rebuildNodeIndex();
     for (const te of topo.edges) {
         if (!nodeById.has(te.from) || !nodeById.has(te.to)) continue;
-        edges.push({ id: te.id, from: te.from, to: te.to, transit: te.transit || 0 });
+        edges.push({ id: te.id, from: te.from, to: te.to, transit: te.transit || 0, style: te.style });
+    }
+    if (topo.edgeStyle === 'L' || topo.edgeStyle === 'Bezier') {
+        globalEdgeStyle = topo.edgeStyle;
+        const btn = document.getElementById('btnEdgeStyle');
+        if (btn) btn.textContent = `⤳ Setas: ${globalEdgeStyle}`;
+    }
+    if (topo.floorPlan && topo.floorPlan.data) {
+        floorPlanData = topo.floorPlan.data;
+        floorPlanOpacity = (typeof topo.floorPlan.opacity === 'number') ? topo.floorPlan.opacity : 0.5;
+        const ctrl = document.getElementById('floorplanCtrl'); if (ctrl) ctrl.style.display = 'flex';
+        const op = document.getElementById('floorOpacity'); if (op) op.value = Math.round(floorPlanOpacity * 100);
     }
     // Substitui buffers.wips pela ordem topológica de BUFFERs (para vista linear se aplicável)
     buffers.wips = nodes.filter(n => n.type === 'BUFFER').map(n => n.ref);
@@ -3611,7 +3683,9 @@ function collectConfig() {
                 buf: n.type === 'BUFFER' ? { ready: n.ref.ready, max: n.ref.max, dwell: n.ref.dwell } : undefined,
                 stationIdx: n.type === 'STATION' ? S.indexOf(n.ref) : undefined
             })),
-            edges: edges.map(e => ({ id: e.id, from: e.from, to: e.to, transit: e.transit || 0 }))
+            edges: edges.map(e => ({ id: e.id, from: e.from, to: e.to, transit: e.transit || 0, style: e.style })),
+            edgeStyle: globalEdgeStyle,
+            floorPlan: floorPlanData ? { data: floorPlanData, opacity: floorPlanOpacity } : null
         },
         stations: S.map(s => ({
             enabled: s.enabled, name: s.name, ppmNom: s.ppmNom,
