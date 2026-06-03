@@ -1135,7 +1135,7 @@ function rebuildLinearGraph() {
         prevId = stnId;
         if (i < S.length - 1) {
             const bufId = `buf${i}`;
-            nodes.push({ id: bufId, type: 'BUFFER', x: 180 * (i + 1) + 90, y: 0, name: `WIP ${i+1}`, ref: buffers.wips[i] });
+            nodes.push({ id: bufId, type: 'BUFFER', x: 180 * (i + 1) + 90, y: 0, name: `ESTEIRA ${i+1}`, ref: buffers.wips[i] });
             edges.push({ id: `e_${stnId}_${bufId}`, from: stnId, to: bufId, transit: TRANSIT_TIME });
             prevId = bufId;
         }
@@ -2686,7 +2686,11 @@ function nodeLiveLabel(n) {
     if (n.type === 'BUFFER') {
         const t = wipTotal(n.ref);
         const cura = n.ref.dwellQueue ? n.ref.dwellQueue.length : 0;
-        return { line1: `${t}/${n.ref.max}`, line2: cura > 0 ? `cura ${cura} (${n.ref.dwell}s)` : 'pull' };
+        const full = t >= n.ref.max;
+        return {
+            line1: `${t}/${n.ref.max}`,
+            line2: cura > 0 ? `cura ${cura} (${n.ref.dwell}s)` : (full ? '⚠ CHEIO' : 'pull')
+        };
     }
     return { line1: '', line2: '' };
 }
@@ -2715,6 +2719,8 @@ function nodeFill(n) {
         if (k.OEE >= 0.4) return '#f59e0b';
         return '#ef4444';
     }
+    // Bloco 7.7: BUFFER cheio vira laranja-avermelhado
+    if (n.type === 'BUFFER' && n.ref && wipTotal(n.ref) >= n.ref.max) return '#f97316';
     return NODE_FILL[n.type] || '#64748b';
 }
 
@@ -2971,7 +2977,7 @@ function addBufferNode() {
     // posiciona no centro do viewBox
     const x = mapViewBox.x + mapViewBox.w / 2 - NODE_W / 2;
     const y = mapViewBox.y + mapViewBox.h / 2 - NODE_H / 2;
-    nodes.push({ id, type: 'BUFFER', x, y, name: 'BUFFER NOVO', ref: buf });
+    nodes.push({ id, type: 'BUFFER', x, y, name: 'ESTEIRA', ref: buf });
     rebuildNodeIndex();
     selectNode(id);
     syncLinearView();
