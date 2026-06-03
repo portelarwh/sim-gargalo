@@ -1,0 +1,591 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <title>SIMULADOR - OEE / TOC</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="topbar">
+    <div class="row1">
+        <div class="left-group">
+            <div class="brand-compact">
+                <span class="brandTitle">SIMULADOR OEE/TOC</span>
+                <span class="brandSub">JIPM/TPM</span>
+            </div>
+            <a href="https://www.linkedin.com/in/pedro-ag-portela/" target="_blank" class="author-link">
+                <svg viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
+                Pedro Portela
+            </a>
+            <button class="help-btn" onclick="openHelp()">AJUDA</button>
+            <button class="analytics-btn" onclick="openAnalytics()">ANÁLISE</button>
+            <div class="data-menu-wrap">
+                <button class="data-btn" onclick="toggleDataMenu(event)">DADOS ▾</button>
+                <div class="data-menu" id="dataMenu">
+                    <div class="group-title">Exportar</div>
+                    <button onclick="exportCSV()">📊 KPIs por estação (CSV)</button>
+                    <button onclick="exportSnapshot()">📦 Snapshot completo (JSON)</button>
+                    <hr>
+                    <div class="group-title">Configuração</div>
+                    <button onclick="saveConfig()">💾 Guardar configuração</button>
+                    <button onclick="document.getElementById('loadConfigInput').click()">📂 Carregar configuração</button>
+                    <button onclick="saveConfigLocal()">⭐ Guardar em browser</button>
+                    <button onclick="loadConfigLocal()">↻ Restaurar do browser</button>
+                    <hr>
+                    <button onclick="openPrefs()">⚙ Preferências…</button>
+                </div>
+                <input type="file" id="loadConfigInput" accept=".json,application/json" style="display:none" onchange="loadConfigFile(event)">
+            </div>
+            <button class="scenario-btn" onclick="openScenarios()">CENÁRIOS</button>
+            <button class="scenario-btn" onclick="openCompare()" title="Comparar dois snapshots JSON">COMPARAR</button>
+            <button class="map-btn" onclick="openMap()" title="Vista em grafo da linha">🗺 MAPA</button>
+        </div>
+
+        <div class="center-configs">
+            <div class="cfg">
+                <span class="cfg-lbl">ESTAÇÕES</span>
+                <input id="stationsSelect" class="cfg-input" type="number" min="1" max="99" value="3" title="Quantidade de estações (1-99)">
+            </div>
+            <div class="cfg">
+                <span class="cfg-lbl">TRÂNSITO (s)</span>
+                <input id="transitTimeInput" class="cfg-input" type="number" min="0" max="999" value="0">
+            </div>
+            <div class="cfg">
+                <span class="cfg-lbl">VELOCIDADE</span>
+                <select id="speedSelect" class="cfg-input">
+                    <option value="1">1x</option><option value="2">2x</option><option value="4">4x</option><option value="8">8x</option><option value="10">10x</option><option value="20">20x</option><option value="100">100x</option>
+                </select>
+            </div>
+            <div class="cfg">
+                <span class="cfg-lbl">ZOOM</span>
+                <div class="zoom-row">
+                    <input id="zoomSlider" type="range" min="30" max="150" step="5" value="100">
+                    <input id="zoomInput" type="number" min="30" max="150" value="100">
+                </div>
+            </div>
+            <div class="cfg" title="Semente para reprodutibilidade (0 = aleatório)">
+                <span class="cfg-lbl">SEED</span>
+                <input id="seedInput" class="seed-input" type="text" value="0" maxlength="10">
+            </div>
+        </div>
+
+        <div class="right-group">
+            <div class="toggles">
+                <label class="tgl"><input type="checkbox" id="chkKeepParams">Manter Parâmetros</label>
+                <label class="tgl"><input type="checkbox" id="chkFlushLine">Esgotar Linha</label>
+            </div>
+            <div class="btns">
+                <button class="iconBtn" id="btnReset" title="Reset">⟲</button>
+                <button class="startBtn" id="btnStart"><span>▶</span> INICIAR</button>
+            </div>
+            <div class="theme-toggle">
+                <span class="theme-lbl">Claro</span>
+                <label class="switch"><input type="checkbox" id="chkTheme"><span class="slider"></span></label>
+            </div>
+        </div>
+    </div>
+
+    <div class="row2">
+        <div class="time-group">
+            <div class="time-card"><div class="time-lbl">META INICIAL</div><div class="time-val est" id="t_init">00:00.0</div></div>
+            <div class="time-card" title="Previsão de tempo de conclusão (P50 / P90 com MTBF ativo)"><div class="time-lbl">PREVISÃO</div><div class="time-val curr" id="t_est_curr">00:00.0</div><div class="time-lbl" id="t_est_p90" style="display:none; color:#fbbf24; font-size:8px; margin-top:1px;"></div></div>
+            <div class="time-card"><div class="time-lbl">DECORRIDO</div><div class="time-val" id="t_elap">00:00.0</div></div>
+            <div class="time-card"><div class="time-lbl">RESTANTE</div><div class="time-val rem" id="t_rem">00:00.0</div></div>
+        </div>
+
+        <div class="chart-group">
+            <div class="mini-chart">
+                <div class="chart-lbl"><span>OEE TREND</span><span class="cv-main" id="val_oee_now">0%</span></div>
+                <div class="svg-box"><svg id="chartOEE"></svg></div>
+            </div>
+            <div class="mini-chart">
+                <div class="chart-lbl">
+                    <span>PPM</span>
+                    <div class="chart-val-box">
+                        <span class="cv-lbl-small">REAL</span><span class="cv-main" id="val_ppm_now">0</span>
+                        <span class="cv-lbl-small">MÉD</span><span class="cv-sub" id="val_ppm_avg">0</span>
+                    </div>
+                </div>
+                <div class="svg-box"><svg id="chartPPM"></svg></div>
+            </div>
+        </div>
+
+        <div class="state-group">
+            <div class="state-pill st-op"><div class="st-lbl">OPERAÇÃO</div><div class="st-val" id="g_run">00:00</div></div>
+            <div class="state-pill st-su"><div class="st-lbl">SETUP</div><div class="st-val" id="g_setup_run">00:00</div></div>
+            <div class="state-pill st-pd"><div class="st-lbl">PARADA</div><div class="st-val" id="g_down">00:00</div></div>
+            <div class="state-pill st-oc"><div class="st-lbl">OCIOSA</div><div class="st-val" id="g_idle">00:00</div></div>
+            <div class="state-pill st-tr"><div class="st-lbl">TRAVADA</div><div class="st-val" id="g_block">00:00</div></div>
+            <div class="state-pill st-ag"><div class="st-lbl">AGUARDANDO</div><div class="st-val" id="g_wait">00:00</div></div>
+            <div class="state-pill scrap-pill st-sc"><div class="st-lbl">REFUGOS</div><div class="st-val" id="g_scrap">0</div></div>
+        </div>
+    </div>
+</div>
+
+<div class="main">
+    <div class="board" id="board">
+        <div class="animLayer" id="animLayer"></div>
+    </div>
+</div>
+
+<div id="helpModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeHelp()">&times;</span>
+        <h2>📘 Manual Completo do Simulador OEE & TOC</h2>
+        
+        <h3>1. INTRODUÇÃO</h3>
+        <p>Este simulador combina os princípios da <strong>Teoria das Restrições (TOC)</strong> de Eliyahu Goldratt com as métricas de <strong>OEE (Overall Equipment Effectiveness)</strong> do padrão JIPM/TPM. O objetivo é visualizar como parâmetros de disponibilidade, performance e qualidade impactam a produção de uma linha de manufatura.</p>
+        
+        <h3>2. CONCEITOS FUNDAMENTAIS</h3>
+        
+        <div class="help-section">
+            <h4>OEE (Overall Equipment Effectiveness)</h4>
+            <p><strong>Fórmula:</strong> <code>OEE = Disponibilidade (A%) × Performance (P%) × Qualidade (Q%)</code></p>
+            <ul>
+                <li><strong>Disponibilidade (A%):</strong> Percentual do tempo que a máquina está operacional (não quebrada)</li>
+                <li><strong>Performance (P%):</strong> Percentual da velocidade nominal que está sendo alcançada</li>
+                <li><strong>Qualidade (Q%):</strong> Percentual de peças boas produzidas (sem defeitos)</li>
+            </ul>
+            <p>Um OEE de <strong>85%</strong> é considerado "classe mundial" na indústria.</p>
+        </div>
+        
+        <div class="help-section">
+            <h4>Teoria das Restrições (TOC)</h4>
+            <ul>
+                <li><strong>Gargalo (Bottleneck):</strong> É a estação com menor capacidade efetiva, que limita toda a linha</li>
+                <li>A capacidade de uma linha de produção é determinada pelo seu gargalo</li>
+                <li>O simulador identifica automaticamente o gargalo (estação com menor PPM × A% × P%)</li>
+                <li>Melhorar qualquer estação que NÃO seja o gargalo não aumenta a produção total</li>
+            </ul>
+        </div>
+        
+        <div class="help-section">
+            <h4>WIP (Work in Progress)</h4>
+            <ul>
+                <li>Estoque intermediário entre estações</li>
+                <li>Buffers protegem o gargalo contra variações das estações anteriores</li>
+                <li><strong>WIP alto:</strong> Maior proteção, mas mais capital parado</li>
+                <li><strong>WIP baixo:</strong> Menor custo, mas maior risco de paradas por falta de peça</li>
+            </ul>
+        </div>
+        
+        <h3>3. CONFIGURAÇÕES GERAIS (Barra Superior)</h3>
+        <div class="glossary-grid">
+            <div class="g-item"><div class="g-title">ESTAÇÕES</div><div class="g-desc">Quantidade de máquinas/etapas na linha (2 a 8)</div></div>
+            <div class="g-item"><div class="g-title">TRÂNSITO (s)</div><div class="g-desc">Tempo de transporte entre estações em segundos</div></div>
+            <div class="g-item"><div class="g-title">VELOCIDADE</div><div class="g-desc">Multiplicador de velocidade da simulação (1x a 100x)</div></div>
+            <div class="g-item"><div class="g-title">ZOOM</div><div class="g-desc">Ajuste visual do tamanho do board (30% a 150%)</div></div>
+        </div>
+        
+        <h3>4. INDICADORES DE TEMPO</h3>
+        <div class="glossary-grid">
+            <div class="g-item"><div class="g-title">META INICIAL</div><div class="g-desc">Tempo estimado para concluir a meta no momento que a simulação iniciou</div></div>
+            <div class="g-item"><div class="g-title">PREVISÃO</div><div class="g-desc">Tempo estimado atual (recalculado se parâmetros mudarem durante a simulação)</div></div>
+            <div class="g-item"><div class="g-title">DECORRIDO</div><div class="g-desc">Tempo de simulação já transcorrido</div></div>
+            <div class="g-item"><div class="g-title">RESTANTE</div><div class="g-desc">Previsão menos o tempo decorrido</div></div>
+        </div>
+        
+        <h3>5. GRÁFICOS EM TEMPO REAL</h3>
+        <div class="glossary-grid">
+            <div class="g-item"><div class="g-title">OEE TREND</div><div class="g-desc">Evolução do OEE do gargalo ao longo do tempo (0% a 100%)</div></div>
+            <div class="g-item"><div class="g-title">PPM</div><div class="g-desc"><strong>REAL:</strong> PPM instantâneo do gargalo | <strong>MÉD:</strong> Média de peças boas por minuto desde o início</div></div>
+        </div>
+        
+        <h3>6. ESTADOS GLOBAIS DA LINHA</h3>
+        <div class="help-section">
+            <table style="width:100%; font-size:13px; border-collapse:collapse;">
+                <tr style="border-bottom:1px solid var(--modal-border);">
+                    <td style="padding:8px;"><strong style="color:var(--blue);">OPERAÇÃO</strong></td>
+                    <td style="padding:8px;">Tempo que o gargalo esteve efetivamente produzindo</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--modal-border);">
+                    <td style="padding:8px;"><strong style="color:var(--cyan);">SETUP</strong></td>
+                    <td style="padding:8px;">Tempo de setup/preparação da última estação</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--modal-border);">
+                    <td style="padding:8px;"><strong style="color:var(--red);">PARADA</strong></td>
+                    <td style="padding:8px;">Tempo de parada não planejada (falhas, quebras)</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--modal-border);">
+                    <td style="padding:8px;"><strong style="color:var(--gray);">OCIOSA</strong></td>
+                    <td style="padding:8px;">Tempo sem atividade (estação 1 sem demanda para puxar)</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--modal-border);">
+                    <td style="padding:8px;"><strong style="color:var(--orange);">TRAVADA</strong></td>
+                    <td style="padding:8px;">Tempo bloqueado porque o buffer à frente está cheio</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--modal-border);">
+                    <td style="padding:8px;"><strong style="color:var(--yellow);">AGUARDANDO</strong></td>
+                    <td style="padding:8px;">Tempo esperando peça chegar do buffer anterior (starving)</td>
+                </tr>
+                <tr>
+                    <td style="padding:8px;"><strong style="color:#f87171;">REFUGOS</strong></td>
+                    <td style="padding:8px;">Total de peças rejeitadas por problemas de qualidade</td>
+                </tr>
+            </table>
+        </div>
+        
+        <h3>7. ESTOQUE (Coluna Esquerda)</h3>
+        <div class="glossary-grid">
+            <div class="g-item"><div class="g-title">DISPONÍVEL</div><div class="g-desc">Quantidade inicial de matéria-prima a ser configurada</div></div>
+            <div class="g-item"><div class="g-title">RESTANTE</div><div class="g-desc">Quantidade ainda disponível para puxar durante a simulação</div></div>
+        </div>
+        
+        <h3>8. PARÂMETROS DE CADA ESTAÇÃO</h3>
+        <div class="help-section">
+            <h4>Controles Ajustáveis</h4>
+            <table style="width:100%; font-size:13px; border-collapse:collapse;">
+                <tr style="border-bottom:1px solid var(--modal-border);">
+                    <td style="padding:8px;"><strong>PPM</strong></td>
+                    <td style="padding:8px;">Peças por minuto nominal (velocidade teórica máxima)</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--modal-border);">
+                    <td style="padding:8px;"><strong>DISP (A%)</strong></td>
+                    <td style="padding:8px;">Disponibilidade - % do tempo que a máquina está operacional</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--modal-border);">
+                    <td style="padding:8px;"><strong>PERF (P%)</strong></td>
+                    <td style="padding:8px;">Performance - % da velocidade nominal realmente alcançada</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--modal-border);">
+                    <td style="padding:8px;"><strong>QUAL (Q%)</strong></td>
+                    <td style="padding:8px;">Qualidade - % de peças boas (sem defeito) produzidas</td>
+                </tr>
+                <tr>
+                    <td style="padding:8px;"><strong>SETUP</strong></td>
+                    <td style="padding:8px;">Tempo de setup ao final da produção (em minutos)</td>
+                </tr>
+            </table>
+        </div>
+        <div class="help-section">
+            <h4>KPIs Calculados da Estação</h4>
+            <ul>
+                <li><strong>OEE</strong> = A% × P% × Q%</li>
+                <li><strong>PPM NOM</strong> = velocidade configurada</li>
+                <li><strong>PPM REAL</strong> = PPM NOM × P%</li>
+                <li><strong>BONS</strong> = peças aprovadas pela estação</li>
+                <li><strong>REFUGO</strong> = peças rejeitadas pela estação</li>
+            </ul>
+        </div>
+        <div class="help-section">
+            <h4>Tempos Acumulados por Estação</h4>
+            <p>OPERANDO, SETUP, PARADA, AGUARDANDO, TRAVADA, OCIOSIDADE - cada um mostra quanto tempo a estação passou em cada estado.</p>
+        </div>
+        
+        <h3>9. BUFFERS WIP (Entre Estações)</h3>
+        <div class="glossary-grid">
+            <div class="g-item"><div class="g-title">Termômetro</div><div class="g-desc">Visualização gráfica do nível de ocupação do buffer</div></div>
+            <div class="g-item"><div class="g-title">%</div><div class="g-desc">Percentual de ocupação do buffer</div></div>
+            <div class="g-item"><div class="g-title">Disp.</div><div class="g-desc">Peças prontas e disponíveis para a próxima estação</div></div>
+            <div class="g-item"><div class="g-title">Trans.</div><div class="g-desc">Peças em trânsito (ainda chegando ao buffer)</div></div>
+            <div class="g-item"><div class="g-title">Início</div><div class="g-desc">Quantidade inicial de WIP (configurável ANTES de iniciar)</div></div>
+            <div class="g-item"><div class="g-title">Nível</div><div class="g-desc">Quantidade atual / Capacidade máxima do buffer</div></div>
+        </div>
+        
+        <h3>10. CONCLUÍDO (Coluna Direita)</h3>
+        <div class="glossary-grid">
+            <div class="g-item"><div class="g-title">META DE PROD.</div><div class="g-desc">Quantidade de peças BOAS desejadas ao final</div></div>
+            <div class="g-item"><div class="g-title">REPOR PERDAS</div><div class="g-desc">Se ativo, continua puxando do estoque até atingir a meta de bons, compensando refugos</div></div>
+            <div class="g-item"><div class="g-title">Número Grande</div><div class="g-desc">Total de peças boas finalizadas (saída da linha)</div></div>
+            <div class="g-item"><div class="g-title">TOTAL PROCESSADO</div><div class="g-desc">Bons + Refugos (tudo que passou pela linha completa)</div></div>
+            <div class="g-item"><div class="g-title">SALDO WIP (INI/FIM)</div><div class="g-desc">WIP total no início da simulação / WIP total atual</div></div>
+        </div>
+        
+        <h3>11. CONTROLES E BOTÕES</h3>
+        <div class="help-section">
+            <table style="width:100%; font-size:13px; border-collapse:collapse;">
+                <tr style="border-bottom:1px solid var(--modal-border);">
+                    <td style="padding:8px;"><strong>Toggle ON/OFF</strong></td>
+                    <td style="padding:8px;">Liga/desliga cada estação individualmente</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--modal-border);">
+                    <td style="padding:8px;"><strong>Manter Parâmetros</strong></td>
+                    <td style="padding:8px;">Ao resetar, preserva TODAS as configurações (PPM, A%, P%, Q%, WIP, etc.)</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--modal-border);">
+                    <td style="padding:8px;"><strong>Esgotar Linha</strong></td>
+                    <td style="padding:8px;">Continua simulação até esvaziar todo o WIP, mesmo após atingir a meta</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--modal-border);">
+                    <td style="padding:8px;"><strong>⟲ (Reset)</strong></td>
+                    <td style="padding:8px;">Reinicia a simulação (respeita "Manter Parâmetros")</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--modal-border);">
+                    <td style="padding:8px;"><strong>▶ INICIAR / ⏸ PAUSAR</strong></td>
+                    <td style="padding:8px;">Inicia ou pausa a simulação</td>
+                </tr>
+                <tr>
+                    <td style="padding:8px;"><strong>Tema Claro/Escuro</strong></td>
+                    <td style="padding:8px;">Alterna entre aparência clara e escura</td>
+                </tr>
+            </table>
+        </div>
+        
+        <h3>12. INDICADOR DE GARGALO</h3>
+        <div class="help-section">
+            <ul>
+                <li>A estação com <strong>menor capacidade efetiva</strong> (PPM × A% × P%) recebe destaque em <strong style="color:var(--purple);">roxo</strong></li>
+                <li>O badge <strong>"GARGALO"</strong> aparece na estação limitante</li>
+                <li>Se todas as estações tiverem capacidade igual, a última é considerada o gargalo</li>
+                <li>Os indicadores globais (OPERAÇÃO, PARADA, etc.) são baseados no gargalo</li>
+            </ul>
+        </div>
+        
+        <h3>13. COMO USAR O SIMULADOR</h3>
+        <div class="help-section">
+            <h4>Passo a Passo Básico</h4>
+            <ol>
+                <li>Configure o <strong>número de estações</strong> desejado</li>
+                <li>Defina o <strong>estoque inicial</strong> (matéria-prima) e a <strong>meta de produção</strong></li>
+                <li>Ajuste os parâmetros (<strong>PPM, A%, P%, Q%</strong>) de cada estação</li>
+                <li>Opcionalmente, configure <strong>WIP inicial</strong> nos buffers e <strong>tempo de setup</strong></li>
+                <li>Clique em <strong>INICIAR</strong></li>
+                <li>Observe os indicadores e identifique o gargalo</li>
+                <li><strong>Pause</strong> para ajustar parâmetros e ver o impacto em tempo real</li>
+            </ol>
+        </div>
+        <div class="help-section">
+            <h4>Dicas de Uso</h4>
+            <ul>
+                <li>Use <strong>velocidade alta (20x ou 100x)</strong> para simulações longas</li>
+                <li>Reduza a <strong>disponibilidade</strong> de uma estação para simular quebras</li>
+                <li>Compare cenários usando <strong>"Manter Parâmetros"</strong> + Reset</li>
+                <li>Observe o <strong>Saldo WIP</strong> para entender acúmulo na linha</li>
+                <li>Ative <strong>"Repor Perdas"</strong> para simular produção até atingir meta de bons</li>
+            </ul>
+        </div>
+        
+        <h3>14. INTERPRETAÇÕES E INSIGHTS</h3>
+        <div class="help-section">
+            <table style="width:100%; font-size:13px; border-collapse:collapse;">
+                <tr style="border-bottom:1px solid var(--modal-border);">
+                    <td style="padding:8px;"><strong>OEE baixo com A% baixo</strong></td>
+                    <td style="padding:8px;">Problema de manutenção/confiabilidade - máquina quebra muito</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--modal-border);">
+                    <td style="padding:8px;"><strong>OEE baixo com P% baixo</strong></td>
+                    <td style="padding:8px;">Máquina operando abaixo da velocidade nominal</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--modal-border);">
+                    <td style="padding:8px;"><strong>OEE baixo com Q% baixo</strong></td>
+                    <td style="padding:8px;">Problema de qualidade no processo</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--modal-border);">
+                    <td style="padding:8px;"><strong>Muito tempo "AGUARDANDO"</strong></td>
+                    <td style="padding:8px;">Estação anterior é mais lenta (gargalo está antes)</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--modal-border);">
+                    <td style="padding:8px;"><strong>Muito tempo "TRAVADA"</strong></td>
+                    <td style="padding:8px;">Buffer cheio - próxima estação é mais lenta (gargalo está depois)</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--modal-border);">
+                    <td style="padding:8px;"><strong>WIP acumulando</strong></td>
+                    <td style="padding:8px;">Desbalanceamento entre estações - revisar capacidades</td>
+                </tr>
+                <tr>
+                    <td style="padding:8px;"><strong>Meta não atingida</strong></td>
+                    <td style="padding:8px;">Estoque insuficiente ou muitos refugos (ativar "Repor Perdas")</td>
+                </tr>
+            </table>
+        </div>
+        
+        <h3>15. GLOSSÁRIO RÁPIDO</h3>
+        <div class="glossary-grid">
+            <div class="g-item"><div class="g-title">PPM</div><div class="g-desc">Peças Por Minuto</div></div>
+            <div class="g-item"><div class="g-title">OEE</div><div class="g-desc">Overall Equipment Effectiveness (Eficácia Global do Equipamento)</div></div>
+            <div class="g-item"><div class="g-title">WIP</div><div class="g-desc">Work in Progress (Estoque em Processo)</div></div>
+            <div class="g-item"><div class="g-title">TOC</div><div class="g-desc">Theory of Constraints (Teoria das Restrições)</div></div>
+            <div class="g-item"><div class="g-title">Gargalo</div><div class="g-desc">Recurso que limita a capacidade total do sistema</div></div>
+            <div class="g-item"><div class="g-title">Setup</div><div class="g-desc">Tempo de preparação/troca de ferramenta</div></div>
+            <div class="g-item"><div class="g-title">Throughput</div><div class="g-desc">Taxa de saída de produtos acabados (bons)</div></div>
+            <div class="g-item"><div class="g-title">Starving</div><div class="g-desc">Estação parada esperando peça (fome de material)</div></div>
+        </div>
+        
+        <div style="margin-top:25px; padding:15px; background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.3); border-radius:10px;">
+            <p style="margin:0; font-size:13px; color:var(--green);"><strong>💡 Lembre-se:</strong> O objetivo é experimentar! Altere parâmetros, observe os impactos e desenvolva intuição sobre como OEE e gargalos afetam a produção.</p>
+        </div>
+    </div>
+</div>
+
+<div id="analyticsModal" class="modal">
+    <div class="modal-content analytics">
+        <span class="close" onclick="closeAnalytics()">&times;</span>
+        <h2>📊 Análise da Linha</h2>
+
+        <div class="analytics-summary" id="analyticsSummary"></div>
+
+        <div class="tab-bar">
+            <button class="tab-btn active" data-tab="yamazumi" onclick="switchAnalyticsTab('yamazumi')">Yamazumi</button>
+            <button class="tab-btn" data-tab="pareto" onclick="switchAnalyticsTab('pareto')">Pareto de Perdas</button>
+            <button class="tab-btn" data-tab="heatmap" onclick="switchAnalyticsTab('heatmap')">Heatmap de Estados</button>
+            <button class="tab-btn" data-tab="sankey" onclick="switchAnalyticsTab('sankey')">Fluxo (Sankey)</button>
+        </div>
+
+        <div class="tab-pane active" id="tab-yamazumi">
+            <p style="font-size:12px; opacity:0.8; margin:0 0 10px;">Tempo de ciclo efetivo decomposto por estação. Cada barra mostra a média de segundos por peça produzida em cada estado. A <strong style="color:var(--cyan);">linha tracejada</strong> indica o <strong>Takt time</strong> (ritmo necessário para atingir a meta).</p>
+            <div class="chart-wrap"><div id="yamazumiChart"></div></div>
+            <div class="legend">
+                <span class="legend-item"><span class="legend-swatch swatch-run"></span>Operando</span>
+                <span class="legend-item"><span class="legend-swatch swatch-setup"></span>Setup</span>
+                <span class="legend-item"><span class="legend-swatch swatch-down"></span>Parada</span>
+                <span class="legend-item"><span class="legend-swatch swatch-block"></span>Travada</span>
+                <span class="legend-item"><span class="legend-swatch swatch-wait"></span>Aguardando</span>
+                <span class="legend-item"><span class="legend-swatch swatch-idle"></span>Ociosa</span>
+            </div>
+        </div>
+
+        <div class="tab-pane" id="tab-pareto">
+            <p style="font-size:12px; opacity:0.8; margin:0 0 10px;">Perdas agregadas da linha, ordenadas do maior para o menor impacto. A linha sobreposta mostra a <strong>% cumulativa</strong>. Foque nas barras à esquerda — geralmente 20% das categorias causam 80% das perdas (Princípio de Pareto).</p>
+            <div class="chart-wrap"><div id="paretoChart"></div></div>
+        </div>
+
+        <div class="tab-pane" id="tab-heatmap">
+            <p style="font-size:12px; opacity:0.8; margin:0 0 10px;">Linha do tempo de cada estação. Cada faixa horizontal mostra o estado ao longo da simulação — útil para identificar padrões (ex: starving cíclico, blocos prolongados, propagação de paradas).</p>
+            <div class="chart-wrap"><div id="heatmapChart"></div></div>
+            <div class="legend">
+                <span class="legend-item"><span class="legend-swatch swatch-run"></span>Operando</span>
+                <span class="legend-item"><span class="legend-swatch swatch-setup"></span>Setup</span>
+                <span class="legend-item"><span class="legend-swatch swatch-down"></span>Parada</span>
+                <span class="legend-item"><span class="legend-swatch swatch-block"></span>Travada</span>
+                <span class="legend-item"><span class="legend-swatch swatch-wait"></span>Aguardando</span>
+                <span class="legend-item"><span class="legend-swatch swatch-idle"></span>Ociosa</span>
+            </div>
+        </div>
+
+        <div class="tab-pane" id="tab-sankey">
+            <p style="font-size:12px; opacity:0.8; margin:0 0 10px;">Fluxo de peças do estoque até ao destino final. A largura de cada fluxo é proporcional ao número de peças. Permite ver instantaneamente onde se concentra o refugo.</p>
+            <div class="chart-wrap"><div id="sankeyChart"></div></div>
+        </div>
+    </div>
+</div>
+
+<div id="scenariosModal" class="modal">
+    <div class="modal-content" style="max-width: 900px;">
+        <span class="close" onclick="closeScenarios()">&times;</span>
+        <h2>🎯 Cenários Didáticos</h2>
+        <p style="font-size: 13px; opacity: 0.85; margin-bottom: 20px;">Selecione um cenário pré-configurado para explorar conceitos específicos. <strong>A configuração atual será substituída.</strong></p>
+        <div class="scenarios-grid" id="scenariosGrid"></div>
+    </div>
+</div>
+
+<div id="compareModal" class="modal">
+    <div class="modal-content" style="max-width: 1100px;">
+        <span class="close" onclick="closeCompare()">&times;</span>
+        <h2>⚖ Comparador de Cenários</h2>
+        <p style="font-size: 13px; opacity: 0.85; margin-bottom: 14px;">Carregue dois ficheiros JSON de snapshot (exportados via DADOS → Snapshot completo) para comparar lado a lado. Útil para validar melhorias entre execuções.</p>
+        <div class="compare-actions">
+            <button class="file-pick-btn" onclick="document.getElementById('cmpFileA').click()">📂 Carregar A</button>
+            <button class="file-pick-btn" onclick="document.getElementById('cmpFileB').click()">📂 Carregar B</button>
+            <button class="file-pick-btn" onclick="useCurrentAsCompare('A')">📌 Usar atual como A</button>
+            <button class="file-pick-btn" onclick="useCurrentAsCompare('B')">📌 Usar atual como B</button>
+        </div>
+        <input type="file" id="cmpFileA" accept=".json,application/json" style="display:none" onchange="loadCompareFile(event, 'A')">
+        <input type="file" id="cmpFileB" accept=".json,application/json" style="display:none" onchange="loadCompareFile(event, 'B')">
+        <div class="compare-cols">
+            <div class="compare-col" id="cmpColA"><div class="empty-note">Carregue um snapshot A</div></div>
+            <div class="compare-col" id="cmpColB"><div class="empty-note">Carregue um snapshot B</div></div>
+        </div>
+        <div id="cmpDiff" style="margin-top: 16px;"></div>
+    </div>
+</div>
+
+<div id="prefsModal" class="modal">
+    <div class="modal-content" style="max-width: 600px;">
+        <span class="close" onclick="closePrefs()">&times;</span>
+        <h2>⚙ Preferências</h2>
+        <p style="font-size: 12px; opacity: 0.85; margin-bottom: 16px;">Parâmetros internos do simulador. Aplicação imediata; valores persistidos com a configuração no browser.</p>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+            <label style="display:grid; grid-template-columns: 1fr 100px; gap:8px; align-items:center; font-size:13px;">
+                <span><strong>Tolerância de balanceamento</strong><br><span style="font-size:10px; opacity:0.7;">Diferença máxima (em PPM efetivo) entre estações para serem consideradas equilibradas.</span></span>
+                <input id="prefBalance" type="number" min="0" step="0.1" class="seed-input" style="width:80px;">
+            </label>
+            <label style="display:grid; grid-template-columns: 1fr 100px; gap:8px; align-items:center; font-size:13px;">
+                <span><strong>Pontos no sparkline</strong><br><span style="font-size:10px; opacity:0.7;">Quantidade de amostras retidas nos gráficos OEE/PPM da topbar.</span></span>
+                <input id="prefHistory" type="number" min="10" max="500" step="10" class="seed-input" style="width:80px;">
+            </label>
+            <label style="display:grid; grid-template-columns: 1fr 100px; gap:8px; align-items:center; font-size:13px;">
+                <span><strong>Transições no heatmap</strong><br><span style="font-size:10px; opacity:0.7;">Limite de mudanças de estado guardadas por estação. Valores maiores aumentam detalhe à custa de memória.</span></span>
+                <input id="prefHeatmap" type="number" min="100" max="5000" step="100" class="seed-input" style="width:80px;">
+            </label>
+            <label style="display:grid; grid-template-columns: 1fr 100px; gap:8px; align-items:center; font-size:13px;">
+                <span><strong>Intervalo de atualização (s)</strong><br><span style="font-size:10px; opacity:0.7;">Cadência de re-render dos gráficos. Maior → menos CPU.</span></span>
+                <input id="prefInterval" type="number" min="0.1" max="5" step="0.1" class="seed-input" style="width:80px;">
+            </label>
+            <label style="display:flex; gap:10px; align-items:center; font-size:13px; padding-top:6px; border-top:1px solid var(--modal-border);">
+                <input id="prefP90" type="checkbox" style="accent-color: var(--blue); width:16px; height:16px;">
+                <span><strong>Mostrar previsão P90 (com MTBF)</strong><br><span style="font-size:10px; opacity:0.7;">Quando há variabilidade estocástica, mostra também o percentil 90 do tempo previsto.</span></span>
+            </label>
+        </div>
+        <div style="display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end;">
+            <button class="file-pick-btn" onclick="resetPrefs()">Repor padrões</button>
+            <button class="file-pick-btn" style="background: var(--blue); color: #fff; border-color: var(--blue);" onclick="closePrefs()">Concluído</button>
+        </div>
+    </div>
+</div>
+
+<div id="mapView" class="map-view">
+    <div class="map-toolbar">
+        <button onclick="autoLayoutMap()" title="Reorganiza os nós em colunas topológicas">⛓ Auto-layout</button>
+        <button onclick="autoFitMap()" title="Centrar e ajustar zoom para todos os nós">⛶ Auto-fit</button>
+        <button onclick="zoomMap(1.25)" title="Zoom in">+</button>
+        <button onclick="zoomMap(0.8)" title="Zoom out">−</button>
+        <span style="opacity:0.4; align-self:center;">│</span>
+        <button onclick="document.getElementById('floorPlanInput').click()" title="Carregar imagem de planta baixa">🖼 Planta</button>
+        <button id="btnEdgeStyle" onclick="toggleAllEdgesStyle()" title="Alternar estilo de todas as setas">⤳ Setas: Bezier</button>
+        <input type="file" id="floorPlanInput" accept="image/*" style="display:none" onchange="loadFloorPlan(event)">
+        <span style="opacity:0.4; align-self:center;">│</span>
+        <button onclick="addStationNode()" title="Inserir uma nova estação">+ Estação</button>
+        <button onclick="addBufferNode()" title="Inserir um novo buffer">+ Buffer</button>
+        <button id="btnMode-connect" onclick="setEditorMode('connecting')" title="Clica num nó origem, depois num destino">🔗 Conectar</button>
+        <button id="btnMode-delete" onclick="setEditorMode('deleting')" title="Clica em edges ou nós BUFFER para apagar">🗑 Apagar</button>
+        <button onclick="setEditorMode('idle')" title="Voltar ao modo de seleção">↩ Selecionar</button>
+        <span style="opacity:0.4; align-self:center;">│</span>
+        <button class="close" onclick="closeMap()">✕ Fechar</button>
+    </div>
+    <div class="map-info" id="mapInfo">—</div>
+    <div class="floorplan-ctrl" id="floorplanCtrl" style="display:none;">
+        <label>🖼 Opacidade <input type="range" id="floorOpacity" min="0" max="100" value="50" oninput="setFloorPlanOpacity(this.value)"></label>
+        <button onclick="removeFloorPlan()" title="Remover planta">✕</button>
+    </div>
+    <svg id="mapSvg" class="map-svg" viewBox="0 0 1600 800" preserveAspectRatio="xMidYMid meet">
+        <defs>
+            <marker id="arrowMap" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M0,0 L10,5 L0,10 z" fill="rgba(148,163,184,0.6)"/>
+            </marker>
+        </defs>
+        <g id="mapFloor"></g>
+        <g id="mapEdges"></g>
+        <g id="mapNodes"></g>
+        <g id="mapAnim"></g>
+    </svg>
+    <svg class="minimap" id="minimap" viewBox="0 0 220 140" preserveAspectRatio="xMidYMid meet" onclick="minimapClick(event)"></svg>
+    <div class="map-legend">
+        <div style="display:flex; flex-direction:column; gap:6px;">
+            <div style="display:flex; gap:14px; flex-wrap:wrap;">
+                <span class="leg-item"><span class="leg-swatch" style="background:#94a3b8;"></span>Estoque</span>
+                <span class="leg-item"><span class="leg-swatch" style="background:#3b82f6;"></span>Estação</span>
+                <span class="leg-item"><span class="leg-swatch" style="background:#06b6d4;"></span>Buffer</span>
+                <span class="leg-item"><span class="leg-swatch" style="background:#22c55e;"></span>Saída</span>
+            </div>
+            <div style="display:flex; gap:10px; flex-wrap:wrap; padding-top:6px; border-top:1px solid rgba(255,255,255,0.08);">
+                <span class="leg-item"><span class="leg-swatch" style="background:#d946ef;"></span>Gargalo</span>
+                <span class="leg-item"><span class="leg-swatch" style="background:#22c55e;"></span>Operando</span>
+                <span class="leg-item"><span class="leg-swatch" style="background:#06b6d4;"></span>Setup</span>
+                <span class="leg-item"><span class="leg-swatch" style="background:#ef4444;"></span>Parada</span>
+                <span class="leg-item"><span class="leg-swatch" style="background:#f59e0b;"></span>Travada</span>
+                <span class="leg-item"><span class="leg-swatch" style="background:#eab308;"></span>Aguardando</span>
+                <span class="leg-item"><span class="leg-swatch" style="background:#475569;"></span>Desligada</span>
+            </div>
+        </div>
+    </div>
+    <div class="map-props" id="mapProps"></div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
